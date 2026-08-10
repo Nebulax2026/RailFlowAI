@@ -1,0 +1,5 @@
+Request ID,Title,Track Sector,Work Type,Duration Minutes,Earliest Start,Deadline,Priority,Required Crew,Required Equipment,Dependencies,Incompatible Work Types,Approval Status,Locked,Notes
+M-101,Signal relay inspection,T12,signal,75,2026-09-18T00:30:00,2026-09-18T04:30:00,5,E2,SignalKit-1,,,approved,false,High priority signal work
+M-102,Track geometry check,T12,inspection,60,2026-09-18T01:00:00,2026-09-18T05:00:00,3,TG1,GeometryCar-1,,,draft,false,Potential track overlap with M-101
+M-103,Power isolation test,T08,electrical,90,2026-09-18T00:00:00,2026-09-18T03:30:00,4,E2,PowerUnit-1,,,approved,false,Shares electrical crew
+M-104,Brake system emergency inspection,T14,inspection,45,2026-09-18T02:00:00,2026-09-18T04:00:00,5,MECH1,DiagnosticKit-1,,,draft,false,Emergency demo request

@@ -1,0 +1,1 @@
+"""Individual conflict detection rules."""
