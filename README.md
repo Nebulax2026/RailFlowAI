@@ -61,8 +61,8 @@ Run locally:
 
 ```bash
 cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+py -m pip install -r requirements.txt
+py -m uvicorn app.main:app --reload
 ```
 
 ## Frontend
@@ -79,8 +79,8 @@ Run locally:
 
 ```bash
 cd frontend
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
 ## MVP Scope

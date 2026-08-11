@@ -3,10 +3,10 @@ import type { CSSProperties } from "react";
 import { Lock, Plus, SlidersHorizontal } from "lucide-react";
 
 const requests = [
-  { id: "M-101", title: "Signal relay inspection", meta: "T12 · Signal · Priority 5", status: "conflict" },
-  { id: "M-102", title: "Track geometry check", meta: "T12 · Inspection · Priority 3", status: "conflict" },
-  { id: "M-103", title: "Power isolation test", meta: "T08 · Electrical · Priority 4", status: "normal" },
-  { id: "M-104", title: "Brake system inspection", meta: "T14 · Emergency · Priority 5", status: "suggested" }
+  { id: "M-101", title: "Signal relay inspection", meta: "T12 / Signal / Priority 5", status: "conflict" },
+  { id: "M-102", title: "Track geometry check", meta: "T12 / Inspection / Priority 3", status: "conflict" },
+  { id: "M-103", title: "Power isolation test", meta: "T08 / Electrical / Priority 4", status: "normal" },
+  { id: "M-104", title: "Brake system inspection", meta: "T14 / Emergency / Priority 5", status: "suggested" }
 ];
 
 const ganttRows = [
@@ -48,7 +48,7 @@ export default function DashboardPage() {
           <div className="panel-body request-list">
             {requests.map((request) => (
               <div className="request-item" key={request.id}>
-                <strong>{request.id} · {request.title}</strong>
+                <strong>{request.id} / {request.title}</strong>
                 <span>{request.meta}</span>
               </div>
             ))}
