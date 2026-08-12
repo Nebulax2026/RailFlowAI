@@ -1,10 +1,14 @@
 from datetime import timedelta
 
 from app.conflict.detector import detect_conflicts
-from app.domain.models import ScheduledWork
+from app.domain.models import MaintenanceRequest, ScheduledWork
 
 
-def stress_test_duration_increase(schedule: list[ScheduledWork], increase_percent: int) -> dict:
+def stress_test_duration_increase(
+    schedule: list[ScheduledWork],
+    increase_percent: int,
+    requests: list[MaintenanceRequest] | None = None,
+) -> dict:
     stressed = [
         item.model_copy(
             update={
@@ -15,7 +19,7 @@ def stress_test_duration_increase(schedule: list[ScheduledWork], increase_percen
         )
         for item in schedule
     ]
-    conflicts = detect_conflicts(stressed)
+    conflicts = detect_conflicts(stressed, requests or [])
     return {
         "scenario": f"duration_increase_{increase_percent}_percent",
         "conflicts": conflicts,

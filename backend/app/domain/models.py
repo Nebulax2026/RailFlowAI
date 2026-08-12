@@ -68,3 +68,16 @@ class ScheduleAlternative(BaseModel):
     conflicts: list[Conflict]
     kpis: KpiSnapshot
     explanation: str
+    rank: int = 0
+    disruption_score: int = 0
+    overtime_score: int = 0
+    completion_score: int = 0
+    critical_priority_score: int = 0
+    overall_score: int = 0
+
+
+class RequestFitResponse(BaseModel):
+    request: MaintenanceRequest
+    fits_current_schedule: bool
+    conflicts: list[Conflict]
+    suggested_alternatives: list[ScheduleAlternative] = Field(default_factory=list)

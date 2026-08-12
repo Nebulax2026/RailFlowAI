@@ -11,5 +11,6 @@ router = APIRouter()
 @router.get("", response_model=KpiSnapshot)
 def get_kpis() -> KpiSnapshot:
     schedule = list(SCHEDULED_WORK.values())
-    conflicts = detect_conflicts(schedule)
-    return calculate_kpis(list(REQUESTS.values()), schedule, conflicts)
+    requests = list(REQUESTS.values())
+    conflicts = detect_conflicts(schedule, requests)
+    return calculate_kpis(requests, schedule, conflicts)

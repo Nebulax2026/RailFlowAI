@@ -38,6 +38,8 @@ def from_csv(content: str, field_mapping: dict[str, str] | None = None) -> list[
             internal_key = mapping.get(external_key)
             if not internal_key:
                 continue
+            if value == "":
+                continue
             if internal_key in {"required_crew", "required_equipment", "dependencies", "incompatible_work_types"}:
                 normalized[internal_key] = parse_list(value)
             elif internal_key == "locked":

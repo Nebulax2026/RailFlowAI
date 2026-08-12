@@ -31,5 +31,7 @@ DEFAULT_FIELD_MAPPING = {
     "Incompatible Work Types": "incompatible_work_types",
     "Approval Status": "approval_status",
     "Locked": "locked",
+    "Fixed Start": "fixed_start",
+    "Fixed End": "fixed_end",
     "Notes": "notes",
 }

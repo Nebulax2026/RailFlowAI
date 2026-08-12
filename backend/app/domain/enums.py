@@ -34,6 +34,7 @@ class ConflictSeverity(StrEnum):
 
 
 class ScheduleOption(StrEnum):
+    REQUESTED_SLOT = "requested_slot"
     MINIMUM_DISRUPTION = "minimum_disruption"
     MINIMUM_OVERTIME = "minimum_overtime"
     MAXIMUM_COMPLETION = "maximum_completion"

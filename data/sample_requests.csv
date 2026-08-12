@@ -1,5 +1,21 @@
-Request ID,Title,Track Sector,Work Type,Duration Minutes,Earliest Start,Deadline,Priority,Required Crew,Required Equipment,Dependencies,Incompatible Work Types,Approval Status,Locked,Notes
-M-101,Signal relay inspection,T12,signal,75,2026-09-18T00:30:00,2026-09-18T04:30:00,5,E2,SignalKit-1,,,approved,false,High priority signal work
-M-102,Track geometry check,T12,inspection,60,2026-09-18T01:00:00,2026-09-18T05:00:00,3,TG1,GeometryCar-1,,,draft,false,Potential track overlap with M-101
-M-103,Power isolation test,T08,electrical,90,2026-09-18T00:00:00,2026-09-18T03:30:00,4,E2,PowerUnit-1,,,approved,false,Shares electrical crew
-M-104,Brake system emergency inspection,T14,inspection,45,2026-09-18T02:00:00,2026-09-18T04:00:00,5,MECH1,DiagnosticKit-1,,,draft,false,Emergency demo request
+Request ID,Title,Track Sector,Work Type,Duration Minutes,Earliest Start,Deadline,Priority,Required Crew,Required Equipment,Dependencies,Incompatible Work Types,Approval Status,Locked,Fixed Start,Fixed End,Notes
+M-101,Locked signal replacement,T12,signal_replacement,70,2026-08-13T00:10:00,2026-08-13T02:00:00,5,SIG1,SignalKit-1,,,locked,true,2026-08-13T00:10:00,2026-08-13T01:20:00,Approved work that future batches should preserve
+M-102,Signal function test,T12,signal_test,45,2026-08-13T01:00:00,2026-08-13T03:00:00,4,SIG1,SignalKit-1,M-101,,draft,false,,,Depends on signal replacement and competes for same crew/equipment
+M-103,Track inspection before renewal,T09,track_inspection,50,2026-08-13T00:20:00,2026-08-13T02:30:00,4,TG1,GeometryCar-1,,,draft,false,,,Prerequisite for renewal
+M-104,Track renewal follow-up,T09,track_renewal,80,2026-08-13T01:00:00,2026-08-13T04:30:00,5,TG1,RailGrinder-1,M-103,,draft,false,,,Must follow track inspection
+M-105,Power isolation for repair,T08,power_isolation,40,2026-08-13T00:00:00,2026-08-13T01:30:00,5,E1,IsolationKit-1,,,draft,false,,,Prerequisite for electrical repair
+M-106,Electrical repair after isolation,T08,electrical_repair,90,2026-08-13T00:45:00,2026-08-13T04:00:00,4,E1,PowerUnit-1,M-105,,draft,false,,,Creates crew continuity pressure
+M-107,Safety clearance for restored sector,T08,safety_clearance,30,2026-08-13T03:30:00,2026-08-13T04:30:00,5,SAFE1,DiagnosticKit-1,,,draft,false,,,Prerequisite for service restore
+M-108,Service restore check,T08,service_restore,25,2026-08-13T04:00:00,2026-08-13T05:00:00,5,SAFE1,DiagnosticKit-1,M-107,,draft,false,,,Must occur after safety clearance
+M-109,Geometry car inspection,T12,track_inspection,60,2026-08-13T01:10:00,2026-08-13T04:00:00,3,TG2,GeometryCar-1,,,draft,false,,,Competes for track sector after locked work
+M-110,Emergency brake inspection,T14,emergency,45,2026-08-13T02:00:00,2026-08-13T04:00:00,5,MECH1,DiagnosticKit-1,,,draft,false,,,High priority emergency-style request
+M-111,Depot equipment diagnostic,T14,inspection,50,2026-08-13T02:10:00,2026-08-13T05:00:00,2,MECH1,DiagnosticKit-1,,,draft,false,,,Competes with emergency job for crew and equipment
+M-112,Electrical feeder inspection,T10,electrical,55,2026-08-13T00:30:00,2026-08-13T02:30:00,3,E2,PowerUnit-2,,,draft,false,,,Shares electrical pool but separate equipment
+M-113,Locked night inspection,T11,inspection,45,2026-08-14T00:15:00,2026-08-14T01:30:00,4,MECH2,DiagnosticKit-1,,,locked,true,2026-08-14T00:15:00,2026-08-14T01:00:00,Second-day approved locked work
+M-114,Track sector patrol,T11,track,60,2026-08-14T00:45:00,2026-08-14T03:00:00,3,TG2,GeometryCar-2,,,draft,false,,,Overlaps locked inspection on same sector
+M-115,Signal replacement eastbound,T13,signal_replacement,75,2026-08-14T01:00:00,2026-08-14T03:20:00,4,SIG2,SignalKit-2,,,draft,false,,,Prerequisite for later test
+M-116,Signal test eastbound,T13,signal_test,40,2026-08-14T02:00:00,2026-08-14T04:00:00,4,SIG2,SignalKit-2,M-115,,draft,false,,,Must follow eastbound signal replacement
+M-117,Power isolation westbound,T10,power_isolation,35,2026-08-14T00:00:00,2026-08-14T01:20:00,4,E2,IsolationKit-1,,,draft,false,,,Prepares later repair
+M-118,Electrical repair westbound,T10,electrical_repair,85,2026-08-14T00:45:00,2026-08-14T04:00:00,4,E2,PowerUnit-2,M-117,,draft,false,,,Dependency and crew sequencing case
+M-119,Low priority inspection buffer,T09,inspection,45,2026-08-14T03:00:00,2026-08-14T05:00:00,1,MECH2,DiagnosticKit-1,,,draft,false,,,Good move candidate
+M-120,Final safety sweep,T12,safety_clearance,30,2026-08-15T03:30:00,2026-08-15T04:45:00,5,SAFE1,DiagnosticKit-1,,,draft,false,,,Third-day KPI and monthly view coverage
