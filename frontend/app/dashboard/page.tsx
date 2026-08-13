@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, CheckCircle2, GitBranch, Lock, Plus, RefreshCw, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, GitBranch, Lock, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Unlock } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -32,6 +32,7 @@ type ScheduledWork = {
   track_sector: string;
   changed_from_original: boolean;
   change_reason?: string | null;
+  status: string;
 };
 
 type Conflict = {
@@ -221,8 +222,111 @@ export default function DashboardPage() {
           ? `Schedule approved and locked by Schedule Manager. ${payload.locked_items ?? 0} items fixed.`
           : `${payload.unresolved_conflicts} resource contentions remain before approval.`
       );
+      await loadDashboard();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Schedule could not be approved.");
+    }
+  }
+
+  async function applySelectedAlternative() {
+    if (!selectedAlternative) {
+      setStatus("Select an alternative before applying it.");
+      return;
+    }
+    setStatus(`Applying ${selectedAlternative.label}...`);
+    try {
+      const response = await fetch(`${API_BASE}/api/schedule/apply?option=${selectedAlternative.option}&role=${role}`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) {
+        const detail = Array.isArray(payload.detail)
+          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
+          : payload.detail;
+        throw new Error(detail || "Alternative could not be applied.");
+      }
+      setSelectedAlternative(null);
+      setAlternatives([]);
+      await loadDashboard();
+      setStatus(`${selectedAlternative.label} applied as the active schedule.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Alternative could not be applied.");
+    }
+  }
+
+  async function rejectSelectedRequest() {
+    if (!selectedRequestId) {
+      setStatus("Select a request before rejecting it.");
+      return;
+    }
+    setStatus(`Rejecting ${selectedRequestId}...`);
+    try {
+      const response = await fetch(`${API_BASE}/api/schedule/reject/${selectedRequestId}?role=${role}`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Request could not be rejected.");
+      }
+      setSelectedAlternative(null);
+      await loadDashboard();
+      setStatus(`${selectedRequestId} rejected and removed from the active schedule.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Request could not be rejected.");
+    }
+  }
+
+  async function toggleSelectedLock() {
+    if (!selectedRequestId || !selectedScheduledItem) {
+      setStatus("Select scheduled work before changing its lock state.");
+      return;
+    }
+    const action = selectedScheduledItem.status === "locked" ? "unlock" : "lock";
+    setStatus(`${action === "lock" ? "Locking" : "Unlocking"} ${selectedRequestId}...`);
+    try {
+      const response = await fetch(`${API_BASE}/api/schedule/${action}/${selectedRequestId}?role=${role}`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Lock state could not be changed.");
+      }
+      await loadDashboard();
+      setStatus(`${selectedRequestId} is now ${action === "lock" ? "locked" : "unlocked"}.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Lock state could not be changed.");
+    }
+  }
+
+  async function modifySelectedStart() {
+    if (!selectedRequestId || !selectedScheduledItem || !selectedRequest) {
+      setStatus("Select scheduled work before modifying it.");
+      return;
+    }
+    const current = selectedScheduledItem.start_time.slice(0, 16);
+    const nextStart = window.prompt("New start time", current);
+    if (!nextStart) {
+      return;
+    }
+    const start = new Date(nextStart);
+    const end = new Date(start.getTime() + selectedRequest.duration_minutes * 60_000);
+    setStatus(`Modifying ${selectedRequestId}...`);
+    try {
+      const response = await fetch(`${API_BASE}/api/schedule/modify/${selectedRequestId}?role=${role}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          changed_from_original: true,
+          change_reason: "Modified by Schedule Manager during decision review."
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        const detail = Array.isArray(payload.detail)
+          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
+          : payload.detail;
+        throw new Error(detail || "Scheduled work could not be modified.");
+      }
+      await loadDashboard();
+      setStatus(`${selectedRequestId} moved to ${formatTime(payload.start_time)}.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Scheduled work could not be modified.");
     }
   }
 
@@ -497,19 +601,23 @@ export default function DashboardPage() {
             {selectedAlternative && (
               <p>Alternative preview is selected. Generate the active schedule before approval, or clear the preview with Refresh.</p>
             )}
+            <button className="button" disabled={role !== "schedule_manager" || !selectedAlternative} onClick={applySelectedAlternative}>
+              <ShieldCheck size={18} />
+              Apply Selected Alternative
+            </button>
             <button className="button" disabled={role !== "schedule_manager" || Boolean(selectedAlternative)} onClick={approveSchedule}>
               <ShieldCheck size={18} />
               Approve Active Schedule
             </button>
-            <button className="button secondary" disabled={role !== "schedule_manager"}>
+            <button className="button secondary" disabled={role !== "schedule_manager" || !selectedScheduledItem} onClick={modifySelectedStart}>
               Modify
             </button>
-            <button className="button secondary" disabled={role !== "schedule_manager"}>
+            <button className="button secondary" disabled={role !== "schedule_manager" || !selectedRequestId} onClick={rejectSelectedRequest}>
               Reject
             </button>
-            <button className="button secondary" disabled={role !== "schedule_manager"} title="Lock schedule">
-              <Lock size={18} />
-              Lock
+            <button className="button secondary" disabled={role !== "schedule_manager" || !selectedScheduledItem} onClick={toggleSelectedLock} title="Lock schedule">
+              {selectedScheduledItem?.status === "locked" ? <Unlock size={18} /> : <Lock size={18} />}
+              {selectedScheduledItem?.status === "locked" ? "Unlock" : "Lock"}
             </button>
           </div>
         </aside>

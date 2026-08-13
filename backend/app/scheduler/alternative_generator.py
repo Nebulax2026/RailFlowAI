@@ -71,8 +71,11 @@ def score_candidate(
 
 
 def explain_ranked_alternative(alternative: ScheduleAlternative) -> str:
+    changed_jobs = sum(1 for item in alternative.scheduled_work if item.changed_from_original)
     return (
-        f"{alternative.label} scores {alternative.overall_score}/100 overall with "
+        f"{alternative.label} schedules {len(alternative.scheduled_work)} jobs with {changed_jobs} changed job"
+        f"{'' if changed_jobs == 1 else 's'} and {len(alternative.conflicts)} unresolved contention"
+        f"{'' if len(alternative.conflicts) == 1 else 's'}. It scores {alternative.overall_score}/100 overall with "
         f"{alternative.disruption_score} disruption, {alternative.overtime_score} overtime, "
         f"{alternative.completion_score} completion, and {alternative.critical_priority_score} critical-priority scores."
     )
@@ -103,14 +106,15 @@ def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAl
         conflicts = detect_conflicts(scheduled, requests)
         kpis = calculate_kpis(requests, scheduled, conflicts)
         scores = score_candidate(requests, scheduled, len(conflicts))
+        changed_count = sum(1 for item in scheduled if item.changed_from_original)
         candidates.append(
             ScheduleAlternative(
                 option=option,
-                label="Requested Slot" if option == ScheduleOption.REQUESTED_SLOT else "Feasible Alternative",
+                label="Requested Slot" if option == ScheduleOption.REQUESTED_SLOT else option.value.replace("_", " ").title(),
                 scheduled_work=scheduled,
                 conflicts=conflicts,
                 kpis=kpis,
-                explanation="",
+                explanation=f"{changed_count} job{'' if changed_count == 1 else 's'} moved from the requested start.",
                 disruption_score=scores[0],
                 overtime_score=scores[1],
                 completion_score=scores[2],
@@ -123,6 +127,6 @@ def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAl
     for index, alternative in enumerate(ranked, start=1):
         alternative.rank = index
         if alternative.option != ScheduleOption.REQUESTED_SLOT:
-            alternative.label = f"Alternative {index}"
+            alternative.label = f"Alternative {index}: {alternative.option.value.replace('_', ' ').title()}"
         alternative.explanation = explain_ranked_alternative(alternative)
     return ranked

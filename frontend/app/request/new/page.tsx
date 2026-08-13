@@ -173,7 +173,11 @@ export default function NewRequestPage() {
 
       setResult(payload);
       setStatus("success");
-      setMessage("Request added to the pending queue. Generate Schedule from the Planning Board when the batch is ready.");
+      setMessage(
+        payload.fits_current_schedule
+          ? "Request added to the pending queue and fits the current active schedule."
+          : "Request added to the pending queue. Review the conflicts and alternatives before approval."
+      );
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Request could not be submitted.");
@@ -376,6 +380,16 @@ export default function NewRequestPage() {
               {status === "submitting" ? "Submitting" : "Submit"}
             </button>
             {message && <div className={`notice ${status}`}>{message}</div>}
+            {result && (
+              <div className="result-list">
+                <strong>{result.fits_current_schedule ? "Fits Current Schedule" : "Needs Decision Review"}</strong>
+                <p>
+                  {result.fits_current_schedule
+                    ? "No active resource contention is reported for this requested slot."
+                    : "The requested slot has resource contention or requires a generated schedule alternative."}
+                </p>
+              </div>
+            )}
             {result && result.conflicts.length > 0 && (
               <div className="result-list">
                 <strong>Resource Contention</strong>

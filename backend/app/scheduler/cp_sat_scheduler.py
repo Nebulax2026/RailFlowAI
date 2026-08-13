@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import MaintenanceRequest, ScheduledWork
@@ -13,21 +13,29 @@ def optimise_schedule(
     if option == ScheduleOption.REQUESTED_SLOT:
         option = ScheduleOption.MINIMUM_DISRUPTION
 
+    locked_requests = sorted(
+        [item for item in requests if item.locked and item.fixed_start and item.fixed_end],
+        key=lambda item: item.fixed_start or item.earliest_start,
+    )
+    movable_requests = [item for item in requests if item not in locked_requests]
+
     if option == ScheduleOption.MINIMUM_OVERTIME:
-        sorted_requests = sorted(requests, key=lambda item: (item.deadline, -item.priority, item.earliest_start))
+        sorted_movable = sorted(movable_requests, key=lambda item: (item.deadline, -item.priority, item.earliest_start))
     elif option == ScheduleOption.MAXIMUM_COMPLETION:
-        sorted_requests = sorted(requests, key=lambda item: (item.duration_minutes, item.deadline, -item.priority))
+        sorted_movable = sorted(movable_requests, key=lambda item: (item.duration_minutes, item.deadline, -item.priority))
     elif option == ScheduleOption.CRITICAL_WORK_FIRST:
-        sorted_requests = sorted(requests, key=lambda item: (-item.priority, item.deadline, item.earliest_start))
+        sorted_movable = sorted(movable_requests, key=lambda item: (-item.priority, item.deadline, item.earliest_start))
     else:
-        sorted_requests = sorted(
-            requests,
-            key=lambda item: (0 if item.locked or item.approval_status == ApprovalStatus.APPROVED else 1, item.earliest_start),
+        sorted_movable = sorted(
+            movable_requests,
+            key=lambda item: (0 if item.approval_status == ApprovalStatus.APPROVED else 1, item.earliest_start),
         )
+
+    sorted_requests = [*locked_requests, *sorted_movable]
     scheduled: list[ScheduledWork] = []
-    next_available_by_track: dict[str, object] = {}
-    next_available_by_crew: dict[str, object] = {}
-    next_available_by_equipment: dict[str, object] = {}
+    next_available_by_track: dict[str, datetime] = {}
+    next_available_by_crew: dict[str, datetime] = {}
+    next_available_by_equipment: dict[str, datetime] = {}
 
     for request in sorted_requests:
         if request.locked and request.fixed_start and request.fixed_end:
@@ -54,7 +62,7 @@ def optimise_schedule(
             assigned_crew=request.required_crew,
             assigned_equipment=request.required_equipment,
             track_sector=request.track_sector,
-            status=ApprovalStatus.SCHEDULED,
+            status=ApprovalStatus.LOCKED if request.locked else ApprovalStatus.SCHEDULED,
             changed_from_original=start_time != request.earliest_start,
             change_reason=(
                 "Moved from requested earliest start to avoid track, crew, or equipment overlap."
