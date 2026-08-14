@@ -54,6 +54,10 @@ class MvpWorkflowTest(unittest.TestCase):
         body = response.json()
         self.assertTrue(body["fits_current_schedule"])
         self.assertEqual(body["conflicts"], [])
+        self.assertIsNotNone(body["scheduled_work"])
+        self.assertFalse(body["requires_manager_review"])
+        self.assertIn("M-001", SCHEDULED_WORK)
+        self.assertEqual(REQUESTS["M-001"].approval_status, ApprovalStatus.SCHEDULED)
 
     def test_request_reports_track_crew_and_equipment_contentions(self) -> None:
         client.post(
@@ -84,18 +88,25 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertFalse(body["fits_current_schedule"])
         self.assertEqual({item["type"] for item in body["conflicts"]}, {"track", "crew", "equipment"})
         self.assertGreaterEqual(len(body["suggested_alternatives"]), 1)
+        self.assertTrue(body["requires_manager_review"])
+        self.assertIsNotNone(body["scheduled_work"])
+        self.assertGreaterEqual(len(body["affected_changes"]), 1)
+        self.assertNotIn("M-002", SCHEDULED_WORK)
 
-    def test_hard_validation_rejects_engineering_hours_and_prerequisites(self) -> None:
-        hours_response = client.post(
+    def test_overtime_is_allowed_and_prerequisites_remain_hard_blockers(self) -> None:
+        overtime_response = client.post(
             "/api/requests",
             json=request_payload("M-001", "2026-08-13T05:30:00", "2026-08-13T06:30:00"),
         )
+        client.post("/api/schedule/optimise?option=minimum_disruption")
+        kpi_response = client.get("/api/kpis")
         dependency_response = client.post(
             "/api/requests",
             json=request_payload("M-002", "2026-08-13T01:00:00", "2026-08-13T02:00:00", work_type="signal_test"),
         )
 
-        self.assertEqual(hours_response.status_code, 422)
+        self.assertEqual(overtime_response.status_code, 200)
+        self.assertEqual(kpi_response.json()["estimated_overtime_minutes"], 30)
         self.assertEqual(dependency_response.status_code, 422)
 
     def test_locked_work_is_preserved_during_optimisation(self) -> None:
@@ -183,6 +194,93 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(denied.status_code, 403)
         self.assertEqual(applied.status_code, 200)
         self.assertEqual(len(applied.json()), 2)
+
+    def test_selected_proposal_does_not_schedule_unselected_pending_requests(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T12:00:00", crew=["E1"]),
+        )
+        client.post(
+            "/api/requests",
+            json=request_payload("M-002", "2026-08-13T10:00:00", "2026-08-13T12:00:00", crew=["E1"], priority=5),
+        )
+        client.post(
+            "/api/requests",
+            json=request_payload("M-003", "2026-08-13T10:05:00", "2026-08-13T12:00:00", crew=["E1"], priority=4),
+        )
+
+        proposals = client.post("/api/schedule/alternatives", json={"request_ids": ["M-002"]})
+        applied = client.post(
+            "/api/schedule/apply?option=critical_work_first&role=schedule_manager",
+            json={"request_ids": ["M-002"]},
+        )
+
+        self.assertEqual(proposals.status_code, 200)
+        self.assertTrue(all("M-002" in {item["request_id"] for item in proposal["scheduled_work"]} for proposal in proposals.json()))
+        self.assertEqual(applied.status_code, 200)
+        self.assertIn("M-002", SCHEDULED_WORK)
+        self.assertNotIn("M-003", SCHEDULED_WORK)
+
+    def test_approve_selected_locks_only_selected_scheduled_tasks(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T11:00:00", track="T08"),
+        )
+        client.post(
+            "/api/requests",
+            json=request_payload("M-002", "2026-08-13T10:00:00", "2026-08-13T11:00:00", track="T09"),
+        )
+
+        pending_denied = client.post("/api/schedule/approve-selected?role=schedule_manager", json={"request_ids": ["M-404"]})
+        approved = client.post("/api/schedule/approve-selected?role=schedule_manager", json={"request_ids": ["M-001"]})
+
+        self.assertEqual(pending_denied.status_code, 422)
+        self.assertEqual(approved.status_code, 200)
+        self.assertEqual(SCHEDULED_WORK["M-001"].status, ApprovalStatus.LOCKED)
+        self.assertEqual(SCHEDULED_WORK["M-002"].status, ApprovalStatus.SCHEDULED)
+
+    def test_manager_proposal_can_move_locked_work_without_silent_mutation(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T12:00:00", crew=["E1"], priority=3),
+        )
+        client.post("/api/schedule/lock/M-001?role=schedule_manager")
+
+        response = client.post(
+            "/api/requests",
+            json=request_payload("M-002", "2026-08-13T10:00:00", "2026-08-13T10:30:00", crew=["E1"], priority=5),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertTrue(body["requires_manager_review"])
+        self.assertGreaterEqual(body["suggested_alternatives"][0]["changed_jobs_count"], 1)
+        self.assertGreaterEqual(body["suggested_alternatives"][0]["churn_penalty"], 0)
+        self.assertEqual(SCHEDULED_WORK["M-001"].status, ApprovalStatus.LOCKED)
+        self.assertNotIn("M-002", SCHEDULED_WORK)
+
+        applied = client.post("/api/schedule/apply?option=critical_work_first&role=schedule_manager")
+
+        self.assertEqual(applied.status_code, 200)
+        self.assertIn("M-002", SCHEDULED_WORK)
+        self.assertEqual(SCHEDULED_WORK["M-001"].status, ApprovalStatus.SCHEDULED)
+        self.assertGreaterEqual(SCHEDULED_WORK["M-001"].start_time, SCHEDULED_WORK["M-002"].end_time)
+
+    def test_demo_seed_and_reset_manage_in_memory_state(self) -> None:
+        seeded = client.post("/api/demo/seed")
+
+        self.assertEqual(seeded.status_code, 200)
+        self.assertGreaterEqual(seeded.json()["requests"], 1)
+        self.assertGreaterEqual(seeded.json()["locked_schedule_items"], 1)
+        self.assertGreaterEqual(seeded.json()["tentative_schedule_items"], 1)
+        self.assertIn("M-101", REQUESTS)
+        self.assertIn("M-101", SCHEDULED_WORK)
+
+        reset = client.post("/api/demo/reset")
+
+        self.assertEqual(reset.status_code, 200)
+        self.assertEqual(REQUESTS, {})
+        self.assertEqual(SCHEDULED_WORK, {})
 
 
 if __name__ == "__main__":

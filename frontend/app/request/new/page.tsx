@@ -27,12 +27,37 @@ type Alternative = {
   completion_score: number;
   critical_priority_score: number;
   overall_score: number;
+  changed_jobs_count: number;
+  moved_locked_count: number;
+  churn_penalty: number;
+  impact_summary?: string | null;
+};
+
+type ScheduledWork = {
+  request_id: string;
+  start_time: string;
+  end_time: string;
+};
+
+type ScheduleChange = {
+  request_id: string;
+  owner: string;
+  previous_start?: string | null;
+  previous_end?: string | null;
+  proposed_start: string;
+  proposed_end: string;
+  was_locked: boolean;
+  reason: string;
 };
 
 type FitResponse = {
   fits_current_schedule: boolean;
   conflicts: Conflict[];
   suggested_alternatives: Alternative[];
+  scheduled_work?: ScheduledWork | null;
+  requires_manager_review: boolean;
+  affected_changes: ScheduleChange[];
+  proposal_option?: string | null;
 };
 
 type FormState = {
@@ -111,6 +136,15 @@ function workLabel(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 }
@@ -175,8 +209,8 @@ export default function NewRequestPage() {
       setStatus("success");
       setMessage(
         payload.fits_current_schedule
-          ? "Request added to the pending queue and fits the current active schedule."
-          : "Request added to the pending queue. Review the conflicts and alternatives before approval."
+          ? "Request placed into a tentative slot."
+          : "Request needs manager review because fitting it requires schedule changes."
       );
     } catch (error) {
       setStatus("error");
@@ -189,7 +223,6 @@ export default function NewRequestPage() {
       <header className="topbar">
         <div>
           <div className="brand">New Request</div>
-          <div className="subtitle">Submit maintenance work for scheduler validation.</div>
         </div>
         <nav className="nav">
           <Link className="secondary" href="/dashboard">
@@ -198,14 +231,6 @@ export default function NewRequestPage() {
           </Link>
         </nav>
       </header>
-      <section className="page-intro form-intro">
-        <div>
-          <span className="eyebrow">Request intake</span>
-          <h1>Describe the work window and resource needs.</h1>
-        </div>
-        <p>Required fields are validated before the request enters the pending planning queue.</p>
-      </section>
-
       <section className="form-page">
         <form className="panel form" onSubmit={submitRequest}>
           <div className="panel-header">
@@ -385,9 +410,29 @@ export default function NewRequestPage() {
                 <strong>{result.fits_current_schedule ? "Fits Current Schedule" : "Needs Decision Review"}</strong>
                 <p>
                   {result.fits_current_schedule
-                    ? "No active resource contention is reported for this requested slot."
-                    : "The requested slot has resource contention or requires a generated schedule alternative."}
+                    ? "No active conflict is reported for this requested slot."
+                    : "The requested slot has a conflict. A manager can apply the proposed reschedule from the Planning Board."}
                 </p>
+                {result.scheduled_work && (
+                  <p>
+                    Your proposed slot: {formatDateTime(result.scheduled_work.start_time)}-{formatDateTime(result.scheduled_work.end_time)}
+                  </p>
+                )}
+              </div>
+            )}
+            {result && result.requires_manager_review && result.affected_changes.length > 0 && (
+              <div className="result-list">
+                <strong>Affected Schedule Changes</strong>
+                {result.affected_changes.map((change) => (
+                  <p key={`${change.request_id}-${change.proposed_start}`}>
+                    {change.request_id} / owner {change.owner}:{" "}
+                    {change.previous_start && change.previous_end
+                      ? `${formatDateTime(change.previous_start)}-${formatDateTime(change.previous_end)} -> `
+                      : "new slot "}
+                    {formatDateTime(change.proposed_start)}-{formatDateTime(change.proposed_end)}
+                    {change.was_locked ? " / currently locked" : ""}
+                  </p>
+                ))}
               </div>
             )}
             {result && result.conflicts.length > 0 && (
@@ -402,10 +447,11 @@ export default function NewRequestPage() {
             )}
             {result && result.suggested_alternatives.length > 0 && (
               <div className="result-list">
-                <strong>Feasible Alternatives</strong>
+                <strong>Schedule Proposals</strong>
                 {result.suggested_alternatives.map((alternative) => (
                   <p key={alternative.option}>
                     #{alternative.rank} {alternative.label}: {alternative.overall_score}/100 overall. {alternative.explanation}
+                    {alternative.impact_summary ? ` ${alternative.impact_summary}` : ""}
                   </p>
                 ))}
               </div>

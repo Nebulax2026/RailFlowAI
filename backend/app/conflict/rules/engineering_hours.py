@@ -3,8 +3,8 @@ from datetime import time
 from app.domain.enums import ConflictSeverity, ConflictType
 from app.domain.models import Conflict, ScheduledWork
 
-ENGINEERING_START = time(0, 0)
-ENGINEERING_END = time(5, 0)
+ENGINEERING_START = time(9, 0)
+ENGINEERING_END = time(18, 0)
 
 
 def detect_engineering_hours_conflicts(schedule: list[ScheduledWork]) -> list[Conflict]:
@@ -18,8 +18,8 @@ def detect_engineering_hours_conflicts(schedule: list[ScheduledWork]) -> list[Co
                     severity=ConflictSeverity.CRITICAL,
                     request_ids=[item.request_id],
                     resource="engineering_hours",
-                    explanation=f"{item.request_id} is scheduled outside the allowed engineering hours.",
-                    suggested_action="Move the request into the configured maintenance window.",
+                    explanation=f"{item.request_id} is scheduled outside standard engineering hours.",
+                    suggested_action="Move the request into 09:00-18:00 or use overtime.",
                 )
             )
     return conflicts

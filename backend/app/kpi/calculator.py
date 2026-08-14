@@ -1,4 +1,23 @@
+from datetime import datetime
+
 from app.domain.models import Conflict, KpiSnapshot, MaintenanceRequest, ScheduledWork
+from app.validation.schedule_validator import ENGINEERING_END, ENGINEERING_START
+
+
+def overtime_minutes(item: ScheduledWork) -> int:
+    standard_start = datetime.combine(item.start_time.date(), ENGINEERING_START)
+    standard_end = datetime.combine(item.start_time.date(), ENGINEERING_END)
+    before_start = max(0, int((min(item.end_time, standard_start) - item.start_time).total_seconds() / 60))
+    after_end = max(0, int((item.end_time - max(item.start_time, standard_end)).total_seconds() / 60))
+    return before_start + after_end
+
+
+def standard_window_minutes_used(item: ScheduledWork) -> int:
+    standard_start = datetime.combine(item.start_time.date(), ENGINEERING_START)
+    standard_end = datetime.combine(item.start_time.date(), ENGINEERING_END)
+    overlap_start = max(item.start_time, standard_start)
+    overlap_end = min(item.end_time, standard_end)
+    return max(0, int((overlap_end - overlap_start).total_seconds() / 60))
 
 
 def calculate_kpis(
@@ -10,12 +29,24 @@ def calculate_kpis(
     scheduled_ids = {item.request_id for item in scheduled_work}
     changed_count = sum(1 for item in scheduled_work if item.changed_from_original)
     total = max(len(requests), 1)
+    scheduled_dates = {item.start_time.date() for item in scheduled_work}
+    standard_minutes = (
+        int(
+            (
+                datetime.combine(datetime.today(), ENGINEERING_END)
+                - datetime.combine(datetime.today(), ENGINEERING_START)
+            ).total_seconds()
+            / 60
+        )
+        * max(len(scheduled_dates), 1)
+    )
+    used_standard_minutes = sum(standard_window_minutes_used(item) for item in scheduled_work)
 
     return KpiSnapshot(
         unresolved_conflicts=len(conflicts),
         critical_jobs_scheduled=len(critical_ids & scheduled_ids),
-        engineering_hours_utilisation=min(round(len(scheduled_work) / total * 100, 1), 100.0),
-        estimated_overtime_minutes=0,
+        engineering_hours_utilisation=min(round(used_standard_minutes / standard_minutes * 100, 1), 100.0),
+        estimated_overtime_minutes=sum(overtime_minutes(item) for item in scheduled_work),
         schedule_stability=round((total - changed_count) / total * 100, 1),
         robustness_score=max(0, 100 - len(conflicts) * 10 - changed_count * 2),
     )

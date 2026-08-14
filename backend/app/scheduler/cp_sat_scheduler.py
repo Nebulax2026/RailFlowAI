@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import MaintenanceRequest, ScheduledWork
-from app.validation.schedule_validator import ENGINEERING_END, ENGINEERING_START
 
 
 def optimise_schedule(
@@ -51,7 +50,7 @@ def optimise_schedule(
                     start_time = blocker
             end_time = start_time + timedelta(minutes=request.duration_minutes)
 
-        if end_time > request.deadline or start_time.time() < ENGINEERING_START or end_time.time() > ENGINEERING_END:
+        if end_time > request.deadline:
             continue
 
         scheduled_item = ScheduledWork(

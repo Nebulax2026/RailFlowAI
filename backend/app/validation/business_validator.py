@@ -1,6 +1,5 @@
 from app.domain.catalog import CREWS, EQUIPMENT, TRACK_SECTORS, WORK_TYPES
 from app.domain.models import MaintenanceRequest
-from app.validation.schedule_validator import ENGINEERING_END, ENGINEERING_START
 
 
 def validate_business_rules(request: MaintenanceRequest) -> list[str]:
@@ -17,8 +16,6 @@ def validate_business_rules(request: MaintenanceRequest) -> list[str]:
         errors.append(f"Unknown equipment values: {', '.join(invalid_equipment)}.")
     if request.deadline <= request.earliest_start:
         errors.append("Deadline must be after earliest start.")
-    if request.earliest_start.time() < ENGINEERING_START or request.deadline.time() > ENGINEERING_END:
-        errors.append("Request window must stay within engineering hours 00:00-05:00.")
     requested_minutes = (request.deadline - request.earliest_start).total_seconds() / 60
     if requested_minutes < request.duration_minutes:
         errors.append("Duration must fit between earliest start and deadline.")

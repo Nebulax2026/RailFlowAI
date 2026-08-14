@@ -19,12 +19,7 @@ export default function Home() {
       </header>
       <section className="home-hero">
         <div className="hero-copy">
-          <span className="eyebrow">Operations planning console</span>
-          <h1>Explainable railway maintenance scheduling</h1>
-          <p>
-            Submit maintenance work, detect resource contentions, compare feasible alternatives,
-            and approve schedule changes from one focused planning workspace.
-          </p>
+          <h1>RailFlow AI</h1>
           <div className="hero-actions">
             <Link href="/dashboard">
               <CalendarClock size={18} />

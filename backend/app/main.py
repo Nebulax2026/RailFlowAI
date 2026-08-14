@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import catalog, conflicts, import_data, kpis, requests, scenarios, schedule, stress_test
+from app.api import catalog, conflicts, demo, import_data, kpis, requests, scenarios, schedule, stress_test
 
 
 app = FastAPI(
@@ -22,6 +22,7 @@ app.include_router(requests.router, prefix="/api/requests", tags=["requests"])
 app.include_router(catalog.router, prefix="/api/catalog", tags=["catalog"])
 app.include_router(import_data.router, prefix="/api/import", tags=["import"])
 app.include_router(conflicts.router, prefix="/api/conflicts", tags=["conflicts"])
+app.include_router(demo.router, prefix="/api/demo", tags=["demo"])
 app.include_router(schedule.router, prefix="/api/schedule", tags=["schedule"])
 app.include_router(scenarios.router, prefix="/api/scenarios", tags=["scenarios"])
 app.include_router(stress_test.router, prefix="/api/stress-test", tags=["stress-test"])

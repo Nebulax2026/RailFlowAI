@@ -39,3 +39,9 @@ class ScheduleOption(StrEnum):
     MINIMUM_OVERTIME = "minimum_overtime"
     MAXIMUM_COMPLETION = "maximum_completion"
     CRITICAL_WORK_FIRST = "critical_work_first"
+
+
+class ScheduleHorizon(StrEnum):
+    FROZEN = "frozen"
+    FIRM = "firm"
+    FLUID = "fluid"

@@ -497,8 +497,8 @@ textarea:focus-visible {
 .day-calendar {
   display: grid;
   grid-template-columns: 64px minmax(560px, 1fr);
-  grid-template-rows: 42px 300px;
-  overflow-x: auto;
+  grid-template-rows: 42px minmax(520px, 68vh);
+  overflow: auto;
 }
 
 .calendar-corner,
@@ -531,7 +531,7 @@ textarea:focus-visible {
 
 .time-axis {
   display: grid;
-  grid-template-rows: repeat(5, 60px);
+  grid-template-rows: repeat(var(--slot-count), var(--slot-height));
   padding-top: 0;
 }
 
@@ -543,20 +543,21 @@ textarea:focus-visible {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(var(--track-count), minmax(118px, 1fr));
+  min-height: calc(var(--slot-count) * var(--slot-height));
   min-width: calc(var(--track-count) * 118px);
   position: relative;
 }
 
 .track-column {
   border-left: 1px solid var(--line);
-  min-height: 300px;
+  min-height: calc(var(--slot-count) * var(--slot-height));
   position: relative;
 }
 
 .hour-line {
   border-top: 1px solid var(--line);
   display: block;
-  height: 60px;
+  height: var(--slot-height);
 }
 
 .calendar-event {
@@ -609,7 +610,7 @@ textarea:focus-visible {
 .kpis {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
   padding: 18px clamp(16px, 3vw, 28px) 0;
 }
 
@@ -661,7 +662,7 @@ textarea:focus-visible {
 .ops-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.82fr) minmax(300px, 0.72fr);
+  grid-template-columns: minmax(220px, 0.68fr) minmax(260px, 0.7fr) minmax(340px, 1.05fr);
   padding: 18px clamp(16px, 3vw, 28px);
 }
 
@@ -958,6 +959,26 @@ textarea:focus-visible {
   font-size: 16px;
   line-height: 1.35;
   margin: 0;
+}
+
+.selected-list {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.selected-list strong {
+  font-size: 13px;
+}
+
+.proposal-list {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
 }
 
 .alternatives {

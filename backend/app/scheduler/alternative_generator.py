@@ -3,8 +3,10 @@ from datetime import timedelta
 from app.conflict.detector import detect_conflicts
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import MaintenanceRequest, ScheduleAlternative, ScheduledWork
-from app.kpi.calculator import calculate_kpis
+from app.kpi.calculator import calculate_kpis, overtime_minutes
 from app.scheduler.cp_sat_scheduler import optimise_schedule
+from app.scheduler.horizon import move_penalty
+from app.storage import SCHEDULED_WORK
 from app.validation.schedule_validator import validate_scheduled_work
 
 MAX_ALTERNATIVES = 3
@@ -48,16 +50,12 @@ def score_candidate(
     total = max(len(requests), 1)
     scheduled_ids = {item.request_id for item in schedule}
     changed_count = sum(1 for item in schedule if item.changed_from_original)
-    overtime_minutes = sum(
-        max(0, int((item.end_time - request.deadline).total_seconds() / 60))
-        for item in schedule
-        for request in requests
-        if request.request_id == item.request_id
-    )
+    overtime_total = sum(overtime_minutes(item) for item in schedule)
     critical_ids = {request.request_id for request in requests if request.priority >= 4}
+    churn_penalty = schedule_churn_penalty(schedule)
 
-    disruption_score = max(0, round(100 - (changed_count / total * 100)))
-    overtime_score = max(0, 100 - overtime_minutes)
+    disruption_score = max(0, round(100 - (changed_count / total * 100) - churn_penalty / max(total, 1)))
+    overtime_score = max(0, 100 - overtime_total)
     completion_score = round(len(scheduled_ids) / total * 100)
     critical_priority_score = round((len(critical_ids & scheduled_ids) / max(len(critical_ids), 1)) * 100)
     overall_score = round(
@@ -71,14 +69,38 @@ def score_candidate(
 
 
 def explain_ranked_alternative(alternative: ScheduleAlternative) -> str:
-    changed_jobs = sum(1 for item in alternative.scheduled_work if item.changed_from_original)
     return (
-        f"{alternative.label} schedules {len(alternative.scheduled_work)} jobs with {changed_jobs} changed job"
-        f"{'' if changed_jobs == 1 else 's'} and {len(alternative.conflicts)} unresolved contention"
-        f"{'' if len(alternative.conflicts) == 1 else 's'}. It scores {alternative.overall_score}/100 overall with "
+        f"Schedules {len(alternative.scheduled_work)} jobs, moves {alternative.changed_jobs_count}, and leaves "
+        f"{len(alternative.conflicts)} unresolved conflict{'' if len(alternative.conflicts) == 1 else 's'}. "
+        f"Churn penalty {alternative.churn_penalty}; locked moves {alternative.moved_locked_count}. "
+        f"Overall score {alternative.overall_score}/100: "
         f"{alternative.disruption_score} disruption, {alternative.overtime_score} overtime, "
-        f"{alternative.completion_score} completion, and {alternative.critical_priority_score} critical-priority scores."
+        f"{alternative.completion_score} completion, {alternative.critical_priority_score} critical priority."
     )
+
+
+def schedule_churn_penalty(schedule: list[ScheduledWork]) -> int:
+    penalty = 0
+    current_by_request = {item.request_id: item for item in SCHEDULED_WORK.values()}
+    for item in schedule:
+        current = current_by_request.get(item.request_id)
+        if not current:
+            continue
+        if current.start_time != item.start_time or current.end_time != item.end_time:
+            penalty += move_penalty(current)
+    return penalty
+
+
+def moved_locked_count(schedule: list[ScheduledWork]) -> int:
+    count = 0
+    current_by_request = {item.request_id: item for item in SCHEDULED_WORK.values()}
+    for item in schedule:
+        current = current_by_request.get(item.request_id)
+        if not current:
+            continue
+        if current.status == ApprovalStatus.LOCKED and (current.start_time != item.start_time or current.end_time != item.end_time):
+            count += 1
+    return count
 
 
 def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAlternative]:
@@ -107,6 +129,8 @@ def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAl
         kpis = calculate_kpis(requests, scheduled, conflicts)
         scores = score_candidate(requests, scheduled, len(conflicts))
         changed_count = sum(1 for item in scheduled if item.changed_from_original)
+        churn_penalty = schedule_churn_penalty(scheduled)
+        locked_moves = moved_locked_count(scheduled)
         candidates.append(
             ScheduleAlternative(
                 option=option,
@@ -120,6 +144,13 @@ def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAl
                 completion_score=scores[2],
                 critical_priority_score=scores[3],
                 overall_score=scores[4],
+                changed_jobs_count=changed_count,
+                moved_locked_count=locked_moves,
+                churn_penalty=churn_penalty,
+                impact_summary=(
+                    f"Moves {changed_count} job{'' if changed_count == 1 else 's'}, including {locked_moves} locked baseline "
+                    f"item{'' if locked_moves == 1 else 's'}, with churn penalty {churn_penalty}."
+                ),
             )
         )
 
@@ -127,6 +158,6 @@ def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAl
     for index, alternative in enumerate(ranked, start=1):
         alternative.rank = index
         if alternative.option != ScheduleOption.REQUESTED_SLOT:
-            alternative.label = f"Alternative {index}: {alternative.option.value.replace('_', ' ').title()}"
+            alternative.label = f"{alternative.option.value.replace('_', ' ').title()} Proposal"
         alternative.explanation = explain_ranked_alternative(alternative)
     return ranked

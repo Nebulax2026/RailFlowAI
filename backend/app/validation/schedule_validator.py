@@ -2,8 +2,8 @@ from datetime import time
 
 from app.domain.models import MaintenanceRequest, ScheduledWork
 
-ENGINEERING_START = time(0, 0)
-ENGINEERING_END = time(5, 0)
+ENGINEERING_START = time(9, 0)
+ENGINEERING_END = time(18, 0)
 
 
 def validate_scheduled_work(
@@ -16,8 +16,6 @@ def validate_scheduled_work(
 
     for item in schedule:
         request = requests_by_id.get(item.request_id)
-        if item.start_time.time() < ENGINEERING_START or item.end_time.time() > ENGINEERING_END:
-            errors.append(f"{item.request_id} is outside engineering hours 00:00-05:00.")
         if request and item.end_time > request.deadline:
             errors.append(f"{item.request_id} cannot finish before its deadline.")
 

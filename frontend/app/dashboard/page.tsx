@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, CheckCircle2, GitBranch, Lock, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Unlock } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -21,6 +21,7 @@ type MaintenanceRequest = {
   dependencies: string[];
   approval_status: string;
   locked: boolean;
+  created_by: string;
 };
 
 type ScheduledWork = {
@@ -67,6 +68,10 @@ type Alternative = {
   completion_score: number;
   critical_priority_score: number;
   overall_score: number;
+  changed_jobs_count: number;
+  moved_locked_count: number;
+  churn_penalty: number;
+  impact_summary?: string | null;
 };
 
 type Role = "requester" | "schedule_manager";
@@ -87,7 +92,27 @@ const dependencyRules = [
   { work: "service_restore", prerequisite: "safety_clearance" }
 ];
 
-const engineeringHours = ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00"];
+const engineeringHours = [
+  "06:00",
+  "07:00",
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+  "18:00",
+  "19:00",
+  "20:00",
+  "21:00",
+  "22:00"
+];
+const timelineStartMinutes = 6 * 60;
+const timeSlotHeight = 88;
 const fallbackTracks = ["T08", "T09", "T10", "T11", "T12", "T13", "T14"];
 
 function formatDate(value: Date) {
@@ -96,6 +121,10 @@ function formatDate(value: Date) {
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 function workLabel(value: string) {
@@ -121,18 +150,26 @@ function requestFor(item: ScheduledWork, requests: MaintenanceRequest[]) {
   return requests.find((request) => request.request_id === item.request_id);
 }
 
+function scheduledFor(requestId: string, schedule: ScheduledWork[]) {
+  return schedule.find((item) => item.request_id === requestId);
+}
+
 function minutesFromEngineeringStart(value: string) {
   const date = new Date(value);
   return date.getHours() * 60 + date.getMinutes();
 }
 
 function calendarBlockStyle(item: ScheduledWork) {
-  const start = minutesFromEngineeringStart(item.start_time);
-  const end = minutesFromEngineeringStart(item.end_time);
+  const start = (minutesFromEngineeringStart(item.start_time) - timelineStartMinutes) * (timeSlotHeight / 60);
+  const end = (minutesFromEngineeringStart(item.end_time) - timelineStartMinutes) * (timeSlotHeight / 60);
   return {
     top: `${Math.max(0, start)}px`,
     height: `${Math.max(24, end - start)}px`
   };
+}
+
+function isLockedStatus(status: string) {
+  return status.toLowerCase() === "locked";
 }
 
 export default function DashboardPage() {
@@ -144,6 +181,8 @@ export default function DashboardPage() {
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const [selectedAlternative, setSelectedAlternative] = useState<Alternative | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([]);
+  const [selectedScheduledIds, setSelectedScheduledIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [status, setStatus] = useState("Loading planning board...");
 
@@ -160,12 +199,24 @@ export default function DashboardPage() {
         throw new Error("Could not load planning board data.");
       }
 
-      const loadedRequests = await requestResponse.json();
+      const loadedRequests: MaintenanceRequest[] = await requestResponse.json();
+      const loadedSchedule: ScheduledWork[] = await scheduleResponse.json();
       setRequests(loadedRequests);
-      setSchedule(await scheduleResponse.json());
+      setSchedule(loadedSchedule);
       setConflicts(await conflictResponse.json());
       setKpis(await kpiResponse.json());
-      setSelectedRequestId((current) => current ?? loadedRequests[0]?.request_id ?? null);
+      const scheduledIds = new Set(loadedSchedule.map((item) => item.request_id));
+      const pendingRequests = loadedRequests.filter(
+        (request) => request.approval_status === "draft" && !request.locked && !scheduledIds.has(request.request_id)
+      );
+      setSelectedRequestId((current) => current ?? pendingRequests[0]?.request_id ?? loadedSchedule[0]?.request_id ?? null);
+      const firstVisibleDate = loadedSchedule[0]?.start_time ?? loadedRequests[0]?.earliest_start;
+      if (firstVisibleDate) {
+        setSelectedDate((current) => {
+          const next = new Date(firstVisibleDate);
+          return sameDay(current, next) ? current : next;
+        });
+      }
       setStatus("Planning board is synced with the backend.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not load planning board data.");
@@ -191,64 +242,114 @@ export default function DashboardPage() {
   }
 
   async function compareAlternatives() {
-    setStatus("Generating alternatives...");
+    if (selectedPendingIds.length === 0) {
+      setStatus("Select one or more pending requests before showing proposals.");
+      return;
+    }
+    setStatus("Generating schedule proposals...");
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/alternatives`, { method: "POST" });
+      const response = await fetch(`${API_BASE}/api/schedule/alternatives`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_ids: selectedPendingIds })
+      });
       if (!response.ok) {
-        throw new Error("Could not generate alternatives.");
+        throw new Error("Could not generate proposals.");
       }
       const payload = await response.json();
       setAlternatives(payload);
       setSelectedAlternative(payload[0] ?? null);
-        setStatus(payload.length ? "Top feasible alternatives are ready for Schedule Manager review." : "No feasible alternatives were generated.");
+      setStatus(payload.length ? "Top schedule proposals are ready for Schedule Manager review." : "No feasible proposals were generated.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not generate alternatives.");
+      setStatus(error instanceof Error ? error.message : "Could not generate proposals.");
     }
   }
 
-  async function approveSchedule() {
-    setStatus("Checking approval authority...");
+  async function approveSelectedSchedule() {
+    const tentativeIds = selectedScheduledIds.filter((requestId) => {
+      const item = schedule.find((scheduledItem) => scheduledItem.request_id === requestId);
+      return item && !isLockedStatus(item.status);
+    });
+    if (tentativeIds.length === 0) {
+      setStatus("Select one or more tentative calendar tasks to approve.");
+      return;
+    }
+    setStatus(`Approving ${tentativeIds.length} selected task${tentativeIds.length === 1 ? "" : "s"}...`);
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/approve?role=${role}`, { method: "POST" });
+      const response = await fetch(`${API_BASE}/api/schedule/approve-selected?role=${role}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_ids: tentativeIds })
+      });
       const payload = await response.json();
       if (!response.ok) {
         const detail = Array.isArray(payload.detail)
           ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
           : payload.detail;
-        throw new Error(detail || "Schedule could not be approved.");
+        throw new Error(detail || "Selected tasks could not be approved.");
       }
-      setStatus(
-        payload.approved
-          ? `Schedule approved and locked by Schedule Manager. ${payload.locked_items ?? 0} items fixed.`
-          : `${payload.unresolved_conflicts} resource contentions remain before approval.`
-      );
+      setSelectedScheduledIds([]);
       await loadDashboard();
+      setStatus(`${payload.locked_items ?? tentativeIds.length} selected task${tentativeIds.length === 1 ? "" : "s"} approved.`);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Schedule could not be approved.");
+      setStatus(error instanceof Error ? error.message : "Selected tasks could not be approved.");
     }
+  }
+
+  async function loadBestProposalFor(requestId: string | null) {
+    const response = await fetch(`${API_BASE}/api/schedule/alternatives`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request_ids: selectedPendingIds.length ? selectedPendingIds : requestId ? [requestId] : [] })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.detail || "Could not generate proposals.");
+    }
+    const proposals = payload as Alternative[];
+    setAlternatives(proposals);
+    const proposal = proposals.find(
+      (alternative) => !alternative.conflicts.length && (!requestId || alternative.scheduled_work.some((item) => item.request_id === requestId))
+    ) ?? proposals[0] ?? null;
+    setSelectedAlternative(proposal);
+    return proposal;
+  }
+
+  async function applyProposalOption(option: string) {
+    const response = await fetch(`${API_BASE}/api/schedule/apply?option=${option}&role=${role}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request_ids: selectedPendingIds })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      const detail = Array.isArray(payload.detail)
+        ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
+        : payload.detail;
+      throw new Error(detail || "Proposal could not be applied.");
+    }
+    return payload as ScheduledWork[];
   }
 
   async function applySelectedAlternative() {
     if (!selectedAlternative) {
-      setStatus("Select an alternative before applying it.");
+      setStatus("Select a proposal before applying it.");
+      return;
+    }
+    if (selectedPendingIds.length === 0) {
+      setStatus("Select the pending requests this proposal should apply before applying it.");
       return;
     }
     setStatus(`Applying ${selectedAlternative.label}...`);
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/apply?option=${selectedAlternative.option}&role=${role}`, { method: "POST" });
-      const payload = await response.json();
-      if (!response.ok) {
-        const detail = Array.isArray(payload.detail)
-          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
-          : payload.detail;
-        throw new Error(detail || "Alternative could not be applied.");
-      }
+      await applyProposalOption(selectedAlternative.option);
       setSelectedAlternative(null);
       setAlternatives([]);
+      setSelectedPendingIds([]);
       await loadDashboard();
       setStatus(`${selectedAlternative.label} applied as the active schedule.`);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Alternative could not be applied.");
+      setStatus(error instanceof Error ? error.message : "Proposal could not be applied.");
     }
   }
 
@@ -265,6 +366,7 @@ export default function DashboardPage() {
         throw new Error(payload.detail || "Request could not be rejected.");
       }
       setSelectedAlternative(null);
+      setSelectedPendingIds((current) => current.filter((requestId) => requestId !== selectedRequestId));
       await loadDashboard();
       setStatus(`${selectedRequestId} rejected and removed from the active schedule.`);
     } catch (error) {
@@ -330,6 +432,48 @@ export default function DashboardPage() {
     }
   }
 
+  async function seedDemoData() {
+    setStatus("Loading demo data...");
+    try {
+      const response = await fetch(`${API_BASE}/api/demo/seed`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Demo data could not be loaded.");
+      }
+      setSelectedAlternative(null);
+      setAlternatives([]);
+      setSelectedPendingIds([]);
+      setSelectedScheduledIds([]);
+      setSelectedRequestId(null);
+      await loadDashboard();
+      setStatus(
+        `Demo data loaded: ${payload.requests} requests, ${payload.tentative_schedule_items ?? 0} tentative items, and ${payload.locked_schedule_items} locked items.`
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Demo data could not be loaded.");
+    }
+  }
+
+  async function resetDemoData() {
+    setStatus("Resetting demo data...");
+    try {
+      const response = await fetch(`${API_BASE}/api/demo/reset`, { method: "POST" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail || "Demo data could not be reset.");
+      }
+      setSelectedAlternative(null);
+      setAlternatives([]);
+      setSelectedPendingIds([]);
+      setSelectedScheduledIds([]);
+      setSelectedRequestId(null);
+      await loadDashboard();
+      setStatus("Demo state reset.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Demo data could not be reset.");
+    }
+  }
+
   useEffect(() => {
     void loadDashboard();
   }, []);
@@ -337,6 +481,10 @@ export default function DashboardPage() {
   const visibleSchedule = selectedAlternative?.scheduled_work ?? schedule;
   const visibleConflicts = selectedAlternative?.conflicts ?? conflicts;
   const displayedKpis = selectedAlternative?.kpis ?? kpis;
+  const scheduledIds = new Set(schedule.map((item) => item.request_id));
+  const pendingRequests = requests.filter(
+    (request) => request.approval_status === "draft" && !request.locked && !scheduledIds.has(request.request_id)
+  );
   const selectedRequest = selectedRequestId ? requests.find((request) => request.request_id === selectedRequestId) ?? null : null;
   const selectedScheduledItem = selectedRequestId
     ? visibleSchedule.find((item) => item.request_id === selectedRequestId) ?? null
@@ -346,6 +494,11 @@ export default function DashboardPage() {
     .filter((item) => sameDay(new Date(item.start_time), selectedDate))
     .sort((left, right) => new Date(left.start_time).getTime() - new Date(right.start_time).getTime());
   const dayTracks = Array.from(new Set([...fallbackTracks, ...todayItems.map((item) => item.track_sector)])).sort();
+  const calendarVars = {
+    "--track-count": dayTracks.length,
+    "--slot-count": engineeringHours.length - 1,
+    "--slot-height": `${timeSlotHeight}px`
+  } as CSSProperties;
 
   const conflictsByRequest = useMemo(() => {
     const map = new Map<string, Conflict[]>();
@@ -357,9 +510,38 @@ export default function DashboardPage() {
     return map;
   }, [visibleConflicts]);
   const selectedConflicts = selectedRequestId ? conflictsByRequest.get(selectedRequestId) ?? [] : visibleConflicts;
+  const selectedPendingRequests = pendingRequests.filter((request) => selectedPendingIds.includes(request.request_id));
+  const selectedScheduledItems = schedule.filter((item) => selectedScheduledIds.includes(item.request_id));
+  const selectedTentativeCount = selectedScheduledItems.filter((item) => !isLockedStatus(item.status)).length;
+  const selectedLockedCount = selectedScheduledItems.filter((item) => isLockedStatus(item.status)).length;
 
   function dayItems(day: Date) {
     return visibleSchedule.filter((item) => sameDay(new Date(item.start_time), day));
+  }
+
+  function togglePendingSelection(requestId: string) {
+    setSelectedRequestId(requestId);
+    setSelectedScheduledIds([]);
+    setSelectedAlternative(null);
+    setAlternatives([]);
+    setSelectedPendingIds((current) =>
+      current.includes(requestId) ? current.filter((item) => item !== requestId) : [...current, requestId]
+    );
+  }
+
+  function toggleScheduledSelection(requestId: string) {
+    const activeItem = schedule.find((item) => item.request_id === requestId);
+    if (!activeItem) {
+      setStatus("Apply the selected proposal before approving proposed calendar items.");
+      return;
+    }
+    setSelectedAlternative(null);
+    setAlternatives([]);
+    setSelectedRequestId(requestId);
+    setSelectedPendingIds([]);
+    setSelectedScheduledIds((current) =>
+      current.includes(requestId) ? current.filter((item) => item !== requestId) : [...current, requestId]
+    );
   }
 
   return (
@@ -367,7 +549,6 @@ export default function DashboardPage() {
       <header className="topbar">
         <div>
           <div className="brand">RailFlowAI Planning Board</div>
-          <div className="subtitle">Monthly capacity, today&apos;s engineering work, and feasible alternatives.</div>
         </div>
         <nav className="nav">
           <select className="role-select" value={role} onChange={(event) => setRole(event.target.value as Role)}>
@@ -382,6 +563,14 @@ export default function DashboardPage() {
             <RefreshCw size={18} />
             Refresh
           </button>
+          <button className="button secondary" onClick={seedDemoData}>
+            <Database size={18} />
+            Seed Demo
+          </button>
+          <button className="button secondary" onClick={resetDemoData}>
+            <Trash2 size={18} />
+            Reset
+          </button>
           <button className="button" onClick={optimiseSchedule}>
             <SlidersHorizontal size={18} />
             Generate Schedule
@@ -394,17 +583,6 @@ export default function DashboardPage() {
         {status}
       </section>
 
-      <section className="page-intro">
-        <div>
-          <span className="eyebrow">Live schedule control</span>
-          <h1>Plan capacity, review risks, and approve feasible railway work.</h1>
-        </div>
-        <div className="intro-meta">
-          <span>{visibleSchedule.length} scheduled items</span>
-          <span>{visibleConflicts.length} active contentions</span>
-        </div>
-      </section>
-
       <section className="planning-hero">
         <section className="month-board">
           <div className="section-heading">
@@ -415,7 +593,7 @@ export default function DashboardPage() {
                 {new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(selectedDate)}
               </h2>
             </div>
-            <span className="legend"><i /> contention</span>
+            <span className="legend"><i /> conflict</span>
           </div>
           <div className="month-grid">
             {days.map((day) => {
@@ -426,7 +604,7 @@ export default function DashboardPage() {
                   className={`day-cell ${sameDay(day, selectedDate) ? "selected" : ""} ${day.getMonth() !== selectedDate.getMonth() ? "muted-day" : ""}`}
                   key={day.toISOString()}
                   onClick={() => setSelectedDate(day)}
-                  aria-label={`${formatDate(day)}, ${items.length} scheduled item${items.length === 1 ? "" : "s"}${hasConflict ? ", has contention" : ""}`}
+                  aria-label={`${formatDate(day)}, ${items.length} scheduled item${items.length === 1 ? "" : "s"}${hasConflict ? ", has conflict" : ""}`}
                 >
                   <span>{day.getDate()}</span>
                   <strong>{items.length}</strong>
@@ -451,12 +629,12 @@ export default function DashboardPage() {
                 <div className="track-column-header" key={track}>{track}</div>
               ))}
             </div>
-            <div className="time-axis">
-              {engineeringHours.map((hour) => (
+            <div className="time-axis" style={calendarVars}>
+              {engineeringHours.slice(0, -1).map((hour) => (
                 <div className="time-tick" key={hour}>{hour}</div>
               ))}
             </div>
-            <div className="calendar-grid" style={{ "--track-count": dayTracks.length } as CSSProperties}>
+            <div className="calendar-grid" style={calendarVars}>
               {dayTracks.map((track) => (
                 <div className="track-column" key={track}>
                   {engineeringHours.slice(0, -1).map((hour) => (
@@ -469,14 +647,15 @@ export default function DashboardPage() {
                       const conflict = conflictsByRequest.get(item.request_id)?.[0];
                       return (
                         <button
-                          className={`calendar-event ${conflict ? "has-conflict" : ""} ${selectedRequestId === item.request_id ? "selected" : ""}`}
+                          className={`calendar-event ${conflict ? "has-conflict" : ""} ${selectedScheduledIds.includes(item.request_id) ? "selected" : ""}`}
                           key={`${item.request_id}-${item.start_time}`}
-                          onClick={() => setSelectedRequestId(item.request_id)}
+                          onClick={() => toggleScheduledSelection(item.request_id)}
                           style={calendarBlockStyle(item)}
                         >
                           <strong>{item.request_id}</strong>
                           <span>{formatTime(item.start_time)}-{formatTime(item.end_time)}</span>
                           <span>{workLabel(request?.work_type ?? "work")}</span>
+                          <span>{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
                         </button>
                       );
                     })}
@@ -491,42 +670,39 @@ export default function DashboardPage() {
       </section>
 
       <section className="kpis">
-        <div className="kpi danger"><span>Resource Contentions</span><strong>{displayedKpis.unresolved_conflicts}</strong></div>
-        <div className="kpi"><span>Critical Jobs Scheduled</span><strong>{displayedKpis.critical_jobs_scheduled}</strong></div>
+        <div className="kpi danger"><span>Open Conflicts</span><strong>{displayedKpis.unresolved_conflicts}</strong></div>
         <div className="kpi"><span>Window Utilisation</span><strong>{displayedKpis.engineering_hours_utilisation}%</strong></div>
         <div className="kpi warning"><span>Estimated Overtime</span><strong>{displayedKpis.estimated_overtime_minutes}m</strong></div>
         <div className="kpi success"><span>Schedule Stability</span><strong>{displayedKpis.schedule_stability}%</strong></div>
-        <div className="kpi success"><span>Robustness Score</span><strong>{displayedKpis.robustness_score}</strong></div>
       </section>
 
       <section className="ops-grid">
         <section className="panel">
           <div className="panel-header">
             <span>Request Queue</span>
-            <small>{requests.length} total</small>
+            <small>{pendingRequests.length} pending</small>
           </div>
           <div className="panel-body request-list">
-            {requests.length === 0 && <p className="muted">No requests yet. Create one from New Request.</p>}
-            {requests.map((request) => (
+            {pendingRequests.length === 0 && <p className="muted">No pending requests. Approved work stays visible on the calendar.</p>}
+            {pendingRequests.map((request) => (
               <button
-                className={`request-item select-card ${selectedRequestId === request.request_id ? "selected" : ""}`}
+                className={`request-item select-card ${selectedPendingIds.includes(request.request_id) ? "selected" : ""}`}
                 key={request.request_id}
-                onClick={() => setSelectedRequestId(request.request_id)}
+                onClick={() => togglePendingSelection(request.request_id)}
               >
                 <strong>{request.request_id} / {request.title}</strong>
                 <span>
                   {request.track_sector} / {workLabel(request.work_type)} / Priority {request.priority}
                 </span>
-                <span className={`badge ${request.locked ? "success" : "neutral"}`}>
-                  {request.locked ? "Locked" : "Pending"}
-                </span>
+                <span>{formatDateTime(request.earliest_start)}-{formatDateTime(request.deadline)}</span>
+                <span className="badge neutral">Pending</span>
                 {request.dependencies.length > 0 && (
                   <span className="dependency-line">
                     <GitBranch size={14} />
                     after {request.dependencies.join(", ")}
                   </span>
                 )}
-                {conflictsByRequest.has(request.request_id) && <span className="badge danger">Contention</span>}
+                {conflictsByRequest.has(request.request_id) && <span className="badge danger">Conflict</span>}
               </button>
             ))}
           </div>
@@ -559,10 +735,40 @@ export default function DashboardPage() {
           </div>
           <div className="panel-body decision-stack">
             <div className="selection-summary">
-              <span className="eyebrow">Selected item</span>
-              {selectedRequest ? (
-                <>
-                  <h3>{selectedRequest.request_id} / {selectedRequest.title}</h3>
+              <span className="eyebrow">Selection</span>
+              <p>
+                {selectedPendingIds.length} pending selected / {selectedTentativeCount} tentative selected / {selectedLockedCount} locked selected
+              </p>
+              {selectedPendingRequests.length === 0 && selectedScheduledItems.length === 0 && !selectedRequest && (
+                <p>Select a request, calendar item, or proposal to inspect exactly what the actions apply to.</p>
+              )}
+              {selectedPendingRequests.length > 0 && (
+                <div className="selected-list">
+                  <strong>Pending requests</strong>
+                  {selectedPendingRequests.map((request) => (
+                    <p key={request.request_id}>
+                      {request.request_id} / {request.title}: {formatDateTime(request.earliest_start)}-{formatDateTime(request.deadline)}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {selectedScheduledItems.length > 0 && (
+                <div className="selected-list">
+                  <strong>Calendar tasks</strong>
+                  {selectedScheduledItems.map((item) => {
+                    const request = requestFor(item, requests);
+                    return (
+                      <p key={item.request_id}>
+                        {item.request_id} / {request?.title ?? "Scheduled work"}: {formatDateTime(item.start_time)}-{formatDateTime(item.end_time)} /{" "}
+                        {isLockedStatus(item.status) ? "Locked" : "Tentative"}
+                      </p>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedRequest && selectedPendingRequests.length === 0 && selectedScheduledItems.length === 0 && (
+                <div className="selected-list">
+                  <strong>{selectedRequest.request_id} / {selectedRequest.title}</strong>
                   <p>
                     {selectedRequest.track_sector} / {workLabel(selectedRequest.work_type)} / Priority {selectedRequest.priority}
                   </p>
@@ -574,9 +780,7 @@ export default function DashboardPage() {
                   ) : (
                     <p>This request is pending and is not in the visible schedule candidate yet.</p>
                   )}
-                </>
-              ) : (
-                <p>Select a request, today card, or alternative to inspect exactly what the actions apply to.</p>
+                </div>
               )}
             </div>
             <div className="review-block">
@@ -584,30 +788,64 @@ export default function DashboardPage() {
               <p>
                 {selectedConflicts.length > 0
                   ? selectedConflicts[0].explanation
-                  : "No active resource contention is reported for the selected item."}
+                  : "No active conflict is reported for the selected item."}
               </p>
               {selectedConflicts[0]?.suggested_action && <p>{selectedConflicts[0].suggested_action}</p>}
             </div>
             {selectedAlternative && (
               <div className="review-block">
-                <span className="eyebrow">Selected alternative</span>
+                <span className="eyebrow">Selected proposal</span>
                 <p>{selectedAlternative.label}: {selectedAlternative.explanation}</p>
+                {selectedAlternative.impact_summary && <p>{selectedAlternative.impact_summary}</p>}
+                {selectedAlternative.scheduled_work
+                  .filter((item) => item.changed_from_original)
+                  .map((item) => {
+                    const request = requestFor(item, requests);
+                    const current = scheduledFor(item.request_id, schedule);
+                    return (
+                      <p key={`${item.request_id}-${item.start_time}`}>
+                        {item.request_id} / owner {request?.created_by ?? "field"}:{" "}
+                        {current ? `${formatTime(current.start_time)}-${formatTime(current.end_time)} -> ` : "new slot "}
+                        {formatTime(item.start_time)}-{formatTime(item.end_time)}
+                      </p>
+                    );
+                  })}
               </div>
             )}
-            <button className="button secondary" onClick={compareAlternatives}>
+            {alternatives.length > 0 && (
+              <div className="proposal-list" aria-label="Schedule proposals">
+                <span className="eyebrow">Proposal options</span>
+                {alternatives.map((alternative) => (
+                  <button
+                    className={`alternative ${selectedAlternative?.option === alternative.option ? "selected" : ""}`}
+                    key={alternative.option}
+                    onClick={() => {
+                      setSelectedAlternative(alternative);
+                      setStatus(`${alternative.label} selected for review.`);
+                    }}
+                  >
+                    <strong>{alternative.label}</strong>
+                    <span>{alternative.overall_score}/100 overall</span>
+                    <span>{alternative.changed_jobs_count} moved / {alternative.moved_locked_count} locked moved</span>
+                    <span>{alternative.conflicts.length} conflicts / {alternative.churn_penalty} churn penalty</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <button className="button secondary" disabled={selectedPendingIds.length === 0} onClick={compareAlternatives}>
               <SlidersHorizontal size={18} />
-              Show Best Alternatives
+              Show Proposals
             </button>
             {selectedAlternative && (
-              <p>Alternative preview is selected. Generate the active schedule before approval, or clear the preview with Refresh.</p>
+              <p>Selected proposal applies only to the selected pending request{selectedPendingIds.length === 1 ? "" : "s"}.</p>
             )}
-            <button className="button" disabled={role !== "schedule_manager" || !selectedAlternative} onClick={applySelectedAlternative}>
+            <button className="button" disabled={role !== "schedule_manager" || !selectedAlternative || selectedPendingIds.length === 0} onClick={applySelectedAlternative}>
               <ShieldCheck size={18} />
-              Apply Selected Alternative
+              Apply Proposal
             </button>
-            <button className="button" disabled={role !== "schedule_manager" || Boolean(selectedAlternative)} onClick={approveSchedule}>
+            <button className="button" disabled={role !== "schedule_manager" || selectedTentativeCount === 0} onClick={approveSelectedSchedule}>
               <ShieldCheck size={18} />
-              Approve Active Schedule
+              Approve Selected
             </button>
             <button className="button secondary" disabled={role !== "schedule_manager" || !selectedScheduledItem} onClick={modifySelectedStart}>
               Modify
@@ -615,36 +853,10 @@ export default function DashboardPage() {
             <button className="button secondary" disabled={role !== "schedule_manager" || !selectedRequestId} onClick={rejectSelectedRequest}>
               Reject
             </button>
-            <button className="button secondary" disabled={role !== "schedule_manager" || !selectedScheduledItem} onClick={toggleSelectedLock} title="Lock schedule">
-              {selectedScheduledItem?.status === "locked" ? <Unlock size={18} /> : <Lock size={18} />}
-              {selectedScheduledItem?.status === "locked" ? "Unlock" : "Lock"}
-            </button>
           </div>
         </aside>
       </section>
 
-      {alternatives.length > 0 && (
-        <section className="alternatives" aria-label="Schedule alternatives">
-          {alternatives.map((alternative) => (
-            <button
-              className={`alternative ${selectedAlternative?.option === alternative.option ? "selected" : ""}`}
-              key={alternative.option}
-              onClick={() => {
-                setSelectedAlternative(alternative);
-                setStatus(`${alternative.label} selected for review. Approve only applies to the active generated schedule.`);
-              }}
-            >
-              <strong>{alternative.label}</strong>
-              <span>{alternative.overall_score}/100 overall</span>
-              <span>{alternative.disruption_score} disruption</span>
-              <span>{alternative.overtime_score} overtime</span>
-              <span>{alternative.completion_score} completion</span>
-              <span>{alternative.critical_priority_score} critical priority</span>
-              <span>{alternative.conflicts.length} contentions</span>
-            </button>
-          ))}
-        </section>
-      )}
     </main>
   );
 }

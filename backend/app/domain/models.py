@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, RequestSource, ScheduleOption
+from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, RequestSource, ScheduleHorizon, ScheduleOption
 
 
 class MaintenanceRequest(BaseModel):
@@ -74,6 +74,23 @@ class ScheduleAlternative(BaseModel):
     completion_score: int = 0
     critical_priority_score: int = 0
     overall_score: int = 0
+    changed_jobs_count: int = 0
+    moved_locked_count: int = 0
+    churn_penalty: int = 0
+    impact_summary: str | None = None
+
+
+class ScheduleChange(BaseModel):
+    request_id: str
+    owner: str
+    previous_start: datetime | None = None
+    previous_end: datetime | None = None
+    proposed_start: datetime
+    proposed_end: datetime
+    was_locked: bool = False
+    horizon: ScheduleHorizon = ScheduleHorizon.FLUID
+    move_penalty: int = 0
+    reason: str
 
 
 class RequestFitResponse(BaseModel):
@@ -81,3 +98,15 @@ class RequestFitResponse(BaseModel):
     fits_current_schedule: bool
     conflicts: list[Conflict]
     suggested_alternatives: list[ScheduleAlternative] = Field(default_factory=list)
+    scheduled_work: ScheduledWork | None = None
+    requires_manager_review: bool = False
+    affected_changes: list[ScheduleChange] = Field(default_factory=list)
+    proposal_option: ScheduleOption | None = None
+
+
+class ProposalRequest(BaseModel):
+    request_ids: list[str] = Field(default_factory=list)
+
+
+class ApproveRequest(BaseModel):
+    request_ids: list[str] = Field(default_factory=list)
