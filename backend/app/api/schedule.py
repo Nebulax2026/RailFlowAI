@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import ValidationError
 
+from app.api.auth import require_schedule_manager
 from app.conflict.detector import detect_conflicts
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import ApproveRequest, ProposalRequest, ScheduleAlternative, ScheduledWork
@@ -8,6 +10,16 @@ from app.storage import REQUESTS, SCHEDULED_WORK
 from app.validation.schedule_validator import validate_scheduled_work
 
 router = APIRouter()
+
+SCHEDULE_MODIFY_FIELDS = {
+    "start_time",
+    "end_time",
+    "assigned_crew",
+    "assigned_equipment",
+    "track_sector",
+    "changed_from_original",
+    "change_reason",
+}
 
 
 @router.get("", response_model=list[ScheduledWork])
@@ -27,8 +39,7 @@ def optimise(option: ScheduleOption = ScheduleOption.MINIMUM_DISRUPTION) -> list
 
 @router.post("/apply", response_model=list[ScheduledWork])
 def apply_schedule_option(payload: ProposalRequest | None = None, option: ScheduleOption = ScheduleOption.MINIMUM_DISRUPTION, role: str = "requester") -> list[ScheduledWork]:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can apply schedule alternatives.")
+    require_schedule_manager(role, "apply schedule alternatives")
     scheduled, errors, conflicts = apply_alternative(option, payload.request_ids if payload else [])
     if errors:
         raise HTTPException(status_code=422, detail=errors or ["No feasible schedule found for all requests."])
@@ -44,8 +55,7 @@ def alternatives(payload: ProposalRequest | None = None) -> list[ScheduleAlterna
 
 @router.post("/approve")
 def approve_schedule(role: str = "requester") -> dict:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can approve schedules.")
+    require_schedule_manager(role, "approve schedules")
     requests = requests_with_locked_schedule()
     schedule = list(SCHEDULED_WORK.values())
     errors = validate_scheduled_work(schedule, requests)
@@ -76,8 +86,7 @@ def approve_schedule(role: str = "requester") -> dict:
 
 @router.post("/approve-selected")
 def approve_selected(payload: ApproveRequest, role: str = "requester") -> dict:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can approve schedules.")
+    require_schedule_manager(role, "approve schedules")
     if not payload.request_ids:
         raise HTTPException(status_code=422, detail=["Select at least one scheduled task to approve."])
 
@@ -118,8 +127,7 @@ def approve_selected(payload: ApproveRequest, role: str = "requester") -> dict:
 
 @router.post("/reject/{request_id}")
 def reject_request(request_id: str, role: str = "requester") -> dict:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can reject requests.")
+    require_schedule_manager(role, "reject requests")
     request = REQUESTS.get(request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
@@ -130,8 +138,7 @@ def reject_request(request_id: str, role: str = "requester") -> dict:
 
 @router.post("/lock/{request_id}", response_model=ScheduledWork)
 def lock_request(request_id: str, role: str = "requester") -> ScheduledWork:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can lock scheduled work.")
+    require_schedule_manager(role, "lock scheduled work")
     scheduled = SCHEDULED_WORK.get(request_id)
     request = REQUESTS.get(request_id)
     if not scheduled or not request:
@@ -151,8 +158,7 @@ def lock_request(request_id: str, role: str = "requester") -> ScheduledWork:
 
 @router.post("/unlock/{request_id}", response_model=ScheduledWork)
 def unlock_request(request_id: str, role: str = "requester") -> ScheduledWork:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can unlock scheduled work.")
+    require_schedule_manager(role, "unlock scheduled work")
     scheduled = SCHEDULED_WORK.get(request_id)
     request = REQUESTS.get(request_id)
     if not scheduled or not request:
@@ -167,12 +173,17 @@ def unlock_request(request_id: str, role: str = "requester") -> ScheduledWork:
 
 @router.patch("/modify/{request_id}", response_model=ScheduledWork)
 def modify_scheduled_work(request_id: str, payload: dict, role: str = "requester") -> ScheduledWork:
-    if role != "schedule_manager":
-        raise HTTPException(status_code=403, detail="Only Schedule Managers can modify scheduled work.")
+    require_schedule_manager(role, "modify scheduled work")
     scheduled = SCHEDULED_WORK.get(request_id)
     if not scheduled:
         raise HTTPException(status_code=404, detail="Scheduled work not found.")
-    updated = scheduled.model_copy(update=payload)
+    unsupported = sorted(set(payload) - SCHEDULE_MODIFY_FIELDS)
+    if unsupported:
+        raise HTTPException(status_code=422, detail=[f"{field} cannot be modified." for field in unsupported])
+    try:
+        updated = ScheduledWork.model_validate({**scheduled.model_dump(), **payload, "request_id": request_id})
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail=error.errors()) from error
     proposed = [updated if item.request_id == request_id else item for item in SCHEDULED_WORK.values()]
     requests = requests_with_locked_schedule()
     errors = validate_scheduled_work(proposed, requests)

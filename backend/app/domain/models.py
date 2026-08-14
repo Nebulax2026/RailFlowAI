@@ -1,11 +1,15 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, RequestSource, ScheduleHorizon, ScheduleOption
 
 
-class MaintenanceRequest(BaseModel):
+class RailFlowModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class MaintenanceRequest(RailFlowModel):
     request_id: str
     title: str
     track_sector: str
@@ -28,7 +32,7 @@ class MaintenanceRequest(BaseModel):
     source: RequestSource = RequestSource.MANUAL
 
 
-class ScheduledWork(BaseModel):
+class ScheduledWork(RailFlowModel):
     schedule_id: str
     request_id: str
     start_time: datetime
@@ -41,7 +45,7 @@ class ScheduledWork(BaseModel):
     change_reason: str | None = None
 
 
-class Conflict(BaseModel):
+class Conflict(RailFlowModel):
     conflict_id: str
     type: ConflictType
     severity: ConflictSeverity
@@ -52,7 +56,7 @@ class Conflict(BaseModel):
     suggested_action: str | None = None
 
 
-class KpiSnapshot(BaseModel):
+class KpiSnapshot(RailFlowModel):
     unresolved_conflicts: int
     critical_jobs_scheduled: int
     engineering_hours_utilisation: float
@@ -61,7 +65,7 @@ class KpiSnapshot(BaseModel):
     robustness_score: int
 
 
-class ScheduleAlternative(BaseModel):
+class ScheduleAlternative(RailFlowModel):
     option: ScheduleOption
     label: str
     scheduled_work: list[ScheduledWork]
@@ -80,7 +84,7 @@ class ScheduleAlternative(BaseModel):
     impact_summary: str | None = None
 
 
-class ScheduleChange(BaseModel):
+class ScheduleChange(RailFlowModel):
     request_id: str
     owner: str
     previous_start: datetime | None = None
@@ -93,7 +97,7 @@ class ScheduleChange(BaseModel):
     reason: str
 
 
-class RequestFitResponse(BaseModel):
+class RequestFitResponse(RailFlowModel):
     request: MaintenanceRequest
     fits_current_schedule: bool
     conflicts: list[Conflict]
@@ -104,9 +108,9 @@ class RequestFitResponse(BaseModel):
     proposal_option: ScheduleOption | None = None
 
 
-class ProposalRequest(BaseModel):
+class ProposalRequest(RailFlowModel):
     request_ids: list[str] = Field(default_factory=list)
 
 
-class ApproveRequest(BaseModel):
+class ApproveRequest(RailFlowModel):
     request_ids: list[str] = Field(default_factory=list)

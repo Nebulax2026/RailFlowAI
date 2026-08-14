@@ -2,11 +2,11 @@
 
 ## 1. Product Overview
 
-RailFlowAI is an explainable railway maintenance scheduling tool for planning maintenance, upgrades, inspections, and emergency work inside limited engineering hours. Railway assets need constant work while train services leave only short closure windows, so schedule requests often compete for the same track sectors, crews, equipment, and safety conditions.
+RailFlowAI is an explainable railway maintenance scheduling tool for planning maintenance, upgrades, inspections, and emergency work inside limited engineering windows. Railway assets need constant work while train services leave limited closure capacity, so requests often compete for the same track sectors, crews, equipment, and sequencing prerequisites.
 
-The product goal is to automate the tedious coordination step: collect valid pending requests, generate feasible schedule candidates for the batch, explain resource contentions clearly, and let a Schedule Manager approve and lock the final schedule.
+The product goal is to automate the tedious coordination step: validate incoming maintenance requests, place conflict-free work tentatively, generate manager-reviewed rescheduling proposals when clashes occur, explain conflicts and schedule movement clearly, and let a Schedule Manager approve selected tentative work into the locked operational baseline.
 
-RailFlowAI is a web-first, human-in-the-loop decision support system. The scheduler engine proposes valid options, but the user remains responsible for accepting, modifying, rejecting, or locking schedule decisions.
+RailFlowAI is a web-first, human-in-the-loop decision support system. The scheduler proposes valid options, but operational release remains a Schedule Manager decision.
 
 ### MVP User Model
 
@@ -15,39 +15,36 @@ The MVP uses two lightweight roles with shared visibility: Requester and Schedul
 Requester users can:
 
 - Create maintenance requests.
-- Edit requests they have submitted before approval.
-- View the schedule dashboard.
-- Detect and review conflicts.
-- Generate and compare alternative schedules.
-- Review explanations and KPI impact.
-- View dashboard KPIs.
+- View proposed slots for their own requests.
+- View schedules, conflicts, proposals, explanations, and KPIs.
+- Generate and compare proposal options.
 - Import CSV or JSON seed/demo data.
 
 Schedule Manager users can do everything a Requester can do, plus:
 
-- Edit any submitted request.
-- Accept, modify, or reject suggested schedules.
-- Approve final schedules.
-- Lock scheduled work.
-- Unlock scheduled work when rescheduling is required.
+- Apply selected rescheduling proposals.
+- Approve selected tentative scheduled work.
+- Modify scheduled work.
+- Reject requests or scheduled decisions.
+- Finalize operational work by approval.
+
+Manual Lock and Unlock endpoints may remain for compatibility or admin use, but they are not the primary MVP workflow. In the product UI, approval is the release/baseline action.
 
 The app should describe workflows as product areas, not permission roles:
 
 - New Request
 - Planning Board
 - Decision Review
-- Alternatives
+- Proposal Options
 - KPI Dashboard
 
-Role behavior should stay simple in the MVP. Everyone can see the same operational information, while final scheduling authority belongs to the Schedule Manager.
+Role behavior stays simple in the MVP. Everyone can see the same operational information, while final scheduling authority belongs to the Schedule Manager.
 
 ## 2. Functional Requirements
 
 ### Request Creation
 
-Users must be able to submit a maintenance request from the web interface. A request must capture enough information for validation, conflict detection, and scheduling.
-
-Submitted requests enter a pending queue. They are not automatically inserted into the active schedule one by one.
+Users must be able to submit a maintenance request from the web interface. A request must capture enough information for validation, conflict detection, direct placement, and proposal generation.
 
 Required request fields:
 
@@ -79,30 +76,55 @@ Optional request fields:
 - `duration_variance_percent`
 - `notes`
 - `source`
+- `created_by`
 
-When a request is submitted, the system must validate that the request is allowed to enter the pending queue.
+When a request is submitted, the system validates hard blockers first.
 
-The request result must include or trigger:
+If the requested slot fits the current active schedule:
 
+- The request is stored.
+- A tentative `ScheduledWork` block is created immediately at the requested start.
+- The response shows the assigned slot as `scheduled_work`.
+- The request does not appear in the Request Queue because it is already placed on the calendar.
+
+If the requested slot conflicts but could fit by moving upcoming work:
+
+- The request remains pending and visible in the Request Queue.
+- The active schedule is not mutated during request submission.
+- The response shows conflicts, affected changes, and a manager-reviewed proposal option.
+- The proposal may move upcoming tentative or locked/approved work, but only after Schedule Manager application.
+
+If the request violates hard validation:
+
+- The API returns `422`.
+- The request is not queued and no schedule block is created.
+
+The request result must include:
+
+- `request`
 - `fits_current_schedule`
 - `conflicts`
-- `suggested_alternatives`, when the original request does not fit
-
-For the MVP batch workflow, request creation primarily confirms that the request is valid and queued. Feasibility and alternatives are generated when the user runs the batch schedule action.
+- `suggested_alternatives`
+- `scheduled_work`
+- `requires_manager_review`
+- `affected_changes`
+- `proposal_option`
 
 ### Validation
 
-The system must validate both schema rules and scheduling rules before a request can be treated as schedulable.
+The system validates both schema rules and scheduling rules before a request can be treated as schedulable.
 
-Validation must check:
+Validation checks:
 
 - Required fields are present.
 - Duration is greater than zero.
 - Priority is within the supported range.
 - Earliest start is before the deadline.
-- Fixed start and fixed end are valid when a request is locked.
-- The request is compatible with engineering-hour windows.
+- Fixed start and fixed end are valid when a request is seeded as locked.
 - Work types with predefined prerequisites can be requested only when prerequisite work is already scheduled on the same track sector.
+- Engineering-hour and prerequisite failures are hard blockers for request intake.
+
+The standard visible planning day is 06:00-22:00. The normal engineering window is 09:00-18:00; work outside that range is allowed as overtime for scheduling impact, not treated as a resource conflict.
 
 Predefined MVP prerequisites:
 
@@ -111,20 +133,20 @@ Predefined MVP prerequisites:
 - Electrical Repair requires Power Isolation.
 - Service Restore requires Safety Clearance.
 
-### Resource Contention Detection
+### Conflict Detection
 
-The system must detect resource contentions between requested or scheduled work. Resource contentions are resolvable scheduling clashes that can produce alternative schedule options.
+The system detects resource conflicts between requested or scheduled work. Conflicts are resolvable scheduling clashes that can produce proposal options.
 
-Contention types:
+Conflict types:
 
 - Track sector overlap
 - Crew double-booking
 - Equipment double-booking
-- Safety incompatibility
+- Safety incompatibility from request `incompatible_work_types`
 
-Engineering-hours violations and dependency/prerequisite failures are not contentions. They are hard validation blockers and must be rejected before scheduling.
+Engineering-hour and dependency/prerequisite failures are not conflicts. They are hard validation blockers and must be rejected before scheduling.
 
-Each contention must have:
+Each conflict must have:
 
 - Type
 - Severity
@@ -134,21 +156,23 @@ Each contention must have:
 - Plain-English explanation
 - Suggested action, when available
 
-### Alternative Schedule Generation
+### Proposal Generation
 
-If the original request cannot fit the current schedule, RailFlowAI must generate alternative schedule options by default.
+If the requested slot cannot fit the current schedule, RailFlowAI generates ranked proposal options by default.
 
 Default behavior:
 
-- Generate 2-3 ranked feasible alternatives.
-- Include Requested Slot as an alternative when hard validation passes.
-- Score every alternative across all four criteria instead of making separate one-criterion modes.
+- Generate up to 2-3 ranked feasible proposal options.
+- Scope proposal generation to selected pending request IDs when the user has selected pending requests in the Request Queue.
+- Otherwise, backend compatibility may allow whole-board proposal generation.
+- Score every proposal across a balanced set of criteria instead of exposing one-criterion scheduling modes as the primary UX.
 
-Each alternative must show:
+Each proposal must show:
 
-- Scheduled work
+- Scheduled work candidate
 - Changed jobs
-- Unresolved resource contentions
+- Moved locked jobs
+- Unresolved conflicts
 - Estimated overtime
 - Engineering-hours utilisation
 - Schedule stability
@@ -158,56 +182,66 @@ Each alternative must show:
 - Completion score
 - Critical-priority score
 - Overall score
+- Churn penalty
 - Plain-English explanation
+- Impact summary
 
-Alternatives should be shown when:
+Proposals should be shown when:
 
 - A newly submitted request does not fit the current schedule.
-- The user explicitly asks to compare schedule options.
+- A user selects pending Request Queue items and chooses Show Proposals.
 - An emergency scenario requires rescheduling existing approved work.
+
+Applying a proposal mutates the active working schedule only after Schedule Manager authorization. Any moved previously locked work becomes tentative at the new slot and must be approved again.
 
 ### Decision Review
 
-Users must be able to review why the original request did not fit and compare suggested alternatives.
+Users must be able to review what is selected, why a request did not fit, and what a selected proposal changes.
 
-The decision review experience must support:
+The Decision Review experience must support:
 
+- Showing selected pending request IDs and requested windows.
+- Showing selected tentative or locked calendar tasks and scheduled windows.
 - Viewing conflict reason.
-- Viewing affected requests.
+- Viewing affected requests and owners.
 - Viewing suggested movement.
-- Viewing KPI impact.
-- Comparing alternative options.
+- Viewing KPI/proposal impact.
+- Comparing proposal options.
 - Requesters can view recommendations and understand impact.
-- Schedule Managers can accept a recommendation.
-- Schedule Managers can modify a recommendation.
-- Schedule Managers can reject a recommendation.
-- Schedule Managers can lock scheduled work.
+- Schedule Managers can apply proposals.
+- Schedule Managers can approve selected tentative calendar tasks.
+- Schedule Managers can modify or reject selected work where supported.
 
 ### Schedule Approval
 
-Approval must remain human-in-the-loop. The system can recommend a schedule, but it must not silently finalize schedule changes.
+Approval remains human-in-the-loop. The system can recommend and tentatively place work, but it must not silently finalize operational changes.
 
 Approval behavior:
 
-- Only a Schedule Manager can approve, reject, modify, lock, or unlock schedule decisions.
-- A schedule can be approved only when unresolved conflicts are acceptable to the Schedule Manager or reduced to zero.
-- Approved work should be eligible for locking by a Schedule Manager.
-- Locked work should be preserved by future optimisation runs unless a Schedule Manager unlocks it.
-- New requests should accumulate in the pending queue and be scheduled as a batch.
-- Once a schedule is approved, its scheduled work becomes locked and future batch scheduling must preserve those fixed times.
+- Pending unscheduled requests cannot be approved directly.
+- Only a Schedule Manager can apply proposals, approve selected work, reject, or modify schedule decisions.
+- `Approve Selected` approves only selected tentative scheduled tasks.
+- If no tentative calendar task is selected, `Approve Selected` is disabled.
+- Approval locks the selected tentative scheduled work.
+- Moved locked work becomes tentative after proposal application and must be approved again.
+- Locked work is preserved during normal optimization.
+- Manager-reviewed proposals may move upcoming locked work, but movement is penalized and not applied silently.
 
 ### Dashboard KPIs
 
-The dashboard must show the operational impact of the current schedule and alternatives.
+The dashboard shows the highest-signal operational KPIs for the current active schedule and selected proposal preview.
 
-Required KPIs:
+Visible MVP KPIs:
 
-- Unresolved conflicts
-- Critical jobs scheduled
-- Engineering-hours utilisation
-- Estimated overtime
-- Schedule stability
-- Robustness score
+- Open Conflicts
+- Window Utilisation
+- Estimated Overtime
+- Schedule Stability
+
+The backend model may also calculate:
+
+- Critical Jobs Scheduled
+- Robustness Score
 
 ### CSV And JSON Import
 
@@ -224,54 +258,114 @@ Internal Request Model
         ->
 Validation
         ->
-Conflict Detection
+In-Memory Request Store
         ->
-Scheduling
+Scheduling / Proposal Workflow
 ```
 
-The adapter layer must normalize external data into the same internal model used by manual web requests.
+The adapter layer normalizes external data into the same internal model used by manual web requests. CSV and JSON preview/confirm endpoints validate imported rows before they enter `REQUESTS`.
 
-## 3. Scheduling And Alternative Design
+Demo seed/reset endpoints load or clear deterministic in-memory state for hackathon walkthroughs.
+
+### Sample Data Columns
+
+The sample CSV intentionally includes more columns than a normal requester must provide. The extra columns create deterministic demo scenarios with tentative, pending, and locked work.
+
+Minimum required import columns:
+
+- `Request ID`
+- `Title`
+- `Track Sector`
+- `Work Type`
+- `Duration Minutes`
+- `Earliest Start`
+- `Deadline`
+- `Priority`
+
+Useful scheduling columns:
+
+- `Required Crew`
+- `Required Equipment`
+- `Dependencies`
+- `Incompatible Work Types`
+
+Demo-state columns:
+
+- `Approval Status`
+- `Locked`
+- `Fixed Start`
+- `Fixed End`
+
+Narrative/debug columns:
+
+- `Notes`
+
+`Approval Status`, `Locked`, `Fixed Start`, and `Fixed End` are not required for ordinary new requests. They are useful for seeding an existing planning board with already tentative or locked work. If those columns are absent, imports should default to pending draft requests unless the API payload explicitly provides scheduling state.
+
+## 3. Scheduling And Proposal Design
 
 ### Scheduling Pipeline
 
-The core pipeline is:
+The core direct-fit pipeline is:
 
 ```text
 Request Created
         ->
-Request Validation
+Hard Validation
+        ->
+Requested Slot Conflict Check
+        ->
+Tentative Calendar Placement
+        ->
+Requester Sees Proposed Slot
+        ->
+Schedule Manager Approves Selected Tentative Work
+        ->
+Locked Operational Baseline
+```
+
+The reschedule-needed pipeline is:
+
+```text
+Request Created
+        ->
+Hard Validation
+        ->
+Requested Slot Conflict Check
         ->
 Pending Request Queue
         ->
-Generate Batch Schedule
+Selected Pending Requests
         ->
-Ranked Alternative Generation, when needed
+Show Proposals
         ->
-KPI Impact Analysis
+Decision Review With Affected Changes
         ->
-Explanation Generation
+Schedule Manager Applies Proposal
         ->
-Schedule Manager Decision
+Changed Work Becomes Tentative
         ->
-Approved And Locked Schedule
+Schedule Manager Approves Selected Tentative Work
+        ->
+Locked Operational Baseline
 ```
 
 ### Hard Constraints
 
-Hard constraints must not be violated in a valid schedule:
+Hard constraints must not be violated in a valid active schedule:
 
 - Work starts no earlier than `earliest_start`.
 - Work ends no later than `deadline`.
 - The same crew cannot be assigned to overlapping work.
 - The same equipment cannot be assigned to overlapping work.
 - The same track sector cannot host incompatible overlapping work.
-- Safety constraints must be respected.
-- Dependencies must be scheduled in order.
-- Locked work must keep its fixed time.
-- Work must fit within allowed engineering-hour windows unless the selected scenario explicitly permits overtime.
+- Safety incompatibilities declared through `incompatible_work_types` must be respected.
+- Dependencies and predefined prerequisites must be satisfied.
+- Active schedules must be conflict-free before approval.
 
-If a hard constraint cannot be satisfied, the schedule candidate must not be created as a valid schedule option.
+Locked work is fixed during normal optimization. In manager-reviewed rescheduling proposals, locked upcoming work may be proposed for movement, but movement is penalized, shown explicitly, and only applied by a Schedule Manager. Once moved, that work becomes tentative until approved again.
+
+If a hard constraint cannot be satisfied, the schedule candidate must not be treated as a valid approval-ready schedule.
 
 ### Soft Objectives
 
@@ -286,16 +380,17 @@ Soft objectives determine which valid schedule is preferred:
 - Preserve schedule stability.
 - Improve robustness against duration variance.
 
-### Alternative Ranking
+### Proposal Ranking
 
-Alternatives use the same hard constraints and are ranked with a balanced score across:
+Proposal options use the same hard constraints and are ranked with a balanced score across:
 
 - Disruption: prefer fewer moved jobs.
 - Overtime: prefer no overtime or deadline pressure.
-- Completion: prefer scheduling all valid requests.
+- Completion: prefer scheduling all selected valid requests.
 - Critical priority: prefer preserving high-priority work.
+- Churn: penalize moving locked or near-term work.
 
-The UI should show the top 2-3 feasible alternatives, each with all four scores and an overall score.
+The UI should show the top feasible proposals with score summaries, changed-job counts, moved-locked counts, conflicts, and churn penalty.
 
 ### No Valid Schedule Fallback
 
@@ -303,11 +398,11 @@ If no valid schedule exists, the system must not pretend that a schedule is vali
 
 The system must return:
 
-- The blocking conflicts.
+- The blocking conflicts or hard blockers.
 - The requests that prevent feasibility.
 - The hard constraints that could not be satisfied.
-- The closest available alternatives, clearly marked as unresolved if conflicts remain.
-- Suggested user actions, such as changing deadline, extending engineering hours, reducing duration, changing crew/equipment, unlocking existing work, or rejecting the request.
+- The closest available proposals, clearly marked as unresolved if conflicts remain.
+- Suggested user actions, such as changing deadline, extending the allowed window, reducing duration, changing crew/equipment, approving overtime, or rejecting the request.
 
 ## 4. UX Requirements
 
@@ -317,12 +412,8 @@ Navigation should be mostly shared across both roles. Preferred MVP labels:
 
 - New Request
 - Planning Board
-- Alternatives
-- KPI Dashboard
 
-Existing labels such as Field Request and Planner Dashboard may remain temporarily, but the product requirements should treat them as workflow labels, not the final role model.
-
-Requester users should see decision actions as read-only or unavailable. Schedule Manager users should see the full decision action set.
+Requester users should see decision actions as read-only or unavailable. Schedule Manager users should see proposal application, approval, modify, and reject actions.
 
 ### New Request Screen
 
@@ -330,55 +421,60 @@ The New Request screen must allow users to enter maintenance work details and su
 
 After submission:
 
-- If the request fits, show that it can be scheduled.
-- If the request does not fit, show the conflict summary and suggested alternatives.
+- If the request fits, show "Your proposed slot" with start/end time.
+- If the request requires rescheduling, show that manager review is required and list affected moved tasks/owners.
+- If validation fails, show backend hard-blocker messages.
 
 ### Planning Board
 
-The Planning Board must make monthly workload and today's execution schedule visible without forcing users into a dense full Gantt first.
+The Planning Board makes monthly workload and the selected day's execution schedule visible without forcing users into a dense full Gantt first.
 
 The Planning Board must show:
 
 - KPI summary.
 - Monthly calendar view with count of scheduled work per day.
 - Conflict marker on days that contain conflicting work.
-- Today's schedule for the selected date.
-- Request list.
+- Selected-day schedule with vertical time and horizontal track sectors.
+- Request Queue containing only unscheduled pending requests.
+- Tentative and locked calendar tasks.
 - Conflict indicators.
-- Decision review panel.
+- Decision Review panel.
+- Proposal Options in Decision Review when proposals are generated.
 
-The full Gantt view may remain as a secondary or future view. The main MVP schedule experience is the monthly planning view plus the selected day's engineering schedule.
+The visible day schedule should show 06:00-22:00 with 09:00-18:00 treated as the standard working window for overtime calculation.
+
+### Selection Behavior
+
+The dashboard supports multi-select:
+
+- Request Queue items can be selected as pending requests.
+- Calendar tasks can be selected as tentative or locked scheduled work.
+- Decision Review lists the actual selected items, not only counts.
+- Show Proposals is enabled only when pending requests are selected.
+- Apply Proposal is enabled only when a proposal exists and pending requests remain selected.
+- Approve Selected is enabled only when selected calendar tasks include tentative work.
 
 ### Decision Review Panel
 
-The decision review panel must explain:
+The Decision Review panel must explain:
 
-- Why the original request did not fit.
-- Which requests or resources conflict.
-- Which task is recommended to move.
-- What schedule option is being shown.
-- How KPIs change before and after the recommendation.
+- Which pending requests are selected.
+- Which calendar tasks are selected.
+- Which conflicts or blockers are active.
+- Which tasks a proposal moves.
+- Which owners are affected.
+- Which proposal option is being shown.
+- How the proposal changes schedule stability, overtime, and disruption.
 
-Available actions:
+Available primary actions:
 
-- Accept, Schedule Manager only
+- Show Proposals
+- Apply Proposal, Schedule Manager only
+- Approve Selected, Schedule Manager only
 - Modify, Schedule Manager only
 - Reject, Schedule Manager only
-- Lock schedule, Schedule Manager only
 
-### Alternatives Comparison
-
-The Alternatives view must compare the default options side by side.
-
-Each option must include:
-
-- Option name
-- Schedule summary
-- Changed jobs
-- Remaining conflicts
-- KPI impact
-- Explanation
-- Accept action
+Lock and Unlock are not primary UI actions. Approved work is changed through proposal application, which makes moved work tentative again.
 
 ## 5. Technical Design
 
@@ -410,30 +506,42 @@ Required API endpoints:
 - `PATCH /api/requests/{id}`
 - `POST /api/import/preview`
 - `POST /api/import/confirm`
+- `POST /api/import/json/preview`
+- `POST /api/import/json/confirm`
 - `POST /api/conflicts/detect`
 - `POST /api/schedule/optimise`
 - `POST /api/schedule/alternatives`
+- `POST /api/schedule/apply`
 - `POST /api/schedule/approve`
+- `POST /api/schedule/approve-selected`
+- `POST /api/schedule/reject/{request_id}`
+- `PATCH /api/schedule/modify/{request_id}`
 - `GET /api/kpis`
+- `POST /api/demo/seed`
+- `POST /api/demo/reset`
 
-Optional or later endpoints:
+Compatibility or later endpoints:
 
+- `POST /api/schedule/lock/{request_id}`
+- `POST /api/schedule/unlock/{request_id}`
 - `POST /api/scenarios/emergency`
 - `POST /api/stress-test`
 
 ### Domain Models
 
-The current domain models remain the baseline:
+The current domain models are the baseline:
 
 - `MaintenanceRequest`
 - `ScheduledWork`
 - `Conflict`
 - `KpiSnapshot`
 - `ScheduleAlternative`
+- `RequestFitResponse`
+- `ScheduleChange`
 
 ### Fit Status Contract
 
-Request submission should return or trigger a fit-status response.
+Request submission returns a fit-status response.
 
 Recommended response shape:
 
@@ -442,31 +550,63 @@ Recommended response shape:
   "request": {},
   "fits_current_schedule": false,
   "conflicts": [],
-  "suggested_alternatives": []
+  "suggested_alternatives": [],
+  "scheduled_work": null,
+  "requires_manager_review": true,
+  "affected_changes": [],
+  "proposal_option": null
 }
 ```
 
-When `fits_current_schedule` is `true`, `suggested_alternatives` may be empty unless the user explicitly requested comparison.
+When `fits_current_schedule` is `true`, `scheduled_work` contains the tentative calendar block and `requires_manager_review` is `false`.
 
-When `fits_current_schedule` is `false`, `suggested_alternatives` must include the default balanced options when feasible.
+When `fits_current_schedule` is `false`, `suggested_alternatives` should include feasible proposal options when possible, `requires_manager_review` is `true`, and `affected_changes` should identify moved owners and before/after windows.
+
+### Proposal And Approval Contracts
+
+`POST /api/schedule/alternatives` accepts:
+
+```json
+{
+  "request_ids": ["M-102", "M-109"]
+}
+```
+
+When `request_ids` is provided, proposals must include those pending requests while preserving constraints for active scheduled work. Unselected pending requests remain queued.
+
+`POST /api/schedule/apply` applies the selected proposal/candidate for selected pending request IDs. Applying a proposal schedules the selected pending requests and any affected changed work as tentative, except unchanged locked work remains locked.
+
+`POST /api/schedule/approve-selected` accepts:
+
+```json
+{
+  "request_ids": ["M-102", "M-109"]
+}
+```
+
+It approves/locks only selected scheduled tentative work. It rejects unscheduled pending IDs.
+
+`POST /api/schedule/approve` remains available as a backend compatibility action to approve all active tentative scheduled work.
 
 ### Authorization Boundary
 
-The MVP role boundary is intentionally small.
+The MVP role boundary is intentionally small and implemented through query/body role fields rather than production authentication.
 
 Requester permissions:
 
 - Create requests.
-- Edit own pending requests.
-- View schedules, conflicts, alternatives, explanations, and KPIs.
+- View schedules, conflicts, proposals, explanations, and KPIs.
+- Generate proposal previews.
 
 Schedule Manager permissions:
 
 - Create and edit requests.
-- Approve, reject, modify, lock, and unlock schedule decisions.
+- Apply proposals.
+- Approve selected scheduled work.
+- Reject or modify schedule decisions.
 - Finalize schedules.
 
-This may be implemented with a simple user-mode field, seed users, demo toggle, or equivalent lightweight mechanism. Full authentication and production-grade access control are future enhancements.
+Full authentication, audit trails, and production-grade access control are future enhancements.
 
 ### Scheduler Boundary
 
@@ -475,91 +615,108 @@ The scheduling engine is responsible for constraint satisfaction and objective o
 The scheduler must:
 
 - Accept normalized `MaintenanceRequest` records.
-- Preserve locked work.
+- Preserve locked work during normal optimization.
+- Allow manager-reviewed proposal generation that can move upcoming locked work with penalty.
 - Respect hard constraints.
-- Apply the selected objective profile.
+- Apply selected objective/profile behavior.
 - Return `ScheduledWork` records.
 - Mark changed work with `changed_from_original`.
 - Provide enough change context for explanations.
 
-The long-term target is OR-Tools CP-SAT. A simpler baseline scheduler may be used during MVP development only if it preserves the API contract.
+The current implementation uses a hardened greedy baseline behind the scheduler API. The long-term target is OR-Tools CP-SAT.
 
 ### Explanation Boundary
 
-The explanation layer must translate scheduler and conflict outputs into user-facing reasons.
+The explanation layer translates scheduler and conflict outputs into user-facing reasons.
 
 Explanations must include:
 
 - What changed.
 - Why it changed.
 - Which conflict was resolved.
-- Which tasks were affected.
+- Which tasks and owners were affected.
 - Which KPI improved or worsened.
 
 Constraint logic decides schedules. LLM usage is optional and must only polish wording or summarize already-computed facts.
 
 ## 6. Demo Scenarios
 
-### Demo 1: Live Request To Schedule
+### Demo 1: Direct Fit Request
 
-1. User creates a maintenance request.
-2. Request appears in the Schedule Dashboard.
-3. System checks the request against current scheduled work.
-4. If no conflict exists, the request is scheduled.
-5. User reviews KPI impact and approves.
+1. User creates a maintenance request whose requested slot is free.
+2. System validates the request.
+3. System creates a tentative scheduled block immediately.
+4. Requester sees "Your proposed slot" with start/end time.
+5. Schedule Manager selects the tentative calendar task and approves it.
 
-### Demo 2: Conflict With Alternative Suggestions
+### Demo 2: Selected Pending Request Proposal
 
-1. User submits a request for a track sector already occupied in the requested window.
-2. System flags the conflict.
-3. System explains the original request does not fit because of track, crew, equipment, or deadline constraints.
-4. System generates the four default alternatives.
-5. User compares KPI impact and changed jobs.
-6. User accepts the preferred recommendation.
+1. User submits a request that conflicts with scheduled work.
+2. System leaves the request in the Request Queue and returns manager-review proposal details.
+3. Schedule Manager selects one or more pending requests.
+4. Schedule Manager chooses Show Proposals.
+5. System generates ranked proposals and lists affected moved tasks/owners.
+6. Schedule Manager applies a selected proposal.
+7. Changed work becomes tentative and is approved with Approve Selected.
 
-### Demo 3: Emergency Rescheduling
+### Demo 3: Locked Work Revision
+
+1. Seed data includes locked approved work and tentative work.
+2. A selected pending request can fit only if upcoming work moves.
+3. System proposes movement and penalizes moving locked work.
+4. Schedule Manager reviews affected owners and before/after windows.
+5. Schedule Manager applies the proposal.
+6. Moved previously locked work becomes tentative and must be approved again.
+
+### Demo 4: Emergency Rescheduling
 
 1. User adds an emergency maintenance request.
-2. System detects conflicts with existing approved work.
-3. System generates ranked feasible alternatives.
-4. Existing work is moved only where necessary.
+2. System detects conflicts with existing scheduled work.
+3. System generates ranked feasible proposals.
+4. Existing work is moved only where necessary and explicitly listed.
 5. User reviews schedule stability and explanation.
-6. User approves or rejects the emergency reschedule.
+6. Schedule Manager applies or rejects the emergency reschedule.
 
 ## 7. Test And Acceptance Criteria
 
 ### Requirement Review
 
-- The document does not define three required user roles.
 - The MVP is described as two lightweight roles with shared visibility.
-- Requesters can create requests and view schedules, conflicts, alternatives, explanations, and KPIs.
-- Schedule Managers can approve, reject, modify, lock, and unlock schedule decisions.
-- Alternative suggestions are required when the original request does not fit.
+- Requesters can create requests and view schedules, conflicts, proposals, explanations, and KPIs.
+- Direct-fit requests create tentative scheduled work.
+- Conflicting requests remain in the unscheduled Request Queue.
+- Schedule Managers can apply proposals and approve selected tentative work.
+- Manual lock/unlock is not the primary product workflow.
 
 ### Scheduling Scenarios
 
-- Original request fits with no conflicts.
+- Original request fits with no conflicts and appears on the calendar as tentative.
 - Original request conflicts with track availability.
 - Original request conflicts with crew availability.
 - Original request conflicts with equipment availability.
-- Original request misses deadline and requires alternatives.
-- Emergency request forces minimum-disruption rescheduling.
-- Locked work remains fixed during optimization.
+- Engineering-hour and prerequisite failures return hard validation blockers.
+- Selected pending requests generate feasible proposals when possible.
+- Applying proposals schedules selected pending requests as tentative.
+- Moved locked work becomes tentative after proposal application.
+- Approval locks only selected tentative scheduled work.
 - No-valid-schedule cases return explicit blockers.
 
 ### Acceptance Criteria
 
-- Alternatives are shown when needed or when explicitly requested.
+- Proposals are shown when needed or when selected pending requests request comparison.
 - Every conflict has a visible reason.
-- Every alternative includes KPI impact and explanation.
-- Only a Schedule Manager can accept, modify, or reject a suggested schedule.
-- Requesters can still view the suggested schedule and explanation.
+- Every proposal includes KPI impact, score context, changed jobs, and explanation.
+- Only a Schedule Manager can apply, approve, modify, or reject schedule decisions.
+- Requesters can still view proposed schedules and explanations.
+- Pending requests cannot be approved directly.
 - The system does not claim an invalid schedule is conflict-free.
 
 ## 8. Future Enhancements
 
+- OR-Tools CP-SAT replacement for the greedy baseline.
 - More detailed role permissions beyond Requester and Schedule Manager.
 - Official dataset enrichment, including MRT station or sector metadata.
+- Import UI for CSV and JSON files.
 - Schedule export.
 - Audit history for schedule decisions.
 - Robustness stress testing.
@@ -567,13 +724,16 @@ Constraint logic decides schedules. LLM usage is optional and must only polish w
 - Richer optimization profiles.
 - Multi-user collaboration.
 - Authentication and production security.
+- Cloud database persistence.
 
 ## 9. Assumptions
 
 - This document is the single PRD + technical design source for the MVP.
 - MVP has two lightweight roles: Requester and Schedule Manager.
-- Everyone has shared visibility into schedules, conflicts, alternatives, explanations, and KPIs.
+- Everyone has shared visibility into schedules, conflicts, proposals, explanations, and KPIs.
 - Only Schedule Managers can finalize schedule decisions.
-- Alternative generation uses balanced named options by default.
-- Existing backend and frontend labels may be updated later from role-flavored labels to shared workflow labels.
+- Direct-fit requests may be tentatively placed immediately.
+- Conflicting requests stay pending until a proposal is applied.
+- Proposal generation uses balanced named options by default.
+- Storage remains in memory for the MVP.
 - The backend API and domain models currently in the repo are the baseline unless later implementation work changes them.

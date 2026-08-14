@@ -13,5 +13,5 @@ def detect_conflicts(
     conflicts.extend(detect_track_conflicts(schedule))
     conflicts.extend(detect_crew_conflicts(schedule))
     conflicts.extend(detect_equipment_conflicts(schedule))
-    conflicts.extend(detect_safety_conflicts(schedule))
+    conflicts.extend(detect_safety_conflicts(schedule, requests or []))
     return conflicts

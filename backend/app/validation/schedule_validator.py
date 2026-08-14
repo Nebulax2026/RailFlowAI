@@ -15,9 +15,13 @@ def validate_scheduled_work(
     requests_by_id = {request.request_id: request for request in requests}
 
     for item in schedule:
+        if item.end_time <= item.start_time:
+            errors.append(f"{item.request_id} end time must be after start time.")
         request = requests_by_id.get(item.request_id)
+        if request and item.start_time < request.earliest_start:
+            errors.append(f"{item.request_id} cannot start before its earliest start.")
         if request and item.end_time > request.deadline:
-            errors.append(f"{item.request_id} cannot finish before its deadline.")
+            errors.append(f"{item.request_id} cannot finish after its deadline.")
 
     for request in requests:
         scheduled = schedule_by_request.get(request.request_id)

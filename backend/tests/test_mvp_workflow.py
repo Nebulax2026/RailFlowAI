@@ -93,6 +93,21 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertGreaterEqual(len(body["affected_changes"]), 1)
         self.assertNotIn("M-002", SCHEDULED_WORK)
 
+    def test_incompatible_work_types_create_safety_conflict(self) -> None:
+        first = request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T11:00:00", work_type="inspection")
+        first["incompatible_work_types"] = ["electrical"]
+        client.post("/api/requests", json=first)
+
+        response = client.post(
+            "/api/requests",
+            json=request_payload("M-002", "2026-08-13T10:10:00", "2026-08-13T11:30:00", work_type="electrical"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertFalse(body["fits_current_schedule"])
+        self.assertIn("safety", {item["type"] for item in body["conflicts"]})
+
     def test_overtime_is_allowed_and_prerequisites_remain_hard_blockers(self) -> None:
         overtime_response = client.post(
             "/api/requests",
@@ -281,6 +296,54 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(reset.status_code, 200)
         self.assertEqual(REQUESTS, {})
         self.assertEqual(SCHEDULED_WORK, {})
+
+    def test_request_patch_revalidates_payload_and_keeps_identity_stable(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-001", "2026-08-13T01:00:00", "2026-08-13T02:00:00"),
+        )
+
+        invalid_duration = client.patch("/api/requests/M-001", json={"duration_minutes": 0})
+        changed_id = client.patch("/api/requests/M-001", json={"request_id": "M-999"})
+        unknown_field = client.patch("/api/requests/M-001", json={"unexpected": True})
+
+        self.assertEqual(invalid_duration.status_code, 422)
+        self.assertEqual(changed_id.status_code, 422)
+        self.assertEqual(unknown_field.status_code, 422)
+        self.assertIn("M-001", REQUESTS)
+        self.assertNotIn("M-999", REQUESTS)
+
+    def test_schedule_modify_rejects_protected_fields_and_revalidates_times(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-001", "2026-08-13T01:00:00", "2026-08-13T02:00:00"),
+        )
+
+        protected = client.patch(
+            "/api/schedule/modify/M-001?role=schedule_manager",
+            json={"status": "locked"},
+        )
+        invalid_window = client.patch(
+            "/api/schedule/modify/M-001?role=schedule_manager",
+            json={"end_time": "2026-08-13T00:30:00"},
+        )
+
+        self.assertEqual(protected.status_code, 422)
+        self.assertEqual(invalid_window.status_code, 422)
+        self.assertEqual(SCHEDULED_WORK["M-001"].status, ApprovalStatus.SCHEDULED)
+
+    def test_import_rejects_unsupported_file_type_and_non_object_json_rows(self) -> None:
+        csv_as_text = client.post(
+            "/api/import/confirm",
+            files={"file": ("requests.txt", "not,csv\n", "text/plain")},
+        )
+        json_shape = client.post(
+            "/api/import/json/confirm",
+            files={"file": ("requests.json", json.dumps(["not an object"]), "application/json")},
+        )
+
+        self.assertEqual(csv_as_text.status_code, 415)
+        self.assertEqual(json_shape.status_code, 422)
 
 
 if __name__ == "__main__":

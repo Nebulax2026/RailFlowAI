@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import ValidationError
 
 from app.adapters.manual_adapter import from_manual_payload
 from app.domain.models import MaintenanceRequest, RequestFitResponse
@@ -28,7 +29,12 @@ def update_request(request_id: str, payload: dict) -> MaintenanceRequest:
     existing = REQUESTS.get(request_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Request not found.")
-    updated = existing.model_copy(update=payload)
+    if "request_id" in payload and payload["request_id"] != request_id:
+        raise HTTPException(status_code=422, detail="Request ID cannot be changed.")
+    try:
+        updated = MaintenanceRequest.model_validate({**existing.model_dump(), **payload, "request_id": request_id})
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail=error.errors()) from error
     errors = validate_request_for_queue(updated)
     if errors:
         raise HTTPException(status_code=422, detail=errors)

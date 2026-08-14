@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import catalog, conflicts, demo, import_data, kpis, requests, scenarios, schedule, stress_test
+from app.settings import allowed_hosts, cors_origins
 
 
 app = FastAPI(
@@ -12,11 +14,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
 app.include_router(requests.router, prefix="/api/requests", tags=["requests"])
 app.include_router(catalog.router, prefix="/api/catalog", tags=["catalog"])
