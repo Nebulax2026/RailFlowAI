@@ -5,7 +5,8 @@ import { AlertTriangle, CalendarDays, CheckCircle2, Database, GitBranch, Plus, R
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const PLANNING_TIME_ZONE = "Asia/Singapore";
 
 type MaintenanceRequest = {
   request_id: string;
@@ -75,6 +76,7 @@ type Alternative = {
 };
 
 type Role = "requester" | "schedule_manager";
+type StatusTone = "loading" | "success" | "error" | "info";
 
 const emptyKpis: Kpis = {
   unresolved_conflicts: 0,
@@ -111,28 +113,38 @@ const engineeringHours = [
   "21:00",
   "22:00"
 ];
-const timelineStartMinutes = 6 * 60;
 const timeSlotHeight = 88;
 const fallbackTracks = ["T08", "T09", "T10", "T11", "T12", "T13", "T14"];
 
 function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(value);
+  return new Intl.DateTimeFormat("en", { timeZone: PLANNING_TIME_ZONE, month: "short", day: "numeric" }).format(value);
 }
 
 function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en", { timeZone: PLANNING_TIME_ZONE, hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en", { timeZone: PLANNING_TIME_ZONE, month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 function workLabel(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function singaporeDateKey(value: Date | string) {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: PLANNING_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(value));
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
 function sameDay(left: Date, right: Date) {
-  return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
+  return singaporeDateKey(left) === singaporeDateKey(right);
 }
 
 function monthDays(anchor: Date) {
@@ -146,6 +158,27 @@ function monthDays(anchor: Date) {
   });
 }
 
+function startOfDay(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+}
+
+function defaultBoardDate(schedule: ScheduledWork[], requests: MaintenanceRequest[], current: Date) {
+  const candidates = [
+    ...schedule.map((item) => item.start_time),
+    ...requests.map((request) => request.earliest_start)
+  ]
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  if (candidates.length === 0) {
+    return current;
+  }
+
+  const today = startOfDay(new Date());
+  return candidates.find((candidate) => candidate >= today) ?? candidates[candidates.length - 1];
+}
+
 function requestFor(item: ScheduledWork, requests: MaintenanceRequest[]) {
   return requests.find((request) => request.request_id === item.request_id);
 }
@@ -155,11 +188,28 @@ function scheduledFor(requestId: string, schedule: ScheduledWork[]) {
 }
 
 function minutesFromEngineeringStart(value: string) {
-  const date = new Date(value);
-  return date.getHours() * 60 + date.getMinutes();
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: PLANNING_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date(value));
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return Number(byType.hour) * 60 + Number(byType.minute);
 }
 
-function calendarBlockStyle(item: ScheduledWork) {
+function timelineHoursFor(items: ScheduledWork[]) {
+  const baselineStart = 6;
+  const baselineEnd = 22;
+  const earliest = items.length ? Math.min(...items.map((item) => Math.floor(minutesFromEngineeringStart(item.start_time) / 60))) : baselineStart;
+  const latest = items.length ? Math.max(...items.map((item) => Math.ceil(minutesFromEngineeringStart(item.end_time) / 60))) : baselineEnd;
+  const start = Math.max(0, Math.min(baselineStart, earliest));
+  const end = Math.min(24, Math.max(baselineEnd, latest));
+
+  return Array.from({ length: Math.max(1, end - start) }, (_, index) => `${String(start + index).padStart(2, "0")}:00`);
+}
+
+function calendarBlockStyle(item: ScheduledWork, timelineStartMinutes: number) {
   const start = (minutesFromEngineeringStart(item.start_time) - timelineStartMinutes) * (timeSlotHeight / 60);
   const end = (minutesFromEngineeringStart(item.end_time) - timelineStartMinutes) * (timeSlotHeight / 60);
   return {
@@ -170,6 +220,39 @@ function calendarBlockStyle(item: ScheduledWork) {
 
 function isLockedStatus(status: string) {
   return status.toLowerCase() === "locked";
+}
+
+async function readResponsePayload(response: Response) {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
+}
+
+function formatApiError(endpoint: string, payload: unknown) {
+  const detail = typeof payload === "object" && payload && "detail" in payload ? (payload as { detail?: unknown }).detail : null;
+  if (Array.isArray(detail)) {
+    return detail.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ");
+  }
+  if (typeof detail === "string") {
+    return detail;
+  }
+  return `${endpoint} failed.`;
+}
+
+async function fetchJson<T>(endpoint: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, init);
+  const payload = await readResponsePayload(response);
+  if (!response.ok) {
+    throw new Error(`${endpoint}: ${formatApiError(endpoint, payload)}`);
+  }
+  return payload as T;
 }
 
 export default function DashboardPage() {
@@ -185,58 +268,56 @@ export default function DashboardPage() {
   const [selectedScheduledIds, setSelectedScheduledIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [status, setStatus] = useState("Loading planning board...");
+  const [statusTone, setStatusTone] = useState<StatusTone>("loading");
+  const [isLoading, setIsLoading] = useState(true);
 
   async function loadDashboard() {
+    setIsLoading(true);
+    setStatusTone("loading");
+    setStatus("Loading planning board...");
     try {
-      const [requestResponse, scheduleResponse, conflictResponse, kpiResponse] = await Promise.all([
-        fetch(`${API_BASE}/api/requests`),
-        fetch(`${API_BASE}/api/schedule`),
-        fetch(`${API_BASE}/api/conflicts/detect`, { method: "POST" }),
-        fetch(`${API_BASE}/api/kpis`)
+      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis] = await Promise.all([
+        fetchJson<MaintenanceRequest[]>("/api/requests"),
+        fetchJson<ScheduledWork[]>("/api/schedule"),
+        fetchJson<Conflict[]>("/api/conflicts/detect", { method: "POST" }),
+        fetchJson<Kpis>("/api/kpis")
       ]);
 
-      if (!requestResponse.ok || !scheduleResponse.ok || !conflictResponse.ok || !kpiResponse.ok) {
-        throw new Error("Could not load planning board data.");
-      }
-
-      const loadedRequests: MaintenanceRequest[] = await requestResponse.json();
-      const loadedSchedule: ScheduledWork[] = await scheduleResponse.json();
       setRequests(loadedRequests);
       setSchedule(loadedSchedule);
-      setConflicts(await conflictResponse.json());
-      setKpis(await kpiResponse.json());
+      setConflicts(loadedConflicts);
+      setKpis(loadedKpis);
       const scheduledIds = new Set(loadedSchedule.map((item) => item.request_id));
       const pendingRequests = loadedRequests.filter(
         (request) => request.approval_status === "draft" && !request.locked && !scheduledIds.has(request.request_id)
       );
       setSelectedRequestId((current) => current ?? pendingRequests[0]?.request_id ?? loadedSchedule[0]?.request_id ?? null);
-      const firstVisibleDate = loadedSchedule[0]?.start_time ?? loadedRequests[0]?.earliest_start;
-      if (firstVisibleDate) {
-        setSelectedDate((current) => {
-          const next = new Date(firstVisibleDate);
-          return sameDay(current, next) ? current : next;
-        });
-      }
+      setSelectedDate((current) => {
+        if ([...loadedSchedule.map((item) => item.start_time), ...loadedRequests.map((request) => request.earliest_start)].some((value) => sameDay(new Date(value), current))) {
+          return current;
+        }
+        const next = defaultBoardDate(loadedSchedule, loadedRequests, current);
+        return sameDay(current, next) ? current : next;
+      });
+      setStatusTone("success");
       setStatus("Planning board is synced with the backend.");
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Could not load planning board data.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
   async function optimiseSchedule() {
+    setStatusTone("loading");
     setStatus("Generating active feasible schedule...");
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/optimise?option=minimum_disruption`, { method: "POST" });
-      const payload = await response.json();
-      if (!response.ok) {
-        const detail = Array.isArray(payload.detail)
-          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
-          : payload.detail;
-        throw new Error(detail || "Could not generate schedule.");
-      }
+      await fetchJson<ScheduledWork[]>("/api/schedule/optimise?option=minimum_disruption", { method: "POST" });
       setSelectedAlternative(null);
       await loadDashboard();
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Could not generate schedule.");
     }
   }
@@ -244,23 +325,23 @@ export default function DashboardPage() {
   async function compareAlternatives() {
     if (selectedPendingIds.length === 0) {
       setStatus("Select one or more pending requests before showing proposals.");
+      setStatusTone("info");
       return;
     }
+    setStatusTone("loading");
     setStatus("Generating schedule proposals...");
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/alternatives`, {
+      const payload = await fetchJson<Alternative[]>("/api/schedule/alternatives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ request_ids: selectedPendingIds })
       });
-      if (!response.ok) {
-        throw new Error("Could not generate proposals.");
-      }
-      const payload = await response.json();
       setAlternatives(payload);
       setSelectedAlternative(payload[0] ?? null);
+      setStatusTone(payload.length ? "success" : "info");
       setStatus(payload.length ? "Top schedule proposals are ready for Schedule Manager review." : "No feasible proposals were generated.");
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Could not generate proposals.");
     }
   }
@@ -272,41 +353,33 @@ export default function DashboardPage() {
     });
     if (tentativeIds.length === 0) {
       setStatus("Select one or more tentative calendar tasks to approve.");
+      setStatusTone("info");
       return;
     }
+    setStatusTone("loading");
     setStatus(`Approving ${tentativeIds.length} selected task${tentativeIds.length === 1 ? "" : "s"}...`);
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/approve-selected?role=${role}`, {
+      const payload = await fetchJson<{ locked_items?: number }>(`/api/schedule/approve-selected?role=${role}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ request_ids: tentativeIds })
       });
-      const payload = await response.json();
-      if (!response.ok) {
-        const detail = Array.isArray(payload.detail)
-          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
-          : payload.detail;
-        throw new Error(detail || "Selected tasks could not be approved.");
-      }
       setSelectedScheduledIds([]);
       await loadDashboard();
+      setStatusTone("success");
       setStatus(`${payload.locked_items ?? tentativeIds.length} selected task${tentativeIds.length === 1 ? "" : "s"} approved.`);
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Selected tasks could not be approved.");
     }
   }
 
   async function loadBestProposalFor(requestId: string | null) {
-    const response = await fetch(`${API_BASE}/api/schedule/alternatives`, {
+    const proposals = await fetchJson<Alternative[]>("/api/schedule/alternatives", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ request_ids: selectedPendingIds.length ? selectedPendingIds : requestId ? [requestId] : [] })
     });
-    const payload = await response.json();
-    if (!response.ok) {
-      throw new Error(payload.detail || "Could not generate proposals.");
-    }
-    const proposals = payload as Alternative[];
     setAlternatives(proposals);
     const proposal = proposals.find(
       (alternative) => !alternative.conflicts.length && (!requestId || alternative.scheduled_work.some((item) => item.request_id === requestId))
@@ -316,30 +389,25 @@ export default function DashboardPage() {
   }
 
   async function applyProposalOption(option: string) {
-    const response = await fetch(`${API_BASE}/api/schedule/apply?option=${option}&role=${role}`, {
+    return fetchJson<ScheduledWork[]>(`/api/schedule/apply?option=${option}&role=${role}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ request_ids: selectedPendingIds })
     });
-    const payload = await response.json();
-    if (!response.ok) {
-      const detail = Array.isArray(payload.detail)
-        ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
-        : payload.detail;
-      throw new Error(detail || "Proposal could not be applied.");
-    }
-    return payload as ScheduledWork[];
   }
 
   async function applySelectedAlternative() {
     if (!selectedAlternative) {
       setStatus("Select a proposal before applying it.");
+      setStatusTone("info");
       return;
     }
     if (selectedPendingIds.length === 0) {
       setStatus("Select the pending requests this proposal should apply before applying it.");
+      setStatusTone("info");
       return;
     }
+    setStatusTone("loading");
     setStatus(`Applying ${selectedAlternative.label}...`);
     try {
       await applyProposalOption(selectedAlternative.option);
@@ -347,8 +415,10 @@ export default function DashboardPage() {
       setAlternatives([]);
       setSelectedPendingIds([]);
       await loadDashboard();
+      setStatusTone("success");
       setStatus(`${selectedAlternative.label} applied as the active schedule.`);
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Proposal could not be applied.");
     }
   }
@@ -356,20 +426,20 @@ export default function DashboardPage() {
   async function rejectSelectedRequest() {
     if (!selectedRequestId) {
       setStatus("Select a request before rejecting it.");
+      setStatusTone("info");
       return;
     }
+    setStatusTone("loading");
     setStatus(`Rejecting ${selectedRequestId}...`);
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/reject/${selectedRequestId}?role=${role}`, { method: "POST" });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.detail || "Request could not be rejected.");
-      }
+      await fetchJson(`/api/schedule/reject/${selectedRequestId}?role=${role}`, { method: "POST" });
       setSelectedAlternative(null);
       setSelectedPendingIds((current) => current.filter((requestId) => requestId !== selectedRequestId));
       await loadDashboard();
+      setStatusTone("success");
       setStatus(`${selectedRequestId} rejected and removed from the active schedule.`);
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Request could not be rejected.");
     }
   }
@@ -377,19 +447,19 @@ export default function DashboardPage() {
   async function toggleSelectedLock() {
     if (!selectedRequestId || !selectedScheduledItem) {
       setStatus("Select scheduled work before changing its lock state.");
+      setStatusTone("info");
       return;
     }
     const action = selectedScheduledItem.status === "locked" ? "unlock" : "lock";
+    setStatusTone("loading");
     setStatus(`${action === "lock" ? "Locking" : "Unlocking"} ${selectedRequestId}...`);
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/${action}/${selectedRequestId}?role=${role}`, { method: "POST" });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.detail || "Lock state could not be changed.");
-      }
+      await fetchJson(`/api/schedule/${action}/${selectedRequestId}?role=${role}`, { method: "POST" });
       await loadDashboard();
+      setStatusTone("success");
       setStatus(`${selectedRequestId} is now ${action === "lock" ? "locked" : "unlocked"}.`);
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Lock state could not be changed.");
     }
   }
@@ -397,6 +467,7 @@ export default function DashboardPage() {
   async function modifySelectedStart() {
     if (!selectedRequestId || !selectedScheduledItem || !selectedRequest) {
       setStatus("Select scheduled work before modifying it.");
+      setStatusTone("info");
       return;
     }
     const current = selectedScheduledItem.start_time.slice(0, 16);
@@ -406,9 +477,10 @@ export default function DashboardPage() {
     }
     const start = new Date(nextStart);
     const end = new Date(start.getTime() + selectedRequest.duration_minutes * 60_000);
+    setStatusTone("loading");
     setStatus(`Modifying ${selectedRequestId}...`);
     try {
-      const response = await fetch(`${API_BASE}/api/schedule/modify/${selectedRequestId}?role=${role}`, {
+      const payload = await fetchJson<ScheduledWork>(`/api/schedule/modify/${selectedRequestId}?role=${role}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -418,58 +490,51 @@ export default function DashboardPage() {
           change_reason: "Modified by Schedule Manager during decision review."
         })
       });
-      const payload = await response.json();
-      if (!response.ok) {
-        const detail = Array.isArray(payload.detail)
-          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
-          : payload.detail;
-        throw new Error(detail || "Scheduled work could not be modified.");
-      }
       await loadDashboard();
+      setStatusTone("success");
       setStatus(`${selectedRequestId} moved to ${formatTime(payload.start_time)}.`);
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Scheduled work could not be modified.");
     }
   }
 
   async function seedDemoData() {
+    setStatusTone("loading");
     setStatus("Loading demo data...");
     try {
-      const response = await fetch(`${API_BASE}/api/demo/seed`, { method: "POST" });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.detail || "Demo data could not be loaded.");
-      }
+      const payload = await fetchJson<{ requests: number; tentative_schedule_items?: number; locked_schedule_items: number }>("/api/demo/seed", { method: "POST" });
       setSelectedAlternative(null);
       setAlternatives([]);
       setSelectedPendingIds([]);
       setSelectedScheduledIds([]);
       setSelectedRequestId(null);
       await loadDashboard();
+      setStatusTone("success");
       setStatus(
         `Demo data loaded: ${payload.requests} requests, ${payload.tentative_schedule_items ?? 0} tentative items, and ${payload.locked_schedule_items} locked items.`
       );
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Demo data could not be loaded.");
     }
   }
 
   async function resetDemoData() {
+    setStatusTone("loading");
     setStatus("Resetting demo data...");
     try {
-      const response = await fetch(`${API_BASE}/api/demo/reset`, { method: "POST" });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.detail || "Demo data could not be reset.");
-      }
+      await fetchJson("/api/demo/reset", { method: "POST" });
       setSelectedAlternative(null);
       setAlternatives([]);
       setSelectedPendingIds([]);
       setSelectedScheduledIds([]);
       setSelectedRequestId(null);
       await loadDashboard();
+      setStatusTone("success");
       setStatus("Demo state reset.");
     } catch (error) {
+      setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Demo data could not be reset.");
     }
   }
@@ -493,10 +558,12 @@ export default function DashboardPage() {
   const todayItems = visibleSchedule
     .filter((item) => sameDay(new Date(item.start_time), selectedDate))
     .sort((left, right) => new Date(left.start_time).getTime() - new Date(right.start_time).getTime());
+  const visibleHours = timelineHoursFor(todayItems);
+  const timelineStartMinutes = Number(visibleHours[0].slice(0, 2)) * 60;
   const dayTracks = Array.from(new Set([...fallbackTracks, ...todayItems.map((item) => item.track_sector)])).sort();
   const calendarVars = {
     "--track-count": dayTracks.length,
-    "--slot-count": engineeringHours.length - 1,
+    "--slot-count": visibleHours.length,
     "--slot-height": `${timeSlotHeight}px`
   } as CSSProperties;
 
@@ -578,7 +645,7 @@ export default function DashboardPage() {
         </nav>
       </header>
 
-      <section className="status-strip" role="status">
+      <section className={`status-strip ${statusTone}`} role="status">
         <CheckCircle2 size={16} />
         {status}
       </section>
@@ -590,7 +657,7 @@ export default function DashboardPage() {
               <span className="eyebrow">Calendar</span>
               <h2>
                 <CalendarDays size={18} />
-                {new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(selectedDate)}
+                {new Intl.DateTimeFormat("en", { timeZone: PLANNING_TIME_ZONE, month: "long", year: "numeric" }).format(selectedDate)}
               </h2>
             </div>
             <span className="legend"><i /> conflict</span>
@@ -630,14 +697,14 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="time-axis" style={calendarVars}>
-              {engineeringHours.slice(0, -1).map((hour) => (
+              {visibleHours.map((hour) => (
                 <div className="time-tick" key={hour}>{hour}</div>
               ))}
             </div>
             <div className="calendar-grid" style={calendarVars}>
               {dayTracks.map((track) => (
                 <div className="track-column" key={track}>
-                  {engineeringHours.slice(0, -1).map((hour) => (
+                  {visibleHours.map((hour) => (
                     <span className="hour-line" key={hour} />
                   ))}
                   {todayItems
@@ -650,7 +717,7 @@ export default function DashboardPage() {
                           className={`calendar-event ${conflict ? "has-conflict" : ""} ${selectedScheduledIds.includes(item.request_id) ? "selected" : ""}`}
                           key={`${item.request_id}-${item.start_time}`}
                           onClick={() => toggleScheduledSelection(item.request_id)}
-                          style={calendarBlockStyle(item)}
+                          style={calendarBlockStyle(item, timelineStartMinutes)}
                         >
                           <strong>{item.request_id}</strong>
                           <span>{formatTime(item.start_time)}-{formatTime(item.end_time)}</span>
@@ -683,7 +750,13 @@ export default function DashboardPage() {
             <small>{pendingRequests.length} pending</small>
           </div>
           <div className="panel-body request-list">
-            {pendingRequests.length === 0 && <p className="muted">No pending requests. Approved work stays visible on the calendar.</p>}
+            {isLoading && (
+              <>
+                <div className="skeleton-line tall" />
+                <div className="skeleton-line tall" />
+              </>
+            )}
+            {!isLoading && pendingRequests.length === 0 && <p className="muted">No pending requests. Approved work stays visible on the calendar.</p>}
             {pendingRequests.map((request) => (
               <button
                 className={`request-item select-card ${selectedPendingIds.includes(request.request_id) ? "selected" : ""}`}
@@ -734,6 +807,13 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="panel-body decision-stack">
+            {isLoading && (
+              <div className="selection-summary" aria-hidden="true">
+                <span className="skeleton-line short" />
+                <span className="skeleton-line" />
+                <span className="skeleton-line" />
+              </div>
+            )}
             <div className="selection-summary">
               <span className="eyebrow">Selection</span>
               <p>

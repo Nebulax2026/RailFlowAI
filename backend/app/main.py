@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
-from app.api import catalog, conflicts, demo, import_data, kpis, requests, scenarios, schedule, stress_test
+from app.api import audit, catalog, conflicts, demo, import_data, kpis, persistence, requests, scenarios, schedule, stress_test
 from app.settings import allowed_hosts, cors_origins
 
 
@@ -22,8 +22,10 @@ app.add_middleware(
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
 app.include_router(requests.router, prefix="/api/requests", tags=["requests"])
+app.include_router(audit.router, prefix="/api/audit", tags=["audit"])
 app.include_router(catalog.router, prefix="/api/catalog", tags=["catalog"])
 app.include_router(import_data.router, prefix="/api/import", tags=["import"])
+app.include_router(persistence.router, prefix="/api/persistence", tags=["persistence"])
 app.include_router(conflicts.router, prefix="/api/conflicts", tags=["conflicts"])
 app.include_router(demo.router, prefix="/api/demo", tags=["demo"])
 app.include_router(schedule.router, prefix="/api/schedule", tags=["schedule"])

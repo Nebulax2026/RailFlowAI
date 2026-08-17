@@ -3,10 +3,12 @@ from datetime import timedelta
 from app.conflict.detector import detect_conflicts
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import Conflict, MaintenanceRequest, RequestFitResponse, ScheduleAlternative, ScheduleChange, ScheduledWork
+from app.proposals import record_proposal_snapshot
+from app.repositories import requests_repository, schedule_repository, unit_of_work
 from app.scheduler.alternative_generator import generate_alternatives, requested_slot_schedule
 from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.scheduler.horizon import classify_horizon, move_penalty
-from app.storage import REQUESTS, SCHEDULED_WORK
+from app.scheduler.time_windows import align_to_engineering_window
 from app.validation.business_validator import validate_business_rules
 from app.validation.dependency_rules import validate_work_type_prerequisites
 from app.validation.schedule_validator import validate_scheduled_work
@@ -14,14 +16,16 @@ from app.validation.schedule_validator import validate_scheduled_work
 
 def validate_request_for_queue(request: MaintenanceRequest) -> list[str]:
     errors = validate_business_rules(request)
-    errors.extend(validate_work_type_prerequisites(request, REQUESTS, SCHEDULED_WORK))
+    existing_requests = {item.request_id: item for item in requests_repository.list()}
+    existing_schedule = {item.request_id: item for item in schedule_repository.list()}
+    errors.extend(validate_work_type_prerequisites(request, existing_requests, existing_schedule))
     return errors
 
 
 def requests_with_locked_schedule() -> list[MaintenanceRequest]:
     prepared: list[MaintenanceRequest] = []
-    for request in REQUESTS.values():
-        scheduled = SCHEDULED_WORK.get(request.request_id)
+    for request in requests_repository.list():
+        scheduled = schedule_repository.get(request.request_id)
         if scheduled and scheduled.status == ApprovalStatus.LOCKED:
             prepared.append(
                 request.model_copy(
@@ -40,10 +44,10 @@ def requests_with_locked_schedule() -> list[MaintenanceRequest]:
 
 def requests_with_movable_schedule(request_ids: list[str] | None = None) -> list[MaintenanceRequest]:
     selected = set(request_ids or [])
-    scheduled_ids = set(SCHEDULED_WORK)
+    scheduled_ids = {item.request_id for item in schedule_repository.list()}
     requests = [
         request
-        for request in REQUESTS.values()
+        for request in requests_repository.list()
         if not selected or request.request_id in selected or request.request_id in scheduled_ids or request.approval_status != ApprovalStatus.DRAFT
     ]
     ordered_requests = sorted(
@@ -57,7 +61,7 @@ def requests_with_movable_schedule(request_ids: list[str] | None = None) -> list
 
 
 def requested_item_for(request: MaintenanceRequest) -> ScheduledWork:
-    start_time = request.fixed_start or request.earliest_start
+    start_time = request.fixed_start or align_to_engineering_window(request.earliest_start, request.duration_minutes, request.deadline)
     end_time = request.fixed_end or start_time + timedelta(minutes=request.duration_minutes)
     return ScheduledWork(
         schedule_id="schedule-requested-fit",
@@ -73,33 +77,23 @@ def requested_item_for(request: MaintenanceRequest) -> ScheduledWork:
 
 def evaluate_fit(request: MaintenanceRequest) -> RequestFitResponse:
     requested_item = requested_item_for(request)
-    candidate = [*SCHEDULED_WORK.values(), requested_item]
-    conflicts = detect_conflicts(candidate, list(REQUESTS.values()))
+    candidate = [*schedule_repository.list(), requested_item]
+    conflicts = detect_conflicts(candidate, requests_repository.list())
     fits = not conflicts
     if fits:
-        scheduled = requested_item.model_copy(update={"schedule_id": "schedule-tentative"})
-        SCHEDULED_WORK[request.request_id] = scheduled
-        REQUESTS[request.request_id] = request.model_copy(update={"approval_status": ApprovalStatus.SCHEDULED})
         return RequestFitResponse(
-            request=REQUESTS[request.request_id],
+            request=request,
             fits_current_schedule=True,
             conflicts=[],
-            scheduled_work=scheduled,
         )
 
     alternatives = generate_reschedule_proposals()
     selected = alternatives[0] if alternatives else None
-    proposed_item = (
-        next((item for item in selected.scheduled_work if item.request_id == request.request_id), None)
-        if selected
-        else None
-    )
     return RequestFitResponse(
         request=request,
         fits_current_schedule=False,
         conflicts=conflicts,
         suggested_alternatives=alternatives,
-        scheduled_work=proposed_item,
         requires_manager_review=bool(selected),
         affected_changes=schedule_changes_for(selected.scheduled_work) if selected else [],
         proposal_option=selected.option if selected else None,
@@ -119,9 +113,8 @@ def build_optimised_schedule(option: ScheduleOption) -> tuple[list[ScheduledWork
 
 
 def apply_schedule(schedule: list[ScheduledWork]) -> None:
-    SCHEDULED_WORK.clear()
-    for item in schedule:
-        SCHEDULED_WORK[item.request_id] = item
+    with unit_of_work() as work:
+        work.schedule.replace_all(schedule)
 
 
 def apply_alternative(option: ScheduleOption, request_ids: list[str] | None = None) -> tuple[list[ScheduledWork], list[str], list[Conflict]]:
@@ -138,19 +131,20 @@ def apply_alternative(option: ScheduleOption, request_ids: list[str] | None = No
 def generate_reschedule_proposals(request_ids: list[str] | None = None) -> list[ScheduleAlternative]:
     selected = set(request_ids or [])
     proposals = [alternative for alternative in generate_alternatives(requests_with_movable_schedule(request_ids)) if not alternative.conflicts]
-    if not selected:
-        return proposals
-    return [
+    filtered = proposals if not selected else [
         alternative
         for alternative in proposals
         if selected.issubset({item.request_id for item in alternative.scheduled_work})
     ]
+    if filtered:
+        record_proposal_snapshot(request_ids or [], filtered)
+    return filtered
 
 
 def schedule_changes_for(schedule: list[ScheduledWork]) -> list[ScheduleChange]:
     changes: list[ScheduleChange] = []
-    current_by_request = {item.request_id: item for item in SCHEDULED_WORK.values()}
-    requests_by_id = {request.request_id: request for request in REQUESTS.values()}
+    current_by_request = {item.request_id: item for item in schedule_repository.list()}
+    requests_by_id = {request.request_id: request for request in requests_repository.list()}
 
     for proposed in schedule:
         request = requests_by_id.get(proposed.request_id)
@@ -178,27 +172,30 @@ def schedule_changes_for(schedule: list[ScheduledWork]) -> list[ScheduleChange]:
 
 
 def apply_reschedule(schedule: list[ScheduledWork]) -> None:
-    current_by_request = {item.request_id: item for item in SCHEDULED_WORK.values()}
-    SCHEDULED_WORK.clear()
-    for item in schedule:
-        current = current_by_request.get(item.request_id)
-        unchanged_locked = (
-            current
-            and current.status == ApprovalStatus.LOCKED
-            and current.start_time == item.start_time
-            and current.end_time == item.end_time
-        )
-        status = ApprovalStatus.LOCKED if unchanged_locked else ApprovalStatus.SCHEDULED
-        applied = item.model_copy(update={"status": status})
-        SCHEDULED_WORK[item.request_id] = applied
-
-        request = REQUESTS.get(item.request_id)
-        if request:
-            REQUESTS[item.request_id] = request.model_copy(
-                update={
-                    "approval_status": status,
-                    "locked": status == ApprovalStatus.LOCKED,
-                    "fixed_start": applied.start_time if status == ApprovalStatus.LOCKED else None,
-                    "fixed_end": applied.end_time if status == ApprovalStatus.LOCKED else None,
-                }
+    current_by_request = {item.request_id: item for item in schedule_repository.list()}
+    with unit_of_work() as work:
+        work.schedule.clear()
+        for item in schedule:
+            current = current_by_request.get(item.request_id)
+            unchanged_locked = (
+                current
+                and current.status == ApprovalStatus.LOCKED
+                and current.start_time == item.start_time
+                and current.end_time == item.end_time
             )
+            status = ApprovalStatus.LOCKED if unchanged_locked else ApprovalStatus.SCHEDULED
+            applied = item.model_copy(update={"status": status})
+            work.schedule.save(applied)
+
+            request = work.requests.get(item.request_id)
+            if request:
+                work.requests.save(
+                    request.model_copy(
+                        update={
+                            "approval_status": status,
+                            "locked": status == ApprovalStatus.LOCKED,
+                            "fixed_start": applied.start_time if status == ApprovalStatus.LOCKED else None,
+                            "fixed_end": applied.end_time if status == ApprovalStatus.LOCKED else None,
+                        }
+                    )
+                )

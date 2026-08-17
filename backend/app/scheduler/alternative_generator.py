@@ -4,9 +4,9 @@ from app.conflict.detector import detect_conflicts
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import MaintenanceRequest, ScheduleAlternative, ScheduledWork
 from app.kpi.calculator import calculate_kpis, overtime_minutes
+from app.repositories import schedule_repository
 from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.scheduler.horizon import move_penalty
-from app.storage import SCHEDULED_WORK
 from app.validation.schedule_validator import validate_scheduled_work
 
 MAX_ALTERNATIVES = 3
@@ -81,7 +81,7 @@ def explain_ranked_alternative(alternative: ScheduleAlternative) -> str:
 
 def schedule_churn_penalty(schedule: list[ScheduledWork]) -> int:
     penalty = 0
-    current_by_request = {item.request_id: item for item in SCHEDULED_WORK.values()}
+    current_by_request = {item.request_id: item for item in schedule_repository.list()}
     for item in schedule:
         current = current_by_request.get(item.request_id)
         if not current:
@@ -93,7 +93,7 @@ def schedule_churn_penalty(schedule: list[ScheduledWork]) -> int:
 
 def moved_locked_count(schedule: list[ScheduledWork]) -> int:
     count = 0
-    current_by_request = {item.request_id: item for item in SCHEDULED_WORK.values()}
+    current_by_request = {item.request_id: item for item in schedule_repository.list()}
     for item in schedule:
         current = current_by_request.get(item.request_id)
         if not current:

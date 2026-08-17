@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import MaintenanceRequest, ScheduledWork
+from app.scheduler.time_windows import align_to_engineering_window
 
 
 def optimise_schedule(
@@ -48,6 +49,7 @@ def optimise_schedule(
             for blocker in blockers:
                 if blocker and blocker > start_time:
                     start_time = blocker
+            start_time = align_to_engineering_window(start_time, request.duration_minutes, request.deadline)
             end_time = start_time + timedelta(minutes=request.duration_minutes)
 
         if end_time > request.deadline:

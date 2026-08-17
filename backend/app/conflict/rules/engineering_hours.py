@@ -1,16 +1,14 @@
-from datetime import time
-
 from app.domain.enums import ConflictSeverity, ConflictType
 from app.domain.models import Conflict, ScheduledWork
-
-ENGINEERING_START = time(9, 0)
-ENGINEERING_END = time(18, 0)
+from app.scheduler.time_windows import ENGINEERING_END, ENGINEERING_START, to_planning_time
 
 
 def detect_engineering_hours_conflicts(schedule: list[ScheduledWork]) -> list[Conflict]:
     conflicts: list[Conflict] = []
     for item in schedule:
-        if item.start_time.time() < ENGINEERING_START or item.end_time.time() > ENGINEERING_END:
+        start_time = to_planning_time(item.start_time)
+        end_time = to_planning_time(item.end_time)
+        if start_time.time() < ENGINEERING_START or end_time.time() > ENGINEERING_END:
             conflicts.append(
                 Conflict(
                     conflict_id=f"engineering-hours-{item.request_id}",

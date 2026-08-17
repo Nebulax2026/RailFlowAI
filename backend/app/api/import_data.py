@@ -6,9 +6,10 @@ from pydantic import ValidationError
 from app.adapters.csv_adapter import from_csv, preview_csv
 from app.adapters.json_adapter import from_json_rows
 from app.api.uploads import read_upload_text
+from app.audit import record_audit_event
 from app.domain.models import MaintenanceRequest
+from app.repositories import unit_of_work
 from app.scheduler.service import validate_request_for_queue
-from app.storage import REQUESTS
 
 router = APIRouter()
 
@@ -82,8 +83,16 @@ def _store_import_batch(requests: list[MaintenanceRequest]) -> dict:
     errors = _validate_import_batch(requests)
     if errors:
         raise HTTPException(status_code=422, detail=errors)
-    for request in requests:
-        REQUESTS[request.request_id] = request
+    with unit_of_work() as work:
+        for request in requests:
+            work.requests.save(request)
+            record_audit_event(
+                "request_created",
+                f"Imported request {request.request_id}.",
+                actor=request.created_by,
+                request_ids=[request.request_id],
+                details={"source": request.source.value},
+            )
     return {"imported": len(requests), "request_ids": [request.request_id for request in requests]}
 
 
