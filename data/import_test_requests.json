@@ -1,0 +1,49 @@
+[
+  {
+    "request_id": "M-JSON-201",
+    "title": "Platform equipment inspection",
+    "track_sector": "T11",
+    "work_type": "inspection",
+    "duration_minutes": 45,
+    "earliest_start": "2026-08-16T09:00:00",
+    "deadline": "2026-08-16T11:00:00",
+    "priority": 3,
+    "required_crew": ["MECH2"],
+    "required_equipment": ["DiagnosticKit-1"],
+    "approval_status": "draft",
+    "locked": false,
+    "notes": "Draft JSON request for queue testing"
+  },
+  {
+    "request_id": "M-JSON-202",
+    "title": "Eastbound geometry inspection",
+    "track_sector": "T14",
+    "work_type": "inspection",
+    "duration_minutes": 60,
+    "earliest_start": "2026-08-16T12:00:00",
+    "deadline": "2026-08-16T15:00:00",
+    "priority": 4,
+    "required_crew": ["TG2"],
+    "required_equipment": ["GeometryCar-2"],
+    "approval_status": "draft",
+    "locked": false,
+    "notes": "Second draft JSON request using separate resources"
+  },
+  {
+    "request_id": "M-JSON-203",
+    "title": "Scheduled signal cabinet inspection",
+    "track_sector": "T10",
+    "work_type": "inspection",
+    "duration_minutes": 30,
+    "earliest_start": "2026-08-16T16:00:00",
+    "deadline": "2026-08-16T18:00:00",
+    "priority": 2,
+    "required_crew": ["SIG2"],
+    "required_equipment": ["SignalKit-2"],
+    "approval_status": "scheduled",
+    "locked": false,
+    "fixed_start": "2026-08-16T16:00:00",
+    "fixed_end": "2026-08-16T16:30:00",
+    "notes": "Scheduled JSON request for calendar testing"
+  }
+]

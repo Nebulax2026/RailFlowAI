@@ -7,12 +7,13 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.domain.enums import ApprovalStatus
+from app.domain.enums import ApprovalStatus, RequestSource
 from app.main import app
 from app.storage import REQUESTS, SCHEDULED_WORK
 
 
 client = TestClient(app)
+SAMPLE_REQUESTS_PATH = Path(__file__).resolve().parents[2] / "data" / "sample_requests.csv"
 
 
 def request_payload(
@@ -192,6 +193,104 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(json_response.status_code, 200)
         self.assertIn("M-CSV", REQUESTS)
         self.assertIn("M-JSON", REQUESTS)
+        self.assertEqual(REQUESTS["M-CSV"].source, RequestSource.CSV)
+        self.assertEqual(REQUESTS["M-JSON"].source, RequestSource.JSON)
+
+    def test_sample_csv_preview_and_confirm_use_the_complete_batch(self) -> None:
+        content = SAMPLE_REQUESTS_PATH.read_bytes()
+
+        preview = client.post(
+            "/api/import/preview",
+            files={"file": (SAMPLE_REQUESTS_PATH.name, content, "text/csv")},
+        )
+
+        self.assertEqual(preview.status_code, 200)
+        self.assertTrue(preview.json()["can_import"])
+        self.assertEqual(preview.json()["errors"], [])
+        self.assertEqual(preview.json()["total_rows"], 20)
+        self.assertEqual(REQUESTS, {})
+        self.assertEqual(SCHEDULED_WORK, {})
+
+        confirmed = client.post(
+            "/api/import/confirm",
+            files={"file": (SAMPLE_REQUESTS_PATH.name, content, "text/csv")},
+        )
+
+        self.assertEqual(confirmed.status_code, 200)
+        self.assertEqual(confirmed.json()["imported"], 20)
+        self.assertEqual(confirmed.json()["scheduled_items"], 15)
+        self.assertEqual(len(REQUESTS), 20)
+        self.assertEqual(len(SCHEDULED_WORK), 15)
+        self.assertEqual(SCHEDULED_WORK["M-101"].status, ApprovalStatus.LOCKED)
+        self.assertEqual(SCHEDULED_WORK["M-104"].status, ApprovalStatus.SCHEDULED)
+        self.assertNotIn("M-102", SCHEDULED_WORK)
+
+    def test_json_preview_reports_detected_columns_and_total_rows(self) -> None:
+        rows = [
+            request_payload("M-JSON-1", "2026-08-13T02:00:00", "2026-08-13T03:00:00", track="T10"),
+            request_payload("M-JSON-2", "2026-08-13T03:00:00", "2026-08-13T04:00:00", track="T11"),
+        ]
+
+        preview = client.post(
+            "/api/import/json/preview",
+            files={"file": ("requests.json", json.dumps(rows), "application/json")},
+        )
+
+        self.assertEqual(preview.status_code, 200)
+        self.assertTrue(preview.json()["can_import"])
+        self.assertEqual(preview.json()["total_rows"], 2)
+        self.assertIn("request_id", preview.json()["detected_columns"])
+        self.assertEqual(preview.json()["missing_required_fields"], [])
+        self.assertEqual(REQUESTS, {})
+
+    def test_empty_import_previews_are_blocked(self) -> None:
+        csv_content = "Request ID,Title,Track Sector,Work Type,Duration Minutes,Earliest Start,Deadline,Priority\n"
+
+        csv_preview = client.post(
+            "/api/import/preview",
+            files={"file": ("requests.csv", csv_content, "text/csv")},
+        )
+        json_preview = client.post(
+            "/api/import/json/preview",
+            files={"file": ("requests.json", "[]", "application/json")},
+        )
+
+        self.assertEqual(csv_preview.status_code, 200)
+        self.assertFalse(csv_preview.json()["can_import"])
+        self.assertIn("at least one data row", csv_preview.json()["errors"][0])
+        self.assertEqual(json_preview.status_code, 200)
+        self.assertFalse(json_preview.json()["can_import"])
+        self.assertIn("at least one data row", json_preview.json()["errors"][0])
+
+    def test_import_preview_reports_row_errors_without_storing_requests(self) -> None:
+        csv_content = (
+            "Request ID,Title,Track Sector,Work Type,Duration Minutes,Earliest Start,Deadline,Priority\n"
+            "M-BAD-CSV,Bad CSV job,T09,inspection,not-a-number,2026-08-13T01:00:00,2026-08-13T02:00:00,3\n"
+        )
+        csv_response = client.post(
+            "/api/import/preview",
+            files={"file": ("requests.csv", csv_content, "text/csv")},
+        )
+        json_response = client.post(
+            "/api/import/json/preview",
+            files={
+                "file": (
+                    "requests.json",
+                    json.dumps([request_payload("M-BAD-JSON", "invalid-date", "2026-08-13T03:00:00")]),
+                    "application/json",
+                )
+            },
+        )
+
+        self.assertEqual(csv_response.status_code, 200)
+        self.assertFalse(csv_response.json()["can_import"])
+        self.assertIn("Row 2, duration_minutes", csv_response.json()["errors"][0])
+        self.assertNotIn("M-BAD-CSV", REQUESTS)
+
+        self.assertEqual(json_response.status_code, 200)
+        self.assertFalse(json_response.json()["can_import"])
+        self.assertIn("Row 1, earliest_start", json_response.json()["errors"][0])
+        self.assertNotIn("M-BAD-JSON", REQUESTS)
 
     def test_apply_alternative_requires_schedule_manager(self) -> None:
         client.post(

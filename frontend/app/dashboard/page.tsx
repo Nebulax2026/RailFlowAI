@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, CheckCircle2, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2 } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
+
+import ImportDialog from "./import-dialog";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
@@ -185,6 +187,7 @@ export default function DashboardPage() {
   const [selectedScheduledIds, setSelectedScheduledIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [status, setStatus] = useState("Loading planning board...");
+  const [showImport, setShowImport] = useState(false);
 
   async function loadDashboard() {
     try {
@@ -221,6 +224,11 @@ export default function DashboardPage() {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not load planning board data.");
     }
+  }
+
+  async function refreshAfterImport(message: string) {
+    await loadDashboard();
+    setStatus(message);
   }
 
   async function optimiseSchedule() {
@@ -559,6 +567,10 @@ export default function DashboardPage() {
             <Plus size={18} />
             New Request
           </Link>
+          <button className="button secondary" onClick={() => setShowImport(true)}>
+            <Upload size={18} />
+            Import Data
+          </button>
           <button className="button secondary" onClick={loadDashboard}>
             <RefreshCw size={18} />
             Refresh
@@ -856,6 +868,14 @@ export default function DashboardPage() {
           </div>
         </aside>
       </section>
+
+      {showImport && (
+        <ImportDialog
+          apiBase={API_BASE}
+          onClose={() => setShowImport(false)}
+          onImported={refreshAfterImport}
+        />
+      )}
 
     </main>
   );
