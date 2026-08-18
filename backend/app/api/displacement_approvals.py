@@ -21,13 +21,13 @@ def list_displacement_approvals(
 
 
 @router.post("/{approval_id}/approve", response_model=DisplacementApproval)
-def approve_displacement(approval_id: str, owner: str | None = None) -> DisplacementApproval:
+def approve_displacement(approval_id: str, owner: str) -> DisplacementApproval:
     approval = displacement_approval_repository.get(approval_id)
     if not approval:
         raise HTTPException(status_code=404, detail="Displacement approval not found.")
     if approval.status != DisplacementApprovalStatus.PENDING:
         raise HTTPException(status_code=422, detail="Displacement approval has already been decided.")
-    if owner and owner != approval.owner:
+    if owner != approval.owner:
         raise HTTPException(status_code=403, detail="Only the affected requester can approve this displacement.")
 
     proposed_schedule = [
@@ -78,13 +78,13 @@ def approve_displacement(approval_id: str, owner: str | None = None) -> Displace
 
 
 @router.post("/{approval_id}/reject", response_model=DisplacementApproval)
-def reject_displacement(approval_id: str, owner: str | None = None) -> DisplacementApproval:
+def reject_displacement(approval_id: str, owner: str) -> DisplacementApproval:
     approval = displacement_approval_repository.get(approval_id)
     if not approval:
         raise HTTPException(status_code=404, detail="Displacement approval not found.")
     if approval.status != DisplacementApprovalStatus.PENDING:
         raise HTTPException(status_code=422, detail="Displacement approval has already been decided.")
-    if owner and owner != approval.owner:
+    if owner != approval.owner:
         raise HTTPException(status_code=403, detail="Only the affected requester can reject this displacement.")
     decided = approval.model_copy(update={"status": DisplacementApprovalStatus.REJECTED, "decided_at": datetime.now(timezone.utc)})
     urgent_request = requests_repository.get(approval.urgent_request_id)

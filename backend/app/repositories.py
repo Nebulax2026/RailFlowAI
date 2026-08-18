@@ -1,8 +1,7 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from app.domain.enums import ScheduleOption
-from app.domain.enums import BlockStatus, DisplacementApprovalStatus
+from app.domain.enums import BlockStatus, DisplacementApprovalStatus, ScheduleOption
 from app.domain.models import (
     AuditEvent,
     BlockedTimeSlot,

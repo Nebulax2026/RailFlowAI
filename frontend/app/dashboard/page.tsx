@@ -665,11 +665,11 @@ export default function DashboardPage() {
     }
   }
 
-  async function decideDisplacement(approvalId: string, decision: "approve" | "reject") {
+  async function decideDisplacement(approval: DisplacementApproval, decision: "approve" | "reject") {
     setStatusTone("loading");
     setStatus(`${decision === "approve" ? "Approving" : "Rejecting"} displacement...`);
     try {
-      await fetchJson<DisplacementApproval>(`/api/displacement-approvals/${approvalId}/${decision}?owner=field`, { method: "POST" });
+      await fetchJson<DisplacementApproval>(`/api/displacement-approvals/${approval.approval_id}/${decision}?owner=${encodeURIComponent(approval.owner)}`, { method: "POST" });
       await loadDashboard();
       setStatusTone("success");
       setStatus(`Displacement ${decision === "approve" ? "approved" : "rejected"}.`);
@@ -1009,10 +1009,10 @@ export default function DashboardPage() {
                     {formatDateTime(approval.previous_start)}-{formatDateTime(approval.previous_end)} {"->"}{" "}
                     {formatDateTime(approval.proposed_start)}-{formatDateTime(approval.proposed_end)}
                   </p>
-                  <button className="button secondary" onClick={() => decideDisplacement(approval.approval_id, "approve")}>
+                  <button className="button secondary" onClick={() => decideDisplacement(approval, "approve")}>
                     Approve
                   </button>
-                  <button className="button secondary" onClick={() => decideDisplacement(approval.approval_id, "reject")}>
+                  <button className="button secondary" onClick={() => decideDisplacement(approval, "reject")}>
                     Reject
                   </button>
                 </div>
