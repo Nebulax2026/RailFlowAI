@@ -84,6 +84,28 @@ class ScheduleAlternative(RailFlowModel):
     impact_summary: str | None = None
 
 
+class ProposalSnapshot(RailFlowModel):
+    proposal_id: str
+    request_ids: list[str] = Field(default_factory=list)
+    alternatives: list[ScheduleAlternative] = Field(default_factory=list)
+    status: str = "generated"
+    selected_option: ScheduleOption | None = None
+    created_at: datetime
+    applied_at: datetime | None = None
+    applied_by: str | None = None
+
+
+class AuditEvent(RailFlowModel):
+    event_id: str
+    event_type: str
+    actor: str = "system"
+    request_ids: list[str] = Field(default_factory=list)
+    proposal_id: str | None = None
+    summary: str
+    details: dict = Field(default_factory=dict)
+    created_at: datetime
+
+
 class ScheduleChange(RailFlowModel):
     request_id: str
     owner: str
@@ -110,6 +132,7 @@ class RequestFitResponse(RailFlowModel):
 
 class ProposalRequest(RailFlowModel):
     request_ids: list[str] = Field(default_factory=list)
+    proposal_id: str | None = None
 
 
 class ApproveRequest(RailFlowModel):

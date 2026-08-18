@@ -2,31 +2,44 @@ from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 
 from app.adapters.manual_adapter import from_manual_payload
+from app.audit import record_audit_event
 from app.domain.models import MaintenanceRequest, RequestFitResponse
+from app.repositories import requests_repository, unit_of_work
 from app.scheduler.service import evaluate_fit, validate_request_for_queue
-from app.storage import REQUESTS
 
 router = APIRouter()
 
 
 @router.post("", response_model=RequestFitResponse)
 def create_request(payload: dict) -> RequestFitResponse:
-    request = from_manual_payload(payload)
+    try:
+        request = from_manual_payload(payload)
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail=error.errors()) from error
     errors = validate_request_for_queue(request)
     if errors:
         raise HTTPException(status_code=422, detail=errors)
-    REQUESTS[request.request_id] = request
-    return evaluate_fit(request)
+    with unit_of_work() as work:
+        work.requests.save(request)
+        response = evaluate_fit(request)
+        record_audit_event(
+            "request_created",
+            f"Request {request.request_id} was created.",
+            actor=request.created_by,
+            request_ids=[request.request_id],
+            details={"fits_current_schedule": response.fits_current_schedule},
+        )
+        return response
 
 
 @router.get("", response_model=list[MaintenanceRequest])
 def list_requests() -> list[MaintenanceRequest]:
-    return list(REQUESTS.values())
+    return requests_repository.list()
 
 
 @router.patch("/{request_id}", response_model=MaintenanceRequest)
 def update_request(request_id: str, payload: dict) -> MaintenanceRequest:
-    existing = REQUESTS.get(request_id)
+    existing = requests_repository.get(request_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Request not found.")
     if "request_id" in payload and payload["request_id"] != request_id:
@@ -38,5 +51,13 @@ def update_request(request_id: str, payload: dict) -> MaintenanceRequest:
     errors = validate_request_for_queue(updated)
     if errors:
         raise HTTPException(status_code=422, detail=errors)
-    REQUESTS[request_id] = updated
-    return updated
+    with unit_of_work() as work:
+        saved = work.requests.save(updated)
+        record_audit_event(
+            "request_updated",
+            f"Request {request_id} was updated.",
+            actor=updated.created_by,
+            request_ids=[request_id],
+            details={"changed_fields": sorted(payload.keys())},
+        )
+    return saved

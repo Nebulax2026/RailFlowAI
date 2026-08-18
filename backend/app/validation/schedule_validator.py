@@ -1,9 +1,5 @@
-from datetime import time
-
 from app.domain.models import MaintenanceRequest, ScheduledWork
-
-ENGINEERING_START = time(9, 0)
-ENGINEERING_END = time(18, 0)
+from app.scheduler.time_windows import ENGINEERING_END, ENGINEERING_START
 
 
 def validate_scheduled_work(

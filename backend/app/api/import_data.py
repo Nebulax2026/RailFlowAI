@@ -7,8 +7,10 @@ from app.adapters.csv_adapter import from_csv, preview_csv
 from app.adapters.field_mapping import REQUIRED_FIELDS
 from app.adapters.json_adapter import from_json_rows, preview_json_rows
 from app.api.uploads import read_upload_text
+from app.audit import record_audit_event
 from app.domain.enums import ApprovalStatus
 from app.domain.models import MaintenanceRequest, ScheduledWork
+from app.repositories import unit_of_work
 from app.storage import REQUESTS, SCHEDULED_WORK
 from app.validation.business_validator import validate_business_rules
 from app.validation.dependency_rules import validate_work_type_prerequisites
@@ -96,13 +98,21 @@ def _store_import_batch(requests: list[MaintenanceRequest]) -> dict:
         raise HTTPException(status_code=422, detail=errors)
 
     scheduled_items = 0
-    for request in requests:
-        REQUESTS[request.request_id] = request
-        SCHEDULED_WORK.pop(request.request_id, None)
-        scheduled = _scheduled_item_for_import(request)
-        if scheduled:
-            SCHEDULED_WORK[request.request_id] = scheduled
-            scheduled_items += 1
+    with unit_of_work() as work:
+        for request in requests:
+            work.requests.save(request)
+            work.schedule.delete(request.request_id)
+            scheduled = _scheduled_item_for_import(request)
+            if scheduled:
+                work.schedule.save(scheduled)
+                scheduled_items += 1
+            record_audit_event(
+                "request_created",
+                f"Imported request {request.request_id}.",
+                actor=request.created_by,
+                request_ids=[request.request_id],
+                details={"source": request.source.value},
+            )
     return {
         "imported": len(requests),
         "scheduled_items": scheduled_items,

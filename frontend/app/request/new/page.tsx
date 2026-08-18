@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowLeft, Clock3, MapPin, Send, Settings2, UsersRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const PLANNING_TIME_ZONE = "Asia/Singapore";
 
 type Conflict = {
   conflict_id: string;
@@ -128,8 +129,8 @@ const initialForm: FormState = {
   emergency: false
 };
 
-function toIsoLocal(value: string) {
-  return new Date(value).toISOString();
+function toSingaporeIso(value: string) {
+  return value.length === 16 ? `${value}:00+08:00` : `${value}+08:00`;
 }
 
 function workLabel(value: string) {
@@ -138,6 +139,7 @@ function workLabel(value: string) {
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("en", {
+    timeZone: PLANNING_TIME_ZONE,
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -147,6 +149,19 @@ function formatDateTime(value: string) {
 
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+}
+
+async function readResponsePayload(response: Response) {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
 }
 
 export default function NewRequestPage() {
@@ -187,8 +202,8 @@ export default function NewRequestPage() {
           track_sector: form.trackSector,
           work_type: form.emergency ? "emergency" : form.workType,
           duration_minutes: Number(form.durationMinutes),
-          earliest_start: toIsoLocal(form.earliestStart),
-          deadline: toIsoLocal(form.deadline),
+          earliest_start: toSingaporeIso(form.earliestStart),
+          deadline: toSingaporeIso(form.deadline),
           priority: form.emergency ? 5 : Number(form.priority),
           required_crew: form.requiredCrew,
           required_equipment: form.requiredEquipment,
@@ -197,11 +212,11 @@ export default function NewRequestPage() {
         })
       });
 
-      const payload = await response.json();
+      const payload = await readResponsePayload(response);
       if (!response.ok) {
-        const detail = Array.isArray(payload.detail)
+        const detail = Array.isArray(payload?.detail)
           ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
-          : payload.detail;
+          : payload?.detail;
         throw new Error(detail || "Request could not be submitted.");
       }
 
@@ -209,8 +224,8 @@ export default function NewRequestPage() {
       setStatus("success");
       setMessage(
         payload.fits_current_schedule
-          ? "Request placed into a tentative slot."
-          : "Request needs manager review because fitting it requires schedule changes."
+          ? "Request queued. Run Generate Schedule on the dashboard to place it on the calendar."
+          : "Request queued with conflicts. Review proposals or run Generate Schedule from the dashboard."
       );
     } catch (error) {
       setStatus("error");
@@ -410,14 +425,9 @@ export default function NewRequestPage() {
                 <strong>{result.fits_current_schedule ? "Fits Current Schedule" : "Needs Decision Review"}</strong>
                 <p>
                   {result.fits_current_schedule
-                    ? "No active conflict is reported for this requested slot."
-                    : "The requested slot has a conflict. A manager can apply the proposed reschedule from the Planning Board."}
+                    ? "No active conflict is reported, but scheduling is applied only after Generate Schedule."
+                    : "The requested window has a conflict. A manager can review proposals from the Planning Board."}
                 </p>
-                {result.scheduled_work && (
-                  <p>
-                    Your proposed slot: {formatDateTime(result.scheduled_work.start_time)}-{formatDateTime(result.scheduled_work.end_time)}
-                  </p>
-                )}
               </div>
             )}
             {result && result.requires_manager_review && result.affected_changes.length > 0 && (

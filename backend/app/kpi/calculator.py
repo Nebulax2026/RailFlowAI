@@ -1,22 +1,32 @@
 from datetime import datetime
 
 from app.domain.models import Conflict, KpiSnapshot, MaintenanceRequest, ScheduledWork
-from app.validation.schedule_validator import ENGINEERING_END, ENGINEERING_START
+from app.scheduler.time_windows import ENGINEERING_END, ENGINEERING_START, to_planning_time
 
 
 def overtime_minutes(item: ScheduledWork) -> int:
-    standard_start = datetime.combine(item.start_time.date(), ENGINEERING_START)
-    standard_end = datetime.combine(item.start_time.date(), ENGINEERING_END)
-    before_start = max(0, int((min(item.end_time, standard_start) - item.start_time).total_seconds() / 60))
-    after_end = max(0, int((item.end_time - max(item.start_time, standard_end)).total_seconds() / 60))
+    start_time = to_planning_time(item.start_time)
+    end_time = to_planning_time(item.end_time)
+    standard_start = datetime.combine(start_time.date(), ENGINEERING_START)
+    standard_end = datetime.combine(start_time.date(), ENGINEERING_END)
+    if start_time.tzinfo is not None:
+        standard_start = standard_start.replace(tzinfo=start_time.tzinfo)
+        standard_end = standard_end.replace(tzinfo=start_time.tzinfo)
+    before_start = max(0, int((min(end_time, standard_start) - start_time).total_seconds() / 60))
+    after_end = max(0, int((end_time - max(start_time, standard_end)).total_seconds() / 60))
     return before_start + after_end
 
 
 def standard_window_minutes_used(item: ScheduledWork) -> int:
-    standard_start = datetime.combine(item.start_time.date(), ENGINEERING_START)
-    standard_end = datetime.combine(item.start_time.date(), ENGINEERING_END)
-    overlap_start = max(item.start_time, standard_start)
-    overlap_end = min(item.end_time, standard_end)
+    start_time = to_planning_time(item.start_time)
+    end_time = to_planning_time(item.end_time)
+    standard_start = datetime.combine(start_time.date(), ENGINEERING_START)
+    standard_end = datetime.combine(start_time.date(), ENGINEERING_END)
+    if start_time.tzinfo is not None:
+        standard_start = standard_start.replace(tzinfo=start_time.tzinfo)
+        standard_end = standard_end.replace(tzinfo=start_time.tzinfo)
+    overlap_start = max(start_time, standard_start)
+    overlap_end = min(end_time, standard_end)
     return max(0, int((overlap_end - overlap_start).total_seconds() / 60))
 
 
@@ -29,7 +39,7 @@ def calculate_kpis(
     scheduled_ids = {item.request_id for item in scheduled_work}
     changed_count = sum(1 for item in scheduled_work if item.changed_from_original)
     total = max(len(requests), 1)
-    scheduled_dates = {item.start_time.date() for item in scheduled_work}
+    scheduled_dates = {to_planning_time(item.start_time).date() for item in scheduled_work}
     standard_minutes = (
         int(
             (

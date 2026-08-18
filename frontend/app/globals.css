@@ -330,11 +330,30 @@ textarea:focus-visible {
   gap: 8px;
   margin: 18px clamp(16px, 3vw, 28px) 0;
   padding: 11px 14px;
+  overflow-wrap: anywhere;
 }
 
 .status-strip svg {
-  color: var(--success);
   flex: 0 0 auto;
+}
+
+.status-strip.success svg {
+  color: var(--success);
+}
+
+.status-strip.loading svg,
+.status-strip.info svg {
+  color: var(--accent);
+}
+
+.status-strip.error {
+  background: var(--danger-soft);
+  border-color: rgba(189, 49, 49, 0.28);
+  color: var(--danger);
+}
+
+.status-strip.error svg {
+  color: var(--danger);
 }
 
 .page-intro {
@@ -617,6 +636,10 @@ textarea:focus-visible {
   font-size: 11px;
   line-height: 1.2;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-event strong {
@@ -745,6 +768,7 @@ textarea:focus-visible {
 .request-item strong {
   display: block;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .request-item span {
@@ -753,6 +777,7 @@ textarea:focus-visible {
   font-size: 13px;
   line-height: 1.45;
   margin-top: 4px;
+  overflow-wrap: anywhere;
 }
 
 .badge {
@@ -994,6 +1019,33 @@ textarea:focus-visible {
 
 .selected-list strong {
   font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.selected-list p,
+.review-block p,
+.selection-summary p,
+.alternative span,
+.alternative strong {
+  overflow-wrap: anywhere;
+}
+
+.skeleton-line {
+  animation: pulse 1.2s ease-in-out infinite;
+  background: linear-gradient(90deg, #edf2f6, #f8fbfd, #edf2f6);
+  background-size: 220% 100%;
+  border-radius: 8px;
+  display: block;
+  height: 14px;
+  width: 100%;
+}
+
+.skeleton-line.short {
+  width: 42%;
+}
+
+.skeleton-line.tall {
+  height: 76px;
 }
 
 .modal-backdrop {
@@ -1399,6 +1451,15 @@ textarea:focus-visible {
   }
 }
 
+@keyframes pulse {
+  0% {
+    background-position: 220% 0;
+  }
+  100% {
+    background-position: -220% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1442,6 +1503,7 @@ textarea:focus-visible {
 
   .nav a,
   .nav button,
+  .button,
   .hero-actions a,
   .role-select {
     flex: 1 1 100%;
@@ -1473,6 +1535,11 @@ textarea:focus-visible {
   .day-cell {
     min-height: 48px;
     padding: 7px;
+  }
+
+  .day-calendar {
+    grid-template-columns: 54px minmax(520px, 1fr);
+    grid-template-rows: 40px minmax(480px, 64vh);
   }
 
   .today-item {

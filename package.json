@@ -1,0 +1,10 @@
+{
+  "name": "railflow-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:backend": "py -m uvicorn app.main:app --reload --app-dir backend",
+    "dev:frontend": "npm.cmd run dev --prefix frontend"
+  }
+}
