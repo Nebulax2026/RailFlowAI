@@ -980,6 +980,52 @@ textarea:focus-visible {
   padding: 12px;
 }
 
+.compact-form {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.compact-form.vertical {
+  align-items: stretch;
+  display: grid;
+}
+
+.compact-form input,
+.compact-form select {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.inline-action {
+  background: transparent;
+  border: 0;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  margin-left: 8px;
+  padding: 0;
+}
+
+.inline-action:disabled {
+  color: var(--subtle);
+  cursor: not-allowed;
+}
+
+.approval-row {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+}
+
 .selection-summary h3 {
   font-size: 16px;
   line-height: 1.35;

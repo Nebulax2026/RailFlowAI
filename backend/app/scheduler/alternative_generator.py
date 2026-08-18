@@ -4,9 +4,10 @@ from app.conflict.detector import detect_conflicts
 from app.domain.enums import ApprovalStatus, ScheduleOption
 from app.domain.models import MaintenanceRequest, ScheduleAlternative, ScheduledWork
 from app.kpi.calculator import calculate_kpis, overtime_minutes
-from app.repositories import schedule_repository
+from app.repositories import blocked_time_slot_repository, schedule_repository
 from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.scheduler.horizon import move_penalty
+from app.scheduler.policy import work_overlaps_any_block
 from app.validation.schedule_validator import validate_scheduled_work
 
 MAX_ALTERNATIVES = 3
@@ -103,6 +104,11 @@ def moved_locked_count(schedule: list[ScheduledWork]) -> int:
     return count
 
 
+def has_blocked_slot_overlap(schedule: list[ScheduledWork]) -> bool:
+    active_blocks = blocked_time_slot_repository.list(active_only=True)
+    return any(work_overlaps_any_block(item, active_blocks) for item in schedule)
+
+
 def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAlternative]:
     candidates: list[ScheduleAlternative] = []
     seen: set[tuple[tuple[str, str, str], ...]] = set()
@@ -117,7 +123,7 @@ def generate_alternatives(requests: list[MaintenanceRequest]) -> list[ScheduleAl
 
     for option in candidate_options:
         scheduled = requested_slot_schedule(requests) if option == ScheduleOption.REQUESTED_SLOT else optimise_schedule(requests, option)
-        if len(scheduled) != len(requests) or validate_scheduled_work(scheduled, requests):
+        if len(scheduled) != len(requests) or validate_scheduled_work(scheduled, requests) or has_blocked_slot_overlap(scheduled):
             continue
 
         signature = schedule_signature(scheduled)

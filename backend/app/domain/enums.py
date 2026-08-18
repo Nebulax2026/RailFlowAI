@@ -17,6 +17,17 @@ class ApprovalStatus(StrEnum):
     CONFLICT = "conflict"
 
 
+class BlockStatus(StrEnum):
+    ACTIVE = "active"
+    CANCELLED = "cancelled"
+
+
+class DisplacementApprovalStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
 class ConflictType(StrEnum):
     TRACK = "track"
     CREW = "crew"

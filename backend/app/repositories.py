@@ -2,8 +2,28 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 from app.domain.enums import ScheduleOption
-from app.domain.models import AuditEvent, MaintenanceRequest, ProposalSnapshot, ScheduledWork
-from app.storage import AUDIT_EVENTS, PROPOSAL_SNAPSHOTS, REQUESTS, SCHEDULED_WORK, persistence_transaction
+from app.domain.enums import BlockStatus, DisplacementApprovalStatus
+from app.domain.models import (
+    AuditEvent,
+    BlockedTimeSlot,
+    DisplacementApproval,
+    MaintenanceRequest,
+    Notification,
+    ProposalSnapshot,
+    ScheduledWork,
+    SchedulingSettings,
+)
+from app.storage import (
+    AUDIT_EVENTS,
+    BLOCKED_TIME_SLOTS,
+    DISPLACEMENT_APPROVALS,
+    NOTIFICATIONS,
+    PROPOSAL_SNAPSHOTS,
+    REQUESTS,
+    SCHEDULED_WORK,
+    SETTINGS,
+    persistence_transaction,
+)
 
 
 class RequestRepository:
@@ -95,12 +115,100 @@ class AuditEventRepository:
         AUDIT_EVENTS.clear()
 
 
+class SchedulingSettingsRepository:
+    key = "scheduling"
+
+    def get(self) -> SchedulingSettings:
+        settings = SETTINGS.get(self.key)
+        if settings:
+            return settings
+        settings = SchedulingSettings()
+        SETTINGS[self.key] = settings
+        return settings
+
+    def save(self, settings: SchedulingSettings) -> SchedulingSettings:
+        SETTINGS[self.key] = settings
+        return settings
+
+    def clear(self) -> None:
+        SETTINGS.clear()
+
+
+class BlockedTimeSlotRepository:
+    def list(self, active_only: bool = False) -> list[BlockedTimeSlot]:
+        slots = BLOCKED_TIME_SLOTS.values()
+        if active_only:
+            slots = [slot for slot in slots if slot.status == BlockStatus.ACTIVE]
+        return sorted(slots, key=lambda item: item.start_time)
+
+    def get(self, block_id: str) -> BlockedTimeSlot | None:
+        return BLOCKED_TIME_SLOTS.get(block_id)
+
+    def save(self, slot: BlockedTimeSlot) -> BlockedTimeSlot:
+        BLOCKED_TIME_SLOTS[slot.block_id] = slot
+        return slot
+
+    def delete(self, block_id: str) -> BlockedTimeSlot | None:
+        return BLOCKED_TIME_SLOTS.pop(block_id, None)
+
+    def clear(self) -> None:
+        BLOCKED_TIME_SLOTS.clear()
+
+
+class NotificationRepository:
+    def list(self, owner: str | None = None, unread_only: bool = False) -> list[Notification]:
+        notifications = NOTIFICATIONS.values()
+        if owner:
+            notifications = [notification for notification in notifications if notification.owner == owner]
+        if unread_only:
+            notifications = [notification for notification in notifications if not notification.read]
+        return sorted(notifications, key=lambda item: item.created_at, reverse=True)
+
+    def get(self, notification_id: str) -> Notification | None:
+        return NOTIFICATIONS.get(notification_id)
+
+    def save(self, notification: Notification) -> Notification:
+        NOTIFICATIONS[notification.notification_id] = notification
+        return notification
+
+    def clear(self) -> None:
+        NOTIFICATIONS.clear()
+
+
+class DisplacementApprovalRepository:
+    def list(
+        self,
+        owner: str | None = None,
+        status: DisplacementApprovalStatus | None = None,
+    ) -> list[DisplacementApproval]:
+        approvals = DISPLACEMENT_APPROVALS.values()
+        if owner:
+            approvals = [approval for approval in approvals if approval.owner == owner]
+        if status:
+            approvals = [approval for approval in approvals if approval.status == status]
+        return sorted(approvals, key=lambda item: item.created_at, reverse=True)
+
+    def get(self, approval_id: str) -> DisplacementApproval | None:
+        return DISPLACEMENT_APPROVALS.get(approval_id)
+
+    def save(self, approval: DisplacementApproval) -> DisplacementApproval:
+        DISPLACEMENT_APPROVALS[approval.approval_id] = approval
+        return approval
+
+    def clear(self) -> None:
+        DISPLACEMENT_APPROVALS.clear()
+
+
 class RailFlowUnitOfWork:
     def __init__(self) -> None:
         self.requests = RequestRepository()
         self.schedule = ScheduleRepository()
         self.proposals = ProposalSnapshotRepository()
         self.audit = AuditEventRepository()
+        self.settings = SchedulingSettingsRepository()
+        self.blocked_slots = BlockedTimeSlotRepository()
+        self.notifications = NotificationRepository()
+        self.displacement_approvals = DisplacementApprovalRepository()
 
     def __enter__(self) -> "RailFlowUnitOfWork":
         self._transaction = persistence_transaction()
@@ -115,6 +223,10 @@ requests_repository = RequestRepository()
 schedule_repository = ScheduleRepository()
 proposal_snapshot_repository = ProposalSnapshotRepository()
 audit_event_repository = AuditEventRepository()
+scheduling_settings_repository = SchedulingSettingsRepository()
+blocked_time_slot_repository = BlockedTimeSlotRepository()
+notification_repository = NotificationRepository()
+displacement_approval_repository = DisplacementApprovalRepository()
 
 
 @contextmanager

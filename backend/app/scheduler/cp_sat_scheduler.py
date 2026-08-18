@@ -1,17 +1,23 @@
 from datetime import datetime, timedelta
 
 from app.domain.enums import ApprovalStatus, ScheduleOption
-from app.domain.models import MaintenanceRequest, ScheduledWork
+from app.domain.models import BlockedTimeSlot, MaintenanceRequest, ScheduledWork
+from app.repositories import blocked_time_slot_repository, scheduling_settings_repository
+from app.scheduler.policy import is_planning_eligible, overlaps, work_overlaps_any_block
 from app.scheduler.time_windows import align_to_engineering_window
 
 
 def optimise_schedule(
     requests: list[MaintenanceRequest],
     option: ScheduleOption = ScheduleOption.MINIMUM_DISRUPTION,
+    blocked_slots: list[BlockedTimeSlot] | None = None,
 ) -> list[ScheduledWork]:
     # This greedy baseline preserves the API contract while CP-SAT constraints are expanded.
     if option == ScheduleOption.REQUESTED_SLOT:
         option = ScheduleOption.MINIMUM_DISRUPTION
+    settings = scheduling_settings_repository.get()
+    active_blocks = blocked_slots if blocked_slots is not None else blocked_time_slot_repository.list(active_only=True)
+    requests = [request for request in requests if request.locked or is_planning_eligible(request, settings)]
 
     locked_requests = sorted(
         [item for item in requests if item.locked and item.fixed_start and item.fixed_end],
@@ -51,6 +57,26 @@ def optimise_schedule(
                     start_time = blocker
             start_time = align_to_engineering_window(start_time, request.duration_minutes, request.deadline)
             end_time = start_time + timedelta(minutes=request.duration_minutes)
+            while work_overlaps_any_block(
+                ScheduledWork(
+                    schedule_id="block-probe",
+                    request_id=request.request_id,
+                    start_time=start_time,
+                    end_time=end_time,
+                    assigned_crew=request.required_crew,
+                    assigned_equipment=request.required_equipment,
+                    track_sector=request.track_sector,
+                ),
+                active_blocks,
+            ):
+                overlapping_blocks = [
+                    block
+                    for block in active_blocks
+                    if request.track_sector in block.track_sectors and overlaps(block.start_time, block.end_time, start_time, end_time)
+                ]
+                start_time = max(block.end_time for block in overlapping_blocks)
+                start_time = align_to_engineering_window(start_time, request.duration_minutes, request.deadline)
+                end_time = start_time + timedelta(minutes=request.duration_minutes)
 
         if end_time > request.deadline:
             continue

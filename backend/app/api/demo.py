@@ -21,6 +21,9 @@ def seed_demo_data() -> dict:
         work.schedule.clear()
         work.proposals.clear()
         work.audit.clear()
+        work.blocked_slots.clear()
+        work.notifications.clear()
+        work.displacement_approvals.clear()
 
         for request in requests:
             work.requests.save(request)
@@ -65,6 +68,9 @@ def reset_demo_data() -> dict:
         work.schedule.clear()
         work.proposals.clear()
         work.audit.clear()
+        work.blocked_slots.clear()
+        work.notifications.clear()
+        work.displacement_approvals.clear()
         record_audit_event(
             "demo_reset",
             "Demo state was reset.",

@@ -1,14 +1,26 @@
+from datetime import datetime, timezone
+from uuid import uuid4
+
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 
 from app.api.auth import require_schedule_manager
 from app.audit import record_audit_event
 from app.conflict.detector import detect_conflicts
-from app.domain.enums import ApprovalStatus, ScheduleOption
-from app.domain.models import ApproveRequest, ProposalRequest, ProposalSnapshot, ScheduleAlternative, ScheduledWork
+from app.domain.enums import ApprovalStatus, BlockStatus, ScheduleOption
+from app.domain.models import ApproveRequest, BlockedTimeSlot, ProposalRequest, ProposalSnapshot, ScheduleAlternative, ScheduledWork
 from app.proposals import mark_proposal_applied
-from app.repositories import proposal_snapshot_repository, requests_repository, schedule_repository, unit_of_work
-from app.scheduler.service import apply_alternative, apply_schedule, build_optimised_schedule, generate_reschedule_proposals, requests_with_locked_schedule
+from app.repositories import blocked_time_slot_repository, proposal_snapshot_repository, requests_repository, schedule_repository, unit_of_work
+from app.scheduler.policy import block_overlaps_work
+from app.scheduler.service import (
+    apply_alternative,
+    apply_schedule,
+    build_optimised_schedule,
+    create_notification,
+    generate_reschedule_proposals,
+    requests_with_locked_schedule,
+    validate_schedule_against_blocks,
+)
 from app.validation.schedule_validator import validate_scheduled_work
 
 router = APIRouter()
@@ -27,6 +39,70 @@ SCHEDULE_MODIFY_FIELDS = {
 @router.get("", response_model=list[ScheduledWork])
 def active_schedule() -> list[ScheduledWork]:
     return schedule_repository.list()
+
+
+@router.get("/blocks", response_model=list[BlockedTimeSlot])
+def blocked_slots(active_only: bool = False) -> list[BlockedTimeSlot]:
+    return blocked_time_slot_repository.list(active_only=active_only)
+
+
+@router.post("/blocks", response_model=BlockedTimeSlot)
+def create_blocked_slot(payload: dict, role: str = "requester") -> BlockedTimeSlot:
+    require_schedule_manager(role, "block schedule time")
+    try:
+        blocked_slot = BlockedTimeSlot.model_validate(
+            {
+                **payload,
+                "block_id": payload.get("block_id") or f"block-{uuid4().hex}",
+                "created_by": role,
+                "status": BlockStatus.ACTIVE,
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail=error.errors()) from error
+    if blocked_slot.end_time <= blocked_slot.start_time:
+        raise HTTPException(status_code=422, detail=["Blocked slot end time must be after start time."])
+
+    affected = [item for item in schedule_repository.list() if block_overlaps_work(blocked_slot, item)]
+    with unit_of_work() as work:
+        saved = work.blocked_slots.save(blocked_slot)
+        for item in affected:
+            request = work.requests.get(item.request_id)
+            owner = request.created_by if request else "field"
+            create_notification(
+                owner=owner,
+                message=f"{item.request_id} overlaps manager blocked slot {saved.block_id} and needs schedule review.",
+                notification_type="blocked_slot_overlap",
+                request_ids=[item.request_id],
+                block_id=saved.block_id,
+            )
+        record_audit_event(
+            "blocked_slot_created",
+            f"Blocked {len(saved.track_sectors)} track sector{'' if len(saved.track_sectors) == 1 else 's'} for scheduling.",
+            actor=role,
+            request_ids=[item.request_id for item in affected],
+            details={"block_id": saved.block_id, "affected_items": len(affected)},
+        )
+    return saved
+
+
+@router.delete("/blocks/{block_id}", response_model=BlockedTimeSlot)
+def cancel_blocked_slot(block_id: str, role: str = "requester") -> BlockedTimeSlot:
+    require_schedule_manager(role, "cancel blocked schedule time")
+    blocked_slot = blocked_time_slot_repository.get(block_id)
+    if not blocked_slot:
+        raise HTTPException(status_code=404, detail="Blocked slot not found.")
+    cancelled = blocked_slot.model_copy(update={"status": BlockStatus.CANCELLED})
+    with unit_of_work() as work:
+        saved = work.blocked_slots.save(cancelled)
+        record_audit_event(
+            "blocked_slot_cancelled",
+            f"Blocked slot {block_id} was cancelled.",
+            actor=role,
+            details={"block_id": block_id},
+        )
+    return saved
 
 
 @router.post("/optimise", response_model=list[ScheduledWork])
@@ -75,6 +151,7 @@ def approve_schedule(role: str = "requester") -> dict:
     requests = requests_with_locked_schedule()
     schedule = schedule_repository.list()
     errors = validate_scheduled_work(schedule, requests)
+    errors.extend(validate_schedule_against_blocks(schedule))
     if errors:
         raise HTTPException(status_code=422, detail=errors)
     conflicts = detect_conflicts(schedule, requests)
@@ -123,6 +200,7 @@ def approve_selected(payload: ApproveRequest, role: str = "requester") -> dict:
     requests = requests_with_locked_schedule()
     schedule = schedule_repository.list()
     errors = validate_scheduled_work(schedule, requests)
+    errors.extend(validate_schedule_against_blocks(schedule))
     if errors:
         raise HTTPException(status_code=422, detail=errors)
     conflicts = detect_conflicts(schedule, requests)
@@ -252,6 +330,7 @@ def modify_scheduled_work(request_id: str, payload: dict, role: str = "requester
     proposed = [updated if item.request_id == request_id else item for item in schedule_repository.list()]
     requests = requests_with_locked_schedule()
     errors = validate_scheduled_work(proposed, requests)
+    errors.extend(validate_schedule_against_blocks(proposed))
     conflicts = detect_conflicts(proposed, requests)
     if errors or conflicts:
         raise HTTPException(status_code=422, detail=errors or [conflict.explanation for conflict in conflicts])

@@ -3,6 +3,7 @@ from pydantic import ValidationError
 
 from app.adapters.manual_adapter import from_manual_payload
 from app.audit import record_audit_event
+from app.domain.enums import ApprovalStatus
 from app.domain.models import MaintenanceRequest, RequestFitResponse
 from app.repositories import requests_repository, unit_of_work
 from app.scheduler.service import evaluate_fit, validate_request_for_queue
@@ -22,6 +23,18 @@ def create_request(payload: dict) -> RequestFitResponse:
     with unit_of_work() as work:
         work.requests.save(request)
         response = evaluate_fit(request)
+        if response.fits_current_schedule and response.scheduled_work:
+            scheduled_request = request.model_copy(
+                update={
+                    "approval_status": ApprovalStatus.SCHEDULED,
+                    "locked": False,
+                    "fixed_start": None,
+                    "fixed_end": None,
+                }
+            )
+            work.schedule.save(response.scheduled_work)
+            work.requests.save(scheduled_request)
+            response = response.model_copy(update={"request": scheduled_request})
         record_audit_event(
             "request_created",
             f"Request {request.request_id} was created.",
