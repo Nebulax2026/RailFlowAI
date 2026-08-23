@@ -155,6 +155,30 @@ textarea:focus-visible {
   opacity: 0.45;
 }
 
+.icon-button {
+  align-items: center;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--bg-soft);
+  border-color: var(--line-strong);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .role-select {
   background: white;
   border: 1px solid var(--line);
@@ -1024,6 +1048,309 @@ textarea:focus-visible {
   height: 76px;
 }
 
+.modal-backdrop {
+  align-items: center;
+  background: rgba(20, 32, 51, 0.58);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 100;
+}
+
+.import-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 26px 70px rgba(20, 32, 51, 0.3);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-height: min(880px, calc(100vh - 40px));
+  max-width: 980px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.import-dialog-header {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 20px 22px;
+}
+
+.import-dialog-header h2 {
+  font-size: 22px;
+  margin: 5px 0 7px;
+}
+
+.import-dialog-header p {
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.import-dialog-body {
+  display: grid;
+  gap: 16px;
+  overflow: auto;
+  padding: 20px 22px;
+}
+
+.file-drop {
+  align-items: center;
+  background: var(--bg-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: center;
+  min-height: 150px;
+  padding: 20px;
+  text-align: center;
+}
+
+.file-drop:hover,
+.file-drop.has-file {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.file-drop svg {
+  color: var(--accent);
+}
+
+.file-drop strong {
+  color: var(--ink);
+}
+
+.file-drop span {
+  font-size: 13px;
+}
+
+.file-drop input {
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
+.file-drop:has(input:focus-visible) {
+  outline: 3px solid rgba(15, 127, 147, 0.26);
+  outline-offset: 2px;
+}
+
+.import-notice {
+  align-items: flex-start;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  line-height: 1.45;
+  padding: 12px;
+}
+
+.import-notice svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.import-notice.error {
+  background: var(--danger-soft);
+  border-color: rgba(189, 49, 49, 0.22);
+  color: var(--danger);
+}
+
+.import-notice.success {
+  background: var(--success-soft);
+  border-color: rgba(40, 120, 79, 0.22);
+  color: var(--success);
+}
+
+.import-notice p {
+  margin: 4px 0 0;
+}
+
+.import-notice ul {
+  margin: 5px 0 0;
+  padding-left: 20px;
+}
+
+.import-preview,
+.import-section {
+  display: grid;
+  gap: 12px;
+}
+
+.import-preview {
+  gap: 18px;
+}
+
+.import-summary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.import-summary div {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.import-summary div.ready {
+  background: var(--success-soft);
+  border-color: rgba(40, 120, 79, 0.22);
+}
+
+.import-summary div.blocked {
+  background: var(--danger-soft);
+  border-color: rgba(189, 49, 49, 0.22);
+}
+
+.import-summary span,
+.import-summary strong {
+  display: block;
+}
+
+.import-summary span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.import-summary strong {
+  margin-top: 5px;
+}
+
+.import-section {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.import-section-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.import-section-heading h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.import-section-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.column-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.column-chips span {
+  background: var(--accent-soft);
+  border: 1px solid rgba(15, 127, 147, 0.22);
+  border-radius: 999px;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 8px;
+}
+
+.mapping-grid {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mapping-grid div {
+  align-items: center;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.mapping-grid span,
+.mapping-grid strong {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mapping-grid span {
+  color: var(--muted);
+}
+
+.mapping-grid strong {
+  color: var(--accent-dark);
+  text-align: right;
+}
+
+.mapping-grid strong::before {
+  color: var(--subtle);
+  content: "→ ";
+}
+
+.import-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.import-table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 100%;
+  white-space: nowrap;
+}
+
+.import-table th,
+.import-table td {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  max-width: 240px;
+  overflow: hidden;
+  padding: 9px 10px;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.import-table th {
+  background: var(--bg-soft);
+  color: var(--muted);
+  font-weight: 800;
+  position: sticky;
+  top: 0;
+}
+
+.import-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.import-dialog-actions {
+  background: var(--bg-soft);
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 22px;
+}
+
 .proposal-list {
   background: var(--bg-soft);
   border: 1px solid var(--line);
@@ -1218,6 +1545,27 @@ textarea:focus-visible {
   .today-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .modal-backdrop {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .import-dialog {
+    border: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .import-summary,
+  .mapping-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .import-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 

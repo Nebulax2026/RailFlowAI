@@ -1,6 +1,8 @@
 import csv
 from io import StringIO
 
+from pydantic import ValidationError
+
 from app.adapters.field_mapping import DEFAULT_FIELD_MAPPING, REQUIRED_FIELDS
 from app.adapters.normalizers import parse_bool, parse_list
 from app.domain.enums import RequestSource
@@ -10,6 +12,7 @@ from app.domain.models import MaintenanceRequest
 def preview_csv(content: str) -> dict:
     reader = csv.DictReader(StringIO(content))
     detected_columns = reader.fieldnames or []
+    rows = list(reader)
     suggested_mapping = {
         column: DEFAULT_FIELD_MAPPING[column]
         for column in detected_columns
@@ -17,13 +20,25 @@ def preview_csv(content: str) -> dict:
     }
     mapped_fields = set(suggested_mapping.values())
     missing_required_fields = sorted(REQUIRED_FIELDS - mapped_fields)
+    errors: list[str] = []
+
+    if not rows:
+        errors.append("Import file must include at least one data row.")
+    elif not missing_required_fields:
+        for row_number, row in enumerate(rows, start=2):
+            try:
+                MaintenanceRequest.model_validate(_normalise_row(row, DEFAULT_FIELD_MAPPING))
+            except ValidationError as error:
+                errors.extend(_format_row_errors(row_number, error))
 
     return {
         "detected_columns": detected_columns,
         "suggested_mapping": suggested_mapping,
         "missing_required_fields": missing_required_fields,
-        "sample_rows": list(reader)[:5],
-        "can_import": not missing_required_fields,
+        "errors": errors,
+        "sample_rows": rows[:5],
+        "total_rows": len(rows),
+        "can_import": not missing_required_fields and not errors,
     }
 
 
@@ -33,20 +48,29 @@ def from_csv(content: str, field_mapping: dict[str, str] | None = None) -> list[
     requests: list[MaintenanceRequest] = []
 
     for row in rows:
-        normalized: dict = {"source": RequestSource.CSV}
-        for external_key, value in row.items():
-            internal_key = mapping.get(external_key)
-            if not internal_key:
-                continue
-            if value == "":
-                continue
-            if internal_key in {"required_crew", "required_equipment", "dependencies", "incompatible_work_types"}:
-                normalized[internal_key] = parse_list(value)
-            elif internal_key == "locked":
-                normalized[internal_key] = parse_bool(value)
-            else:
-                normalized[internal_key] = value
-
-        requests.append(MaintenanceRequest.model_validate(normalized))
+        requests.append(MaintenanceRequest.model_validate(_normalise_row(row, mapping)))
 
     return requests
+
+
+def _normalise_row(row: dict[str, str], mapping: dict[str, str]) -> dict:
+    normalized: dict = {"source": RequestSource.CSV}
+    for external_key, value in row.items():
+        internal_key = mapping.get(external_key)
+        if not internal_key or value == "":
+            continue
+        if internal_key in {"required_crew", "required_equipment", "dependencies", "incompatible_work_types"}:
+            normalized[internal_key] = parse_list(value)
+        elif internal_key == "locked":
+            normalized[internal_key] = parse_bool(value)
+        else:
+            normalized[internal_key] = value
+    return normalized
+
+
+def _format_row_errors(row_number: int, error: ValidationError) -> list[str]:
+    messages: list[str] = []
+    for item in error.errors():
+        field = ".".join(str(part) for part in item["loc"])
+        messages.append(f"Row {row_number}, {field}: {item['msg']}")
+    return messages
