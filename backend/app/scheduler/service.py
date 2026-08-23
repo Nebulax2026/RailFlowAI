@@ -1,13 +1,23 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 from app.conflict.detector import detect_conflicts
-from app.domain.enums import ApprovalStatus, ScheduleOption
-from app.domain.models import Conflict, MaintenanceRequest, RequestFitResponse, ScheduleAlternative, ScheduleChange, ScheduledWork
+from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, DisplacementApprovalStatus, ScheduleOption
+from app.domain.models import Conflict, DisplacementApproval, MaintenanceRequest, Notification, RequestFitResponse, ScheduleAlternative, ScheduleChange, ScheduledWork
 from app.proposals import record_proposal_snapshot
-from app.repositories import requests_repository, schedule_repository, unit_of_work
+from app.repositories import (
+    blocked_time_slot_repository,
+    displacement_approval_repository,
+    notification_repository,
+    requests_repository,
+    schedule_repository,
+    scheduling_settings_repository,
+    unit_of_work,
+)
 from app.scheduler.alternative_generator import generate_alternatives, requested_slot_schedule
 from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.scheduler.horizon import classify_horizon, move_penalty
+from app.scheduler.policy import block_overlaps_work, is_planning_eligible, is_urgent
 from app.scheduler.time_windows import align_to_engineering_window
 from app.validation.business_validator import validate_business_rules
 from app.validation.dependency_rules import validate_work_type_prerequisites
@@ -23,8 +33,11 @@ def validate_request_for_queue(request: MaintenanceRequest) -> list[str]:
 
 
 def requests_with_locked_schedule() -> list[MaintenanceRequest]:
+    settings = scheduling_settings_repository.get()
     prepared: list[MaintenanceRequest] = []
     for request in requests_repository.list():
+        if not request.locked and not is_planning_eligible(request, settings):
+            continue
         scheduled = schedule_repository.get(request.request_id)
         if scheduled and scheduled.status == ApprovalStatus.LOCKED:
             prepared.append(
@@ -43,12 +56,14 @@ def requests_with_locked_schedule() -> list[MaintenanceRequest]:
 
 
 def requests_with_movable_schedule(request_ids: list[str] | None = None) -> list[MaintenanceRequest]:
+    settings = scheduling_settings_repository.get()
     selected = set(request_ids or [])
     scheduled_ids = {item.request_id for item in schedule_repository.list()}
     requests = [
         request
         for request in requests_repository.list()
-        if not selected or request.request_id in selected or request.request_id in scheduled_ids or request.approval_status != ApprovalStatus.DRAFT
+        if (not selected or request.request_id in selected or request.request_id in scheduled_ids or request.approval_status != ApprovalStatus.DRAFT)
+        and (request.request_id in selected or request.locked or is_planning_eligible(request, settings))
     ]
     ordered_requests = sorted(
         requests,
@@ -75,20 +90,145 @@ def requested_item_for(request: MaintenanceRequest) -> ScheduledWork:
     )
 
 
+def blocked_slot_conflicts(item: ScheduledWork) -> list[Conflict]:
+    conflicts: list[Conflict] = []
+    for block in blocked_time_slot_repository.list(active_only=True):
+        if not block_overlaps_work(block, item):
+            continue
+        conflicts.append(
+            Conflict(
+                conflict_id=f"conflict-block-{block.block_id}-{item.request_id}",
+                type=ConflictType.TRACK,
+                severity=ConflictSeverity.HIGH,
+                request_ids=[item.request_id],
+                resource=", ".join(block.track_sectors),
+                time_overlap=(item.start_time, item.end_time),
+                explanation=(
+                    f"{item.request_id} overlaps manager blocked track time {block.block_id} "
+                    f"for {', '.join(block.track_sectors)}."
+                ),
+                suggested_action="Choose a proposal outside the blocked window or ask a Schedule Manager to revise the block.",
+            )
+        )
+    return conflicts
+
+
+def validate_schedule_against_blocks(schedule: list[ScheduledWork]) -> list[str]:
+    errors: list[str] = []
+    for item in schedule:
+        for block in blocked_time_slot_repository.list(active_only=True):
+            if block_overlaps_work(block, item):
+                errors.append(f"{item.request_id} overlaps blocked slot {block.block_id}.")
+    return errors
+
+
+def create_notification(
+    owner: str,
+    message: str,
+    notification_type: str,
+    request_ids: list[str] | None = None,
+    block_id: str | None = None,
+    approval_id: str | None = None,
+) -> Notification:
+    notification = Notification(
+        notification_id=f"notice-{uuid4().hex}",
+        owner=owner,
+        type=notification_type,
+        message=message,
+        request_ids=request_ids or [],
+        block_id=block_id,
+        approval_id=approval_id,
+        created_at=datetime.now(timezone.utc),
+    )
+    return notification_repository.save(notification)
+
+
+def create_displacement_approval_if_needed(request: MaintenanceRequest, alternatives: list[ScheduleAlternative]) -> None:
+    settings = scheduling_settings_repository.get()
+    if not is_urgent(request, settings):
+        return
+    current_by_request = {item.request_id: item for item in schedule_repository.list()}
+    requests_by_id = {item.request_id: item for item in requests_repository.list()}
+    for alternative in alternatives:
+        urgent_work = next((item for item in alternative.scheduled_work if item.request_id == request.request_id), None)
+        if not urgent_work:
+            continue
+        for proposed in alternative.scheduled_work:
+            current = current_by_request.get(proposed.request_id)
+            if not current or proposed.request_id == request.request_id:
+                continue
+            if current.start_time == proposed.start_time and current.end_time == proposed.end_time:
+                continue
+            displaced_request = requests_by_id.get(proposed.request_id)
+            owner = displaced_request.created_by if displaced_request else "field"
+            existing = [
+                approval
+                for approval in displacement_approval_repository.list(status=DisplacementApprovalStatus.PENDING)
+                if approval.urgent_request_id == request.request_id and approval.displaced_request_id == proposed.request_id
+            ]
+            if existing:
+                return
+            approval = displacement_approval_repository.save(
+                DisplacementApproval(
+                    approval_id=f"approval-{uuid4().hex}",
+                    urgent_request_id=request.request_id,
+                    displaced_request_id=proposed.request_id,
+                    owner=owner,
+                    previous_start=current.start_time,
+                    previous_end=current.end_time,
+                    proposed_start=proposed.start_time,
+                    proposed_end=proposed.end_time,
+                    urgent_work=urgent_work,
+                    displaced_work=proposed,
+                    created_at=datetime.now(timezone.utc),
+                )
+            )
+            create_notification(
+                owner=owner,
+                message=(
+                    f"Urgent request {request.request_id} needs your slot. "
+                    f"Approve moving {proposed.request_id} to the proposed later window."
+                ),
+                notification_type="displacement_approval_requested",
+                request_ids=[request.request_id, proposed.request_id],
+                approval_id=approval.approval_id,
+            )
+            create_notification(
+                owner=request.created_by,
+                message=(
+                    f"No suitable slot is free for urgent request {request.request_id}. "
+                    f"Approval has been requested to move {proposed.request_id}."
+                ),
+                notification_type="urgent_displacement_pending",
+                request_ids=[request.request_id, proposed.request_id],
+                approval_id=approval.approval_id,
+            )
+            return
+
+
 def evaluate_fit(request: MaintenanceRequest) -> RequestFitResponse:
+    settings = scheduling_settings_repository.get()
+    if not is_planning_eligible(request, settings):
+        return RequestFitResponse(
+            request=request,
+            fits_current_schedule=True,
+            conflicts=[],
+        )
     requested_item = requested_item_for(request)
     candidate = [*schedule_repository.list(), requested_item]
-    conflicts = detect_conflicts(candidate, requests_repository.list())
+    conflicts = [*detect_conflicts(candidate, requests_repository.list()), *blocked_slot_conflicts(requested_item)]
     fits = not conflicts
     if fits:
         return RequestFitResponse(
             request=request,
             fits_current_schedule=True,
             conflicts=[],
+            scheduled_work=requested_item,
         )
 
     alternatives = generate_reschedule_proposals()
     selected = alternatives[0] if alternatives else None
+    create_displacement_approval_if_needed(request, alternatives)
     return RequestFitResponse(
         request=request,
         fits_current_schedule=False,
@@ -104,6 +244,7 @@ def build_optimised_schedule(option: ScheduleOption) -> tuple[list[ScheduledWork
     requests = requests_with_locked_schedule()
     scheduled = optimise_schedule(requests, option)
     errors = validate_scheduled_work(scheduled, requests)
+    errors.extend(validate_schedule_against_blocks(scheduled))
     if len(scheduled) != len(requests):
         scheduled_ids = {item.request_id for item in scheduled}
         missing = [request.request_id for request in requests if request.request_id not in scheduled_ids]
@@ -121,6 +262,7 @@ def apply_alternative(option: ScheduleOption, request_ids: list[str] | None = No
     requests = requests_with_movable_schedule(request_ids)
     schedule = requested_slot_schedule(requests) if option == ScheduleOption.REQUESTED_SLOT else optimise_schedule(requests, option)
     errors = validate_scheduled_work(schedule, requests)
+    errors.extend(validate_schedule_against_blocks(schedule))
     conflicts = detect_conflicts(schedule, requests)
     if errors or conflicts:
         return schedule, errors, conflicts

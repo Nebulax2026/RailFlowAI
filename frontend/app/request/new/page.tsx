@@ -72,7 +72,6 @@ type FormState = {
   requiredCrew: string[];
   requiredEquipment: string[];
   notes: string;
-  emergency: boolean;
 };
 
 type Catalog = {
@@ -125,8 +124,7 @@ const initialForm: FormState = {
   durationMinutes: "60",
   requiredCrew: [],
   requiredEquipment: [],
-  notes: "",
-  emergency: false
+  notes: ""
 };
 
 function toSingaporeIso(value: string) {
@@ -200,15 +198,14 @@ export default function NewRequestPage() {
           request_id: `M-${Date.now().toString().slice(-6)}`,
           title: form.title,
           track_sector: form.trackSector,
-          work_type: form.emergency ? "emergency" : form.workType,
+          work_type: form.workType,
           duration_minutes: Number(form.durationMinutes),
           earliest_start: toSingaporeIso(form.earliestStart),
           deadline: toSingaporeIso(form.deadline),
-          priority: form.emergency ? 5 : Number(form.priority),
+          priority: Number(form.priority),
           required_crew: form.requiredCrew,
           required_equipment: form.requiredEquipment,
-          notes: form.notes || null,
-          source: form.emergency ? "emergency" : "manual"
+          notes: form.notes || null
         })
       });
 
@@ -223,8 +220,10 @@ export default function NewRequestPage() {
       setResult(payload);
       setStatus("success");
       setMessage(
-        payload.fits_current_schedule
-          ? "Request queued. Run Generate Schedule on the dashboard to place it on the calendar."
+        payload.fits_current_schedule && payload.scheduled_work
+          ? "Request placed tentatively on the calendar. A Schedule Manager can approve it from the dashboard."
+          : payload.fits_current_schedule
+            ? "Request queued. It will enter scheduling when it is inside the configured planning window."
           : "Request queued with conflicts. Review proposals or run Generate Schedule from the dashboard."
       );
     } catch (error) {
@@ -250,7 +249,7 @@ export default function NewRequestPage() {
         <form className="panel form" onSubmit={submitRequest}>
           <div className="panel-header">
             <span>Maintenance Request</span>
-            <small>{form.emergency ? "emergency priority" : "standard intake"}</small>
+            <small>standard intake</small>
           </div>
           <div className="panel-body form">
             <section className="form-section">
@@ -300,7 +299,6 @@ export default function NewRequestPage() {
                     id="priority"
                     value={form.priority}
                     onChange={(event) => setForm({ ...form, priority: event.target.value })}
-                    disabled={form.emergency}
                   >
                     {catalog.priorities
                       .slice()
@@ -397,14 +395,6 @@ export default function NewRequestPage() {
                 <MapPin size={18} />
                 Notes and status
               </div>
-            <label className="check-row">
-              <input
-                checked={form.emergency}
-                type="checkbox"
-                onChange={(event) => setForm({ ...form, emergency: event.target.checked })}
-              />
-              Mark as emergency
-            </label>
             <div className="field">
               <label htmlFor="notes">Notes</label>
               <textarea
@@ -424,8 +414,10 @@ export default function NewRequestPage() {
               <div className="result-list">
                 <strong>{result.fits_current_schedule ? "Fits Current Schedule" : "Needs Decision Review"}</strong>
                 <p>
-                  {result.fits_current_schedule
-                    ? "No active conflict is reported, but scheduling is applied only after Generate Schedule."
+                  {result.fits_current_schedule && result.scheduled_work
+                    ? "No active conflict is reported, and the work is tentatively placed pending Schedule Manager approval."
+                    : result.fits_current_schedule
+                      ? "No active conflict is reported, but this request is outside the current planning window."
                     : "The requested window has a conflict. A manager can review proposals from the Planning Board."}
                 </p>
               </div>

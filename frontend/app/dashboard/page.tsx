@@ -77,6 +77,46 @@ type Alternative = {
   impact_summary?: string | null;
 };
 
+type SchedulingSettings = {
+  urgent_lead_days: number;
+};
+
+type BlockedTimeSlot = {
+  block_id: string;
+  track_sectors: string[];
+  start_time: string;
+  end_time: string;
+  reason: string;
+  created_by: string;
+  status: string;
+  created_at: string;
+};
+
+type Notification = {
+  notification_id: string;
+  owner: string;
+  type: string;
+  message: string;
+  request_ids: string[];
+  block_id?: string | null;
+  approval_id?: string | null;
+  read: boolean;
+  created_at: string;
+};
+
+type DisplacementApproval = {
+  approval_id: string;
+  urgent_request_id: string;
+  displaced_request_id: string;
+  owner: string;
+  previous_start: string;
+  previous_end: string;
+  proposed_start: string;
+  proposed_end: string;
+  status: string;
+  created_at: string;
+};
+
 type Role = "requester" | "schedule_manager";
 type StatusTone = "loading" | "success" | "error" | "info";
 
@@ -269,6 +309,15 @@ export default function DashboardPage() {
   const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([]);
   const [selectedScheduledIds, setSelectedScheduledIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [settings, setSettings] = useState<SchedulingSettings>({ urgent_lead_days: 3 });
+  const [urgentLeadDaysInput, setUrgentLeadDaysInput] = useState("3");
+  const [blockedSlots, setBlockedSlots] = useState<BlockedTimeSlot[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [displacementApprovals, setDisplacementApprovals] = useState<DisplacementApproval[]>([]);
+  const [blockTrack, setBlockTrack] = useState(fallbackTracks[0]);
+  const [blockStart, setBlockStart] = useState("");
+  const [blockEnd, setBlockEnd] = useState("");
+  const [blockReason, setBlockReason] = useState("");
   const [status, setStatus] = useState("Loading planning board...");
   const [showImport, setShowImport] = useState(false);
   const [statusTone, setStatusTone] = useState<StatusTone>("loading");
@@ -279,17 +328,26 @@ export default function DashboardPage() {
     setStatusTone("loading");
     setStatus("Loading planning board...");
     try {
-      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis] = await Promise.all([
+      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis, loadedSettings, loadedBlocks, loadedNotifications, loadedApprovals] = await Promise.all([
         fetchJson<MaintenanceRequest[]>("/api/requests"),
         fetchJson<ScheduledWork[]>("/api/schedule"),
         fetchJson<Conflict[]>("/api/conflicts/detect", { method: "POST" }),
-        fetchJson<Kpis>("/api/kpis")
+        fetchJson<Kpis>("/api/kpis"),
+        fetchJson<SchedulingSettings>("/api/settings/scheduling"),
+        fetchJson<BlockedTimeSlot[]>("/api/schedule/blocks?active_only=true"),
+        fetchJson<Notification[]>("/api/notifications"),
+        fetchJson<DisplacementApproval[]>("/api/displacement-approvals?status=pending")
       ]);
 
       setRequests(loadedRequests);
       setSchedule(loadedSchedule);
       setConflicts(loadedConflicts);
       setKpis(loadedKpis);
+      setSettings(loadedSettings);
+      setUrgentLeadDaysInput(String(loadedSettings.urgent_lead_days));
+      setBlockedSlots(loadedBlocks);
+      setNotifications(loadedNotifications);
+      setDisplacementApprovals(loadedApprovals);
       const scheduledIds = new Set(loadedSchedule.map((item) => item.request_id));
       const pendingRequests = loadedRequests.filter(
         (request) => request.approval_status === "draft" && !request.locked && !scheduledIds.has(request.request_id)
@@ -548,6 +606,88 @@ export default function DashboardPage() {
     }
   }
 
+  async function updateUrgentLeadDays() {
+    const nextValue = Number(urgentLeadDaysInput);
+    if (!Number.isInteger(nextValue) || nextValue < 1) {
+      setStatus("Urgent lead days must be a positive whole number.");
+      setStatusTone("info");
+      return;
+    }
+    setStatusTone("loading");
+    setStatus("Updating scheduling settings...");
+    try {
+      const payload = await fetchJson<SchedulingSettings>(`/api/settings/scheduling?role=${role}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urgent_lead_days: nextValue })
+      });
+      setSettings(payload);
+      setUrgentLeadDaysInput(String(payload.urgent_lead_days));
+      setStatusTone("success");
+      setStatus(`Urgent lead window set to ${payload.urgent_lead_days} day${payload.urgent_lead_days === 1 ? "" : "s"}.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Scheduling settings could not be updated.");
+    }
+  }
+
+  async function createBlockedSlot() {
+    if (!blockStart || !blockEnd || !blockReason.trim()) {
+      setStatus("Choose a start, end, and reason before blocking track time.");
+      setStatusTone("info");
+      return;
+    }
+    setStatusTone("loading");
+    setStatus(`Blocking ${blockTrack}...`);
+    try {
+      await fetchJson<BlockedTimeSlot>(`/api/schedule/blocks?role=${role}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          track_sectors: [blockTrack],
+          start_time: new Date(blockStart).toISOString(),
+          end_time: new Date(blockEnd).toISOString(),
+          reason: blockReason.trim()
+        })
+      });
+      setBlockReason("");
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`${blockTrack} blocked for manager review.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Blocked slot could not be created.");
+    }
+  }
+
+  async function cancelBlockedSlot(blockId: string) {
+    setStatusTone("loading");
+    setStatus(`Cancelling ${blockId}...`);
+    try {
+      await fetchJson<BlockedTimeSlot>(`/api/schedule/blocks/${blockId}?role=${role}`, { method: "DELETE" });
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`${blockId} cancelled.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Blocked slot could not be cancelled.");
+    }
+  }
+
+  async function decideDisplacement(approval: DisplacementApproval, decision: "approve" | "reject") {
+    setStatusTone("loading");
+    setStatus(`${decision === "approve" ? "Approving" : "Rejecting"} displacement...`);
+    try {
+      await fetchJson<DisplacementApproval>(`/api/displacement-approvals/${approval.approval_id}/${decision}?owner=${encodeURIComponent(approval.owner)}`, { method: "POST" });
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`Displacement ${decision === "approve" ? "approved" : "rejected"}.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Displacement decision could not be saved.");
+    }
+  }
+
   useEffect(() => {
     void loadDashboard();
   }, []);
@@ -590,6 +730,10 @@ export default function DashboardPage() {
   const selectedScheduledItems = schedule.filter((item) => selectedScheduledIds.includes(item.request_id));
   const selectedTentativeCount = selectedScheduledItems.filter((item) => !isLockedStatus(item.status)).length;
   const selectedLockedCount = selectedScheduledItems.filter((item) => isLockedStatus(item.status)).length;
+  const urgencyCutoff = Date.now() + settings.urgent_lead_days * 24 * 60 * 60 * 1000;
+  const urgentRequestIds = new Set(
+    requests.filter((request) => new Date(request.deadline).getTime() <= urgencyCutoff).map((request) => request.request_id)
+  );
 
   function dayItems(day: Date) {
     return visibleSchedule.filter((item) => sameDay(new Date(item.start_time), day));
@@ -782,6 +926,7 @@ export default function DashboardPage() {
                 </span>
                 <span>{formatDateTime(request.earliest_start)}-{formatDateTime(request.deadline)}</span>
                 <span className="badge neutral">Pending</span>
+                {urgentRequestIds.has(request.request_id) && <span className="badge warning">Urgent</span>}
                 {request.dependencies.length > 0 && (
                   <span className="dependency-line">
                     <GitBranch size={14} />
@@ -806,6 +951,86 @@ export default function DashboardPage() {
                 <strong>{workLabel(rule.work)}</strong>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <span>Manager Controls</span>
+            <small>{settings.urgent_lead_days} day urgent window</small>
+          </div>
+          <div className="panel-body decision-stack">
+            <div className="review-block">
+              <span className="eyebrow">Urgency</span>
+              <div className="compact-form">
+                <input
+                  min="1"
+                  type="number"
+                  value={urgentLeadDaysInput}
+                  onChange={(event) => setUrgentLeadDaysInput(event.target.value)}
+                  aria-label="Urgent lead days"
+                />
+                <button className="button secondary" disabled={role !== "schedule_manager"} onClick={updateUrgentLeadDays}>
+                  Save
+                </button>
+              </div>
+            </div>
+            <div className="review-block">
+              <span className="eyebrow">Block Track Time</span>
+              <div className="compact-form vertical">
+                <select value={blockTrack} onChange={(event) => setBlockTrack(event.target.value)}>
+                  {dayTracks.map((track) => (
+                    <option key={track} value={track}>{track}</option>
+                  ))}
+                </select>
+                <input type="datetime-local" value={blockStart} onChange={(event) => setBlockStart(event.target.value)} aria-label="Block start" />
+                <input type="datetime-local" value={blockEnd} onChange={(event) => setBlockEnd(event.target.value)} aria-label="Block end" />
+                <input value={blockReason} onChange={(event) => setBlockReason(event.target.value)} placeholder="Reason" />
+                <button className="button secondary" disabled={role !== "schedule_manager"} onClick={createBlockedSlot}>
+                  Block Slot
+                </button>
+              </div>
+            </div>
+            <div className="review-block">
+              <span className="eyebrow">Active Blocks</span>
+              {blockedSlots.length === 0 && <p>No active manager blocks.</p>}
+              {blockedSlots.map((slot) => (
+                <p key={slot.block_id}>
+                  {slot.track_sectors.join(", ")} / {formatDateTime(slot.start_time)}-{formatDateTime(slot.end_time)}
+                  <button className="inline-action" disabled={role !== "schedule_manager"} onClick={() => cancelBlockedSlot(slot.block_id)}>
+                    Cancel
+                  </button>
+                </p>
+              ))}
+            </div>
+            <div className="review-block">
+              <span className="eyebrow">In-App Alerts</span>
+              {notifications.length === 0 && <p>No alerts yet.</p>}
+              {notifications.slice(0, 4).map((notification) => (
+                <p key={notification.notification_id}>
+                  {notification.read ? "" : "[new] "}{notification.message}
+                </p>
+              ))}
+            </div>
+            <div className="review-block">
+              <span className="eyebrow">Displacement Approvals</span>
+              {displacementApprovals.length === 0 && <p>No pending displacement approvals.</p>}
+              {displacementApprovals.map((approval) => (
+                <div className="approval-row" key={approval.approval_id}>
+                  <p>
+                    {approval.urgent_request_id} needs {approval.displaced_request_id}:{" "}
+                    {formatDateTime(approval.previous_start)}-{formatDateTime(approval.previous_end)} {"->"}{" "}
+                    {formatDateTime(approval.proposed_start)}-{formatDateTime(approval.proposed_end)}
+                  </p>
+                  <button className="button secondary" onClick={() => decideDisplacement(approval, "approve")}>
+                    Approve
+                  </button>
+                  <button className="button secondary" onClick={() => decideDisplacement(approval, "reject")}>
+                    Reject
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

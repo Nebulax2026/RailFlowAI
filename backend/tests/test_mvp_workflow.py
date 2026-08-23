@@ -1,7 +1,9 @@
 import json
 import sys
 import unittest
+from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -11,7 +13,16 @@ from app.domain.enums import ApprovalStatus, RequestSource
 from app.domain.models import MaintenanceRequest
 from app.main import app
 from app.repositories import unit_of_work
-from app.storage import AUDIT_EVENTS, PROPOSAL_SNAPSHOTS, REQUESTS, SCHEDULED_WORK
+from app.storage import (
+    AUDIT_EVENTS,
+    BLOCKED_TIME_SLOTS,
+    DISPLACEMENT_APPROVALS,
+    NOTIFICATIONS,
+    PROPOSAL_SNAPSHOTS,
+    REQUESTS,
+    SCHEDULED_WORK,
+    SETTINGS,
+)
 
 
 client = TestClient(app)
@@ -48,6 +59,10 @@ class MvpWorkflowTest(unittest.TestCase):
         SCHEDULED_WORK.clear()
         PROPOSAL_SNAPSHOTS.clear()
         AUDIT_EVENTS.clear()
+        SETTINGS.clear()
+        BLOCKED_TIME_SLOTS.clear()
+        NOTIFICATIONS.clear()
+        DISPLACEMENT_APPROVALS.clear()
 
     def test_valid_request_fit_without_active_conflicts(self) -> None:
         response = client.post(
@@ -59,10 +74,10 @@ class MvpWorkflowTest(unittest.TestCase):
         body = response.json()
         self.assertTrue(body["fits_current_schedule"])
         self.assertEqual(body["conflicts"], [])
-        self.assertIsNone(body["scheduled_work"])
+        self.assertEqual(body["scheduled_work"]["request_id"], "M-001")
         self.assertFalse(body["requires_manager_review"])
-        self.assertNotIn("M-001", SCHEDULED_WORK)
-        self.assertEqual(REQUESTS["M-001"].approval_status, ApprovalStatus.DRAFT)
+        self.assertIn("M-001", SCHEDULED_WORK)
+        self.assertEqual(REQUESTS["M-001"].approval_status, ApprovalStatus.SCHEDULED)
 
         scheduled = client.post("/api/schedule/optimise?option=minimum_disruption")
 
@@ -551,6 +566,97 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertIn("proposal_applied", event_types)
         self.assertIn("schedule_approved", event_types)
         self.assertTrue(all("M-002" in event["request_ids"] for event in request_events.json()))
+
+    def test_scheduling_settings_default_and_manager_update(self) -> None:
+        default_settings = client.get("/api/settings/scheduling")
+        denied = client.patch("/api/settings/scheduling?role=requester", json={"urgent_lead_days": 5})
+        updated = client.patch("/api/settings/scheduling?role=schedule_manager", json={"urgent_lead_days": 5})
+
+        self.assertEqual(default_settings.status_code, 200)
+        self.assertEqual(default_settings.json()["urgent_lead_days"], 3)
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.json()["urgent_lead_days"], 5)
+
+    def test_rolling_planning_window_keeps_future_request_queued_until_lead_window(self) -> None:
+        with (
+            patch("app.scheduler.service.is_planning_eligible", return_value=False),
+            patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=False),
+        ):
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-FUTURE", "2026-08-31T09:00:00", "2026-08-31T12:00:00"),
+            )
+            scheduled_too_early = client.post("/api/schedule/optimise?option=minimum_disruption")
+
+        self.assertEqual(created.status_code, 200)
+        self.assertIsNone(created.json()["scheduled_work"])
+        self.assertNotIn("M-FUTURE", SCHEDULED_WORK)
+        self.assertEqual(scheduled_too_early.status_code, 200)
+        self.assertNotIn("M-FUTURE", SCHEDULED_WORK)
+
+        with (
+            patch("app.scheduler.service.is_planning_eligible", return_value=True),
+            patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True),
+        ):
+            scheduled_in_window = client.post("/api/schedule/optimise?option=minimum_disruption")
+
+        self.assertEqual(scheduled_in_window.status_code, 200)
+        self.assertIn("M-FUTURE", SCHEDULED_WORK)
+        self.assertGreaterEqual(SCHEDULED_WORK["M-FUTURE"].start_time, REQUESTS["M-FUTURE"].earliest_start)
+
+    def test_manager_block_prevents_track_schedule_and_notifies_overlap_owner(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T12:00:00", track="T08"),
+        )
+
+        block = client.post(
+            "/api/schedule/blocks?role=schedule_manager",
+            json={
+                "track_sectors": ["T08"],
+                "start_time": "2026-08-13T10:00:00",
+                "end_time": "2026-08-13T11:00:00",
+                "reason": "Manager possession block",
+            },
+        )
+        scheduled = client.post("/api/schedule/optimise?option=minimum_disruption")
+        notifications = client.get("/api/notifications?owner=field")
+
+        self.assertEqual(block.status_code, 200)
+        self.assertEqual(scheduled.status_code, 200)
+        self.assertGreaterEqual(SCHEDULED_WORK["M-001"].start_time, datetime(2026, 8, 13, 11, 0, 0))
+        self.assertEqual(notifications.status_code, 200)
+        self.assertTrue(any("blocked slot" in item["message"] for item in notifications.json()))
+
+    def test_urgent_displacement_requires_requester_approval_before_schedule_changes(self) -> None:
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 12, 0, 0, 0)):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T12:00:00", crew=["E1"]),
+            )
+            original_start = SCHEDULED_WORK["M-001"].start_time
+            response = client.post(
+                "/api/requests",
+                json=request_payload("M-002", "2026-08-13T10:00:00", "2026-08-13T10:30:00", crew=["E1"], priority=5),
+            )
+
+        approvals = client.get("/api/displacement-approvals?owner=field&status=pending")
+        approval_id = approvals.json()[0]["approval_id"]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["fits_current_schedule"])
+        self.assertEqual(SCHEDULED_WORK["M-001"].start_time, original_start)
+        self.assertEqual(approvals.status_code, 200)
+        self.assertGreaterEqual(len(approvals.json()), 1)
+        missing_owner = client.post(f"/api/displacement-approvals/{approval_id}/approve")
+        wrong_owner = client.post(f"/api/displacement-approvals/{approval_id}/approve?owner=other")
+        approved = client.post(f"/api/displacement-approvals/{approval_id}/approve?owner=field")
+        self.assertEqual(missing_owner.status_code, 422)
+        self.assertEqual(wrong_owner.status_code, 403)
+        self.assertEqual(approved.status_code, 200)
+        self.assertIn("M-002", SCHEDULED_WORK)
+        self.assertGreaterEqual(SCHEDULED_WORK["M-001"].start_time, SCHEDULED_WORK["M-002"].end_time)
 
 
 if __name__ == "__main__":

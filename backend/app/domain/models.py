@@ -2,7 +2,16 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, RequestSource, ScheduleHorizon, ScheduleOption
+from app.domain.enums import (
+    ApprovalStatus,
+    BlockStatus,
+    ConflictSeverity,
+    ConflictType,
+    DisplacementApprovalStatus,
+    RequestSource,
+    ScheduleHorizon,
+    ScheduleOption,
+)
 
 
 class RailFlowModel(BaseModel):
@@ -43,6 +52,50 @@ class ScheduledWork(RailFlowModel):
     status: ApprovalStatus = ApprovalStatus.SCHEDULED
     changed_from_original: bool = False
     change_reason: str | None = None
+
+
+class SchedulingSettings(RailFlowModel):
+    urgent_lead_days: int = Field(default=3, ge=1, le=30)
+
+
+class BlockedTimeSlot(RailFlowModel):
+    block_id: str
+    track_sectors: list[str] = Field(min_length=1)
+    start_time: datetime
+    end_time: datetime
+    reason: str
+    created_by: str = "schedule_manager"
+    status: BlockStatus = BlockStatus.ACTIVE
+    created_at: datetime
+
+
+class Notification(RailFlowModel):
+    notification_id: str
+    owner: str
+    type: str
+    message: str
+    request_ids: list[str] = Field(default_factory=list)
+    block_id: str | None = None
+    proposal_id: str | None = None
+    approval_id: str | None = None
+    read: bool = False
+    created_at: datetime
+
+
+class DisplacementApproval(RailFlowModel):
+    approval_id: str
+    urgent_request_id: str
+    displaced_request_id: str
+    owner: str
+    previous_start: datetime
+    previous_end: datetime
+    proposed_start: datetime
+    proposed_end: datetime
+    urgent_work: ScheduledWork
+    displaced_work: ScheduledWork
+    status: DisplacementApprovalStatus = DisplacementApprovalStatus.PENDING
+    created_at: datetime
+    decided_at: datetime | None = None
 
 
 class Conflict(RailFlowModel):
