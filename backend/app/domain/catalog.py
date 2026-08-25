@@ -31,7 +31,7 @@ EQUIPMENT = [
 
 PRIORITIES = [1, 2, 3, 4, 5]
 
-USER_ROLES = ["requester", "schedule_manager"]
+USER_ROLES = ["requester", "approver", "schedule_manager"]
 
 
 def catalog_response() -> dict[str, list[str] | list[int]]:

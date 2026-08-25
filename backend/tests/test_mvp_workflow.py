@@ -9,10 +9,11 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.domain.enums import ApprovalStatus, RequestSource
+from app.domain.enums import ApprovalStatus, RequestSource, ScheduleOption
 from app.domain.models import MaintenanceRequest
 from app.main import app
 from app.repositories import unit_of_work
+from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.storage import (
     AUDIT_EVENTS,
     BLOCKED_TIME_SLOTS,
@@ -249,6 +250,28 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(SCHEDULED_WORK["M-101"].status, ApprovalStatus.LOCKED)
         self.assertEqual(SCHEDULED_WORK["M-104"].status, ApprovalStatus.SCHEDULED)
         self.assertNotIn("M-102", SCHEDULED_WORK)
+
+    def test_csv_import_accepts_common_header_and_value_whitespace(self) -> None:
+        csv_content = (
+            "\ufeff request id , title , track sector , work type , duration minutes , earliest start , deadline , priority , required crew \n"
+            " M-CSV-SPACED , Spaced CSV job , T09 , inspection , 30 , 2026-08-13T01:00:00 , 2026-08-13T02:00:00 , 3 , MECH1 \n"
+        )
+
+        preview = client.post(
+            "/api/import/preview",
+            files={"file": ("requests.csv", csv_content, "text/csv")},
+        )
+        confirmed = client.post(
+            "/api/import/confirm",
+            files={"file": ("requests.csv", csv_content, "text/csv")},
+        )
+
+        self.assertEqual(preview.status_code, 200)
+        self.assertTrue(preview.json()["can_import"])
+        self.assertEqual(preview.json()["errors"], [])
+        self.assertEqual(confirmed.status_code, 200)
+        self.assertIn("M-CSV-SPACED", REQUESTS)
+        self.assertEqual(REQUESTS["M-CSV-SPACED"].required_crew, ["MECH1"])
 
     def test_json_preview_reports_detected_columns_and_total_rows(self) -> None:
         rows = [
@@ -578,6 +601,13 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(updated.status_code, 200)
         self.assertEqual(updated.json()["urgent_lead_days"], 5)
 
+    def test_catalog_exposes_requester_and_approver_roles(self) -> None:
+        response = client.get("/api/catalog")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("requester", response.json()["user_roles"])
+        self.assertIn("approver", response.json()["user_roles"])
+
     def test_rolling_planning_window_keeps_future_request_queued_until_lead_window(self) -> None:
         with (
             patch("app.scheduler.service.is_planning_eligible", return_value=False),
@@ -629,12 +659,13 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(notifications.status_code, 200)
         self.assertTrue(any("blocked slot" in item["message"] for item in notifications.json()))
 
-    def test_urgent_displacement_requires_requester_approval_before_schedule_changes(self) -> None:
-        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 12, 0, 0, 0)):
+    def test_urgent_conflict_waits_for_approver_before_schedule_changes(self) -> None:
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 10, 0, 0, 0)):
             client.post(
                 "/api/requests",
                 json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T12:00:00", crew=["E1"]),
             )
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 12, 0, 0, 0)):
             original_start = SCHEDULED_WORK["M-001"].start_time
             response = client.post(
                 "/api/requests",
@@ -642,21 +673,272 @@ class MvpWorkflowTest(unittest.TestCase):
             )
 
         approvals = client.get("/api/displacement-approvals?owner=field&status=pending")
-        approval_id = approvals.json()[0]["approval_id"]
+        notifications = client.get("/api/notifications?owner=approver")
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["fits_current_schedule"])
         self.assertEqual(SCHEDULED_WORK["M-001"].start_time, original_start)
         self.assertEqual(approvals.status_code, 200)
-        self.assertGreaterEqual(len(approvals.json()), 1)
-        missing_owner = client.post(f"/api/displacement-approvals/{approval_id}/approve")
-        wrong_owner = client.post(f"/api/displacement-approvals/{approval_id}/approve?owner=other")
-        approved = client.post(f"/api/displacement-approvals/{approval_id}/approve?owner=field")
-        self.assertEqual(missing_owner.status_code, 422)
-        self.assertEqual(wrong_owner.status_code, 403)
+        self.assertEqual(approvals.json(), [])
+        self.assertEqual(notifications.status_code, 200)
+        self.assertEqual(REQUESTS["M-002"].approval_status, ApprovalStatus.PENDING_APPROVAL)
+        self.assertNotIn("M-002", SCHEDULED_WORK)
+        self.assertTrue(any(item["type"] == "urgent_approval_requested" for item in notifications.json()))
+
+    def test_approver_alias_can_use_manager_endpoints_and_requester_is_denied(self) -> None:
+        denied = client.patch("/api/settings/scheduling?role=requester", json={"urgent_lead_days": 4})
+        approved = client.patch("/api/settings/scheduling?role=approver", json={"urgent_lead_days": 4})
+
+        self.assertEqual(denied.status_code, 403)
         self.assertEqual(approved.status_code, 200)
-        self.assertIn("M-002", SCHEDULED_WORK)
-        self.assertGreaterEqual(SCHEDULED_WORK["M-001"].start_time, SCHEDULED_WORK["M-002"].end_time)
+        self.assertEqual(approved.json()["urgent_lead_days"], 4)
+
+    def test_d_plus_three_batch_freezes_target_day(self) -> None:
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)):
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-D3", "2026-08-28T09:00:00", "2026-08-28T11:00:00"),
+            )
+
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            frozen = client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
+
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(frozen.status_code, 200)
+        self.assertEqual(frozen.json()["target_date"], "2026-08-28")
+        self.assertEqual(SCHEDULED_WORK["M-D3"].status, ApprovalStatus.LOCKED)
+        self.assertTrue(REQUESTS["M-D3"].locked)
+
+    def test_recommend_slot_returns_earliest_feasible_gap_without_moving_current_schedule(self) -> None:
+        with patch("app.scheduler.service.is_planning_eligible", return_value=True):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-BASE", "2026-08-29T09:00:00", "2026-08-29T10:00:00", crew=["E1"]),
+            )
+        client.post("/api/schedule/lock/M-BASE?role=approver")
+
+        with patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
+            recommendation = client.post(
+                "/api/requests/recommend-slot",
+                json=request_payload("M-URG", "2026-08-29T09:00:00", "2026-08-29T11:00:00", crew=["E1"]),
+            )
+
+        self.assertEqual(recommendation.status_code, 200)
+        self.assertTrue(recommendation.json()["available"])
+        self.assertEqual(recommendation.json()["recommended_work"]["start_time"], "2026-08-29T09:30:00")
+        self.assertEqual(SCHEDULED_WORK["M-BASE"].start_time, datetime(2026, 8, 29, 9, 0, 0))
+
+    def test_recommend_slot_no_slot_allows_requester_message_for_approver(self) -> None:
+        with patch("app.scheduler.service.is_planning_eligible", return_value=True):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-BASE", "2026-08-29T09:00:00", "2026-08-29T10:00:00", crew=["E1"]),
+            )
+        client.post("/api/schedule/lock/M-BASE?role=approver")
+
+        with patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
+            recommendation = client.post(
+                "/api/requests/recommend-slot",
+                json=request_payload("M-NOSLOT", "2026-08-29T09:00:00", "2026-08-29T09:30:00", crew=["E1"]),
+            )
+        client.post(
+            "/api/requests",
+            json=request_payload("M-NOSLOT", "2026-08-29T09:00:00", "2026-08-29T09:30:00", crew=["E1"]),
+        )
+        confirmed = client.post(
+            "/api/requests/M-NOSLOT/confirm-urgent",
+            json={"requester_message": "Please review manually."},
+        )
+
+        self.assertEqual(recommendation.status_code, 200)
+        self.assertFalse(recommendation.json()["available"])
+        self.assertEqual(confirmed.status_code, 200)
+        self.assertEqual(REQUESTS["M-NOSLOT"].approval_status, ApprovalStatus.PENDING_APPROVAL)
+        self.assertEqual(REQUESTS["M-NOSLOT"].requester_message, "Please review manually.")
+        self.assertTrue(any(item.owner == "approver" for item in NOTIFICATIONS.values()))
+
+    def test_urgent_confirm_approve_and_reject_reason_workflow(self) -> None:
+        client.post(
+            "/api/requests",
+            json=request_payload("M-URG", "2026-08-30T09:00:00", "2026-08-30T10:00:00", track="T08", crew=["E1"]),
+        )
+        with patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
+            confirmed = client.post("/api/requests/M-URG/confirm-urgent", json={})
+        denied = client.post("/api/approvals/M-URG/approve?role=requester")
+        approved = client.post("/api/approvals/M-URG/approve?role=approver")
+
+        client.post(
+            "/api/requests",
+            json=request_payload("M-REJECT", "2026-08-30T11:00:00", "2026-08-30T12:00:00", track="T09", crew=["E2"]),
+        )
+        client.post("/api/requests/M-REJECT/confirm-urgent", json={})
+        missing_reason = client.post("/api/approvals/M-REJECT/reject?role=approver", json={"reason": ""})
+        rejected = client.post("/api/approvals/M-REJECT/reject?role=approver", json={"reason": "Insufficient access window."})
+
+        self.assertEqual(confirmed.status_code, 200)
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(approved.status_code, 200)
+        self.assertIn("M-URG", SCHEDULED_WORK)
+        self.assertEqual(missing_reason.status_code, 422)
+        self.assertEqual(rejected.status_code, 200)
+        self.assertEqual(REQUESTS["M-REJECT"].approval_status, ApprovalStatus.REJECTED)
+        self.assertEqual(REQUESTS["M-REJECT"].rejection_reason, "Insufficient access window.")
+
+    def test_approver_can_delete_scheduled_work(self) -> None:
+        with patch("app.scheduler.service.is_planning_eligible", return_value=True):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-DELETE", "2026-08-30T09:00:00", "2026-08-30T10:00:00"),
+            )
+
+        denied = client.delete("/api/schedule/M-DELETE?role=requester")
+        deleted = client.delete("/api/schedule/M-DELETE?role=approver")
+
+        self.assertEqual(denied.status_code, 403)
+        self.assertEqual(deleted.status_code, 200)
+        self.assertNotIn("M-DELETE", SCHEDULED_WORK)
+        self.assertEqual(REQUESTS["M-DELETE"].approval_status, ApprovalStatus.DRAFT)
+
+    def test_approver_can_delete_frozen_scheduled_work(self) -> None:
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-FROZEN-DELETE", "2026-08-28T09:00:00", "2026-08-28T11:00:00", crew=["E1"]),
+            )
+            client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
+
+        deleted = client.delete("/api/schedule/M-FROZEN-DELETE?role=approver")
+
+        self.assertEqual(deleted.status_code, 200)
+        self.assertNotIn("M-FROZEN-DELETE", SCHEDULED_WORK)
+        self.assertEqual(REQUESTS["M-FROZEN-DELETE"].approval_status, ApprovalStatus.DRAFT)
+        self.assertFalse(REQUESTS["M-FROZEN-DELETE"].locked)
+
+    def test_approver_can_move_frozen_work_inside_deadline(self) -> None:
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-FROZEN-MOVE", "2026-08-28T09:00:00", "2026-08-28T11:00:00", crew=["E1"]),
+            )
+            client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
+
+        moved = client.patch(
+            "/api/schedule/modify/M-FROZEN-MOVE?role=approver",
+            json={
+                "start_time": "2026-08-28T10:00:00",
+                "end_time": "2026-08-28T10:30:00",
+                "change_reason": "Approver emergency override.",
+            },
+        )
+
+        self.assertEqual(moved.status_code, 200)
+        self.assertEqual(SCHEDULED_WORK["M-FROZEN-MOVE"].start_time, datetime(2026, 8, 28, 10, 0, 0))
+        self.assertEqual(REQUESTS["M-FROZEN-MOVE"].fixed_start, datetime(2026, 8, 28, 10, 0, 0))
+        self.assertTrue(REQUESTS["M-FROZEN-MOVE"].locked)
+
+    def test_cp_sat_places_earliest_feasible_slot_and_respects_resource_conflicts(self) -> None:
+        requests = [
+            MaintenanceRequest.model_validate(
+                request_payload("M-001", "2026-09-01T09:00:00", "2026-09-01T12:00:00", track="T01", crew=["E1"], equipment=["EQ1"])
+            ),
+            MaintenanceRequest.model_validate(
+                request_payload("M-002", "2026-09-01T09:00:00", "2026-09-01T12:00:00", track="T01", crew=["E1"], equipment=["EQ1"])
+            ),
+        ]
+
+        with patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
+            scheduled = optimise_schedule(requests, ScheduleOption.MINIMUM_DISRUPTION)
+
+        self.assertEqual(len(scheduled), 2)
+        first, second = sorted(scheduled, key=lambda item: item.start_time)
+        self.assertEqual(first.start_time, datetime(2026, 9, 1, 9, 0, 0))
+        self.assertGreaterEqual(second.start_time, first.end_time)
+
+    def test_cp_sat_adds_break_when_same_team_would_exceed_four_continuous_hours(self) -> None:
+        first = request_payload("M-LONG-1", "2026-09-02T09:00:00", "2026-09-02T18:00:00", track="T31", crew=["E7"])
+        second = request_payload("M-LONG-2", "2026-09-02T09:00:00", "2026-09-02T18:00:00", track="T32", crew=["E7"])
+        first["duration_minutes"] = 180
+        second["duration_minutes"] = 180
+        requests = [MaintenanceRequest.model_validate(first), MaintenanceRequest.model_validate(second)]
+
+        with patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
+            scheduled = sorted(optimise_schedule(requests, ScheduleOption.MINIMUM_DISRUPTION), key=lambda item: item.start_time)
+
+        self.assertEqual(len(scheduled), 2)
+        self.assertGreaterEqual((scheduled[1].start_time - scheduled[0].end_time).total_seconds() / 60, 30)
+
+    def test_cp_sat_uses_back_to_back_same_team_work_when_break_is_infeasible(self) -> None:
+        first = request_payload("M-TIGHT-1", "2026-09-03T09:00:00", "2026-09-03T15:00:00", track="T41", crew=["E8"])
+        second = request_payload("M-TIGHT-2", "2026-09-03T09:00:00", "2026-09-03T15:00:00", track="T42", crew=["E8"])
+        first["duration_minutes"] = 180
+        second["duration_minutes"] = 180
+        requests = [MaintenanceRequest.model_validate(first), MaintenanceRequest.model_validate(second)]
+
+        with patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
+            scheduled = sorted(optimise_schedule(requests, ScheduleOption.MINIMUM_DISRUPTION), key=lambda item: item.start_time)
+
+        self.assertEqual(len(scheduled), 2)
+        self.assertEqual((scheduled[1].start_time - scheduled[0].end_time).total_seconds() / 60, 0)
+
+    def test_requester_urgent_in_frozen_window_requires_approver_instead_of_auto_schedule(self) -> None:
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-D2-URG", "2026-08-27T09:00:00", "2026-08-27T10:00:00", crew=["E1"]),
+            )
+
+        self.assertEqual(created.status_code, 200)
+        self.assertFalse(created.json()["fits_current_schedule"])
+        self.assertTrue(created.json()["requires_manager_review"])
+        self.assertIsNone(created.json()["scheduled_work"])
+        self.assertNotIn("M-D2-URG", SCHEDULED_WORK)
+        self.assertEqual(REQUESTS["M-D2-URG"].approval_status, ApprovalStatus.PENDING_APPROVAL)
+        self.assertEqual(REQUESTS["M-D2-URG"].recommended_start, datetime(2026, 8, 27, 9, 0, 0))
+
+    def test_approver_cannot_approve_unconfirmed_draft_request(self) -> None:
+        with patch("app.scheduler.service.is_planning_eligible", return_value=False):
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-DRAFT-FUTURE", "2026-09-10T09:00:00", "2026-09-10T10:00:00", crew=["E1"]),
+            )
+        approved = client.post("/api/approvals/M-DRAFT-FUTURE/approve?role=approver")
+
+        self.assertEqual(created.status_code, 200)
+        self.assertIsNone(created.json()["scheduled_work"])
+        self.assertEqual(approved.status_code, 422)
+        self.assertNotIn("M-DRAFT-FUTURE", SCHEDULED_WORK)
+
+    def test_d_plus_three_batch_locks_target_day_while_d_plus_two_request_needs_approval(self) -> None:
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-D2", "2026-08-27T09:00:00", "2026-08-27T10:00:00", crew=["E1"]),
+            )
+            client.post(
+                "/api/requests",
+                json=request_payload("M-D3", "2026-08-28T09:00:00", "2026-08-28T10:00:00", crew=["E2"]),
+            )
+            frozen = client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
+
+        self.assertEqual(frozen.status_code, 200)
+        self.assertEqual(SCHEDULED_WORK["M-D3"].status, ApprovalStatus.LOCKED)
+        self.assertNotIn("M-D2", SCHEDULED_WORK)
+        self.assertEqual(REQUESTS["M-D2"].approval_status, ApprovalStatus.PENDING_APPROVAL)
 
 
 if __name__ == "__main__":

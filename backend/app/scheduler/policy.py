@@ -24,6 +24,27 @@ def is_planning_eligible(request: MaintenanceRequest, settings: SchedulingSettin
     return comparable_time(request.earliest_start).date() <= (anchor + timedelta(days=settings.urgent_lead_days)).date()
 
 
+def frozen_date_cutoff(settings: SchedulingSettings, now: datetime | None = None) -> datetime.date:
+    anchor = comparable_time(now or planning_now())
+    return (anchor + timedelta(days=settings.urgent_lead_days)).date()
+
+
+def is_frozen_time(value: datetime, settings: SchedulingSettings, now: datetime | None = None) -> bool:
+    anchor = comparable_time(now or planning_now()).date()
+    target = comparable_time(value).date()
+    return anchor <= target <= frozen_date_cutoff(settings, now)
+
+
+def requires_urgent_approver_review(request: MaintenanceRequest, settings: SchedulingSettings, now: datetime | None = None) -> bool:
+    anchor = comparable_time(now or planning_now()).date()
+    target = comparable_time(request.earliest_start).date()
+    return anchor <= target < frozen_date_cutoff(settings, now)
+
+
+def is_frozen_work(item: ScheduledWork, settings: SchedulingSettings, now: datetime | None = None) -> bool:
+    return is_frozen_time(item.start_time, settings, now)
+
+
 def overlaps(left_start: datetime, left_end: datetime, right_start: datetime, right_end: datetime) -> bool:
     return comparable_time(left_start) < comparable_time(right_end) and comparable_time(right_start) < comparable_time(left_end)
 

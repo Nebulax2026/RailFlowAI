@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import (
+    approvals,
     audit,
     catalog,
     conflicts,
@@ -37,6 +38,7 @@ app.add_middleware(
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
 app.include_router(requests.router, prefix="/api/requests", tags=["requests"])
+app.include_router(approvals.router, prefix="/api/approvals", tags=["approvals"])
 app.include_router(audit.router, prefix="/api/audit", tags=["audit"])
 app.include_router(catalog.router, prefix="/api/catalog", tags=["catalog"])
 app.include_router(import_data.router, prefix="/api/import", tags=["import"])

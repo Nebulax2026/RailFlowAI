@@ -1010,6 +1010,12 @@ textarea:focus-visible {
   gap: 8px;
 }
 
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .compact-form.vertical {
   align-items: stretch;
   display: grid;
@@ -1115,6 +1121,29 @@ textarea:focus-visible {
   max-height: min(880px, calc(100vh - 40px));
   max-width: 980px;
   overflow: hidden;
+  width: 100%;
+}
+
+.approval-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 26px 70px rgba(20, 32, 51, 0.3);
+  display: grid;
+  max-width: 620px;
+  overflow: hidden;
+  width: min(100%, 620px);
+}
+
+.approval-dialog textarea {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 92px;
+  padding: 10px 12px;
+  resize: vertical;
   width: 100%;
 }
 

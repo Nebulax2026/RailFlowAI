@@ -2,8 +2,9 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from app.conflict.detector import detect_conflicts
-from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, DisplacementApprovalStatus, ScheduleOption
-from app.domain.models import Conflict, DisplacementApproval, MaintenanceRequest, Notification, RequestFitResponse, ScheduleAlternative, ScheduleChange, ScheduledWork
+from app.audit import record_audit_event
+from app.domain.enums import ApprovalStatus, ConflictSeverity, ConflictType, DisplacementApprovalStatus, RequestSource, ScheduleOption
+from app.domain.models import Conflict, DisplacementApproval, MaintenanceRequest, Notification, RequestFitResponse, ScheduleAlternative, ScheduleChange, ScheduledWork, SlotRecommendation
 from app.proposals import record_proposal_snapshot
 from app.repositories import (
     blocked_time_slot_repository,
@@ -17,7 +18,7 @@ from app.repositories import (
 from app.scheduler.alternative_generator import generate_alternatives, requested_slot_schedule
 from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.scheduler.horizon import classify_horizon, move_penalty
-from app.scheduler.policy import block_overlaps_work, is_planning_eligible, is_urgent
+from app.scheduler.policy import block_overlaps_work, frozen_date_cutoff, is_frozen_work, is_planning_eligible, is_urgent, planning_now, requires_urgent_approver_review
 from app.scheduler.time_windows import align_to_engineering_window
 from app.validation.business_validator import validate_business_rules
 from app.validation.dependency_rules import validate_work_type_prerequisites
@@ -36,10 +37,12 @@ def requests_with_locked_schedule() -> list[MaintenanceRequest]:
     settings = scheduling_settings_repository.get()
     prepared: list[MaintenanceRequest] = []
     for request in requests_repository.list():
+        if request.approval_status == ApprovalStatus.PENDING_APPROVAL:
+            continue
         if not request.locked and not is_planning_eligible(request, settings):
             continue
         scheduled = schedule_repository.get(request.request_id)
-        if scheduled and scheduled.status == ApprovalStatus.LOCKED:
+        if scheduled and (scheduled.status == ApprovalStatus.LOCKED or is_frozen_work(scheduled, settings)):
             prepared.append(
                 request.model_copy(
                     update={
@@ -87,6 +90,44 @@ def requested_item_for(request: MaintenanceRequest) -> ScheduledWork:
         assigned_equipment=request.required_equipment,
         track_sector=request.track_sector,
         status=ApprovalStatus.SCHEDULED,
+    )
+
+
+def fixed_existing_requests_for_recommendation() -> list[MaintenanceRequest]:
+    existing = {request.request_id: request for request in requests_repository.list()}
+    fixed: list[MaintenanceRequest] = []
+    for item in schedule_repository.list():
+        request = existing.get(item.request_id)
+        if not request:
+            continue
+        fixed.append(
+            request.model_copy(
+                update={
+                    "locked": True,
+                    "fixed_start": item.start_time,
+                    "fixed_end": item.end_time,
+                    "approval_status": ApprovalStatus.LOCKED,
+                }
+            )
+        )
+    return fixed
+
+
+def recommend_slot(request: MaintenanceRequest) -> SlotRecommendation:
+    scheduled = optimise_schedule([*fixed_existing_requests_for_recommendation(), request], ScheduleOption.MINIMUM_DISRUPTION)
+    recommended = next((item for item in scheduled if item.request_id == request.request_id), None)
+    conflicts = detect_conflicts([*schedule_repository.list(), requested_item_for(request)], requests_repository.list())
+    if not recommended:
+        return SlotRecommendation(
+            request=request,
+            available=False,
+            message="No feasible slot is available. Send the requirement to an Approver for manual review.",
+        )
+    return SlotRecommendation(
+        request=request,
+        available=True,
+        recommended_work=recommended,
+        message="Recommended slot is available for Approver review." if conflicts else "Recommended slot is available.",
     )
 
 
@@ -214,6 +255,35 @@ def evaluate_fit(request: MaintenanceRequest) -> RequestFitResponse:
             fits_current_schedule=True,
             conflicts=[],
         )
+    if requires_urgent_approver_review(request, settings):
+        recommendation = recommend_slot(request)
+        updates = {
+            "approval_status": ApprovalStatus.PENDING_APPROVAL,
+            "source": RequestSource.EMERGENCY,
+        }
+        if recommendation.recommended_work:
+            updates["recommended_start"] = recommendation.recommended_work.start_time
+            updates["recommended_end"] = recommendation.recommended_work.end_time
+        pending_request = request.model_copy(update=updates)
+        create_notification(
+            owner="approver",
+            message=f"Urgent request {request.request_id} is waiting for approval.",
+            notification_type="urgent_approval_requested",
+            request_ids=[request.request_id],
+        )
+        create_notification(
+            owner="schedule_manager",
+            message=f"Urgent request {request.request_id} is waiting for approval.",
+            notification_type="urgent_approval_requested",
+            request_ids=[request.request_id],
+        )
+        return RequestFitResponse(
+            request=pending_request,
+            fits_current_schedule=False,
+            conflicts=[],
+            requires_manager_review=True,
+            scheduled_work=None,
+        )
     requested_item = requested_item_for(request)
     candidate = [*schedule_repository.list(), requested_item]
     conflicts = [*detect_conflicts(candidate, requests_repository.list()), *blocked_slot_conflicts(requested_item)]
@@ -238,6 +308,165 @@ def evaluate_fit(request: MaintenanceRequest) -> RequestFitResponse:
         affected_changes=schedule_changes_for(selected.scheduled_work) if selected else [],
         proposal_option=selected.option if selected else None,
     )
+
+
+def confirm_urgent_request(request_id: str, requester_message: str | None = None) -> MaintenanceRequest:
+    request = requests_repository.get(request_id)
+    if not request:
+        raise ValueError("Request not found.")
+    recommendation = recommend_slot(request)
+    updates = {
+        "approval_status": ApprovalStatus.PENDING_APPROVAL,
+        "requester_message": requester_message,
+        "source": RequestSource.EMERGENCY,
+    }
+    if recommendation.recommended_work:
+        updates["recommended_start"] = recommendation.recommended_work.start_time
+        updates["recommended_end"] = recommendation.recommended_work.end_time
+    with unit_of_work() as work:
+        saved = work.requests.save(request.model_copy(update=updates))
+        create_notification(
+            owner="approver",
+            message=f"Urgent request {request_id} is waiting for approval.",
+            notification_type="urgent_approval_requested",
+            request_ids=[request_id],
+        )
+        create_notification(
+            owner="schedule_manager",
+            message=f"Urgent request {request_id} is waiting for approval.",
+            notification_type="urgent_approval_requested",
+            request_ids=[request_id],
+        )
+        return saved
+
+
+def approve_pending_request(request_id: str, actor: str) -> ScheduledWork:
+    request = requests_repository.get(request_id)
+    if not request:
+        raise ValueError("Request not found.")
+    if request.approval_status != ApprovalStatus.PENDING_APPROVAL:
+        raise ValueError("Request is not waiting for Approver approval.")
+    start = request.recommended_start
+    end = request.recommended_end
+    if not start or not end:
+        recommendation = recommend_slot(request)
+        if not recommendation.recommended_work:
+            raise ValueError("No feasible recommended slot exists.")
+        start = recommendation.recommended_work.start_time
+        end = recommendation.recommended_work.end_time
+    scheduled = ScheduledWork(
+        schedule_id="schedule-approver-approved",
+        request_id=request_id,
+        start_time=start,
+        end_time=end,
+        assigned_crew=request.required_crew,
+        assigned_equipment=request.required_equipment,
+        track_sector=request.track_sector,
+        status=ApprovalStatus.SCHEDULED,
+        changed_from_original=start != request.earliest_start,
+        change_reason="Approved urgent or pending request at the recommended slot.",
+    )
+    proposed = [item for item in schedule_repository.list() if item.request_id != request_id]
+    proposed.append(scheduled)
+    errors = validate_scheduled_work(proposed, [*requests_repository.list(), request])
+    errors.extend(validate_schedule_against_blocks(proposed))
+    conflicts = detect_conflicts(proposed, requests_repository.list())
+    if errors or conflicts:
+        raise ValueError("; ".join(errors or [conflict.explanation for conflict in conflicts]))
+    with unit_of_work() as work:
+        saved = work.schedule.save(scheduled)
+        work.requests.save(
+            request.model_copy(
+                update={
+                    "approval_status": ApprovalStatus.SCHEDULED,
+                    "locked": False,
+                    "fixed_start": None,
+                    "fixed_end": None,
+                    "rejection_reason": None,
+                }
+            )
+        )
+        create_notification(
+            owner=request.created_by,
+            message=f"Request {request_id} was approved by an Approver.",
+            notification_type="request_approved",
+            request_ids=[request_id],
+        )
+        record_audit_event("request_approved", f"Request {request_id} was approved.", actor=actor, request_ids=[request_id])
+        return saved
+
+
+def reject_pending_request(request_id: str, reason: str, actor: str) -> MaintenanceRequest:
+    request = requests_repository.get(request_id)
+    if not request:
+        raise ValueError("Request not found.")
+    with unit_of_work() as work:
+        saved = work.requests.save(
+            request.model_copy(
+                update={
+                    "approval_status": ApprovalStatus.REJECTED,
+                    "locked": False,
+                    "rejection_reason": reason,
+                }
+            )
+        )
+        work.schedule.delete(request_id)
+        create_notification(
+            owner=request.created_by,
+            message=f"Request {request_id} was rejected: {reason}",
+            notification_type="request_rejected",
+            request_ids=[request_id],
+        )
+        record_audit_event(
+            "request_rejected",
+            f"Request {request_id} was rejected.",
+            actor=actor,
+            request_ids=[request_id],
+            details={"reason": reason},
+        )
+        return saved
+
+
+def freeze_d_plus_three_batch(now: datetime | None = None) -> dict:
+    settings = scheduling_settings_repository.get()
+    target_date = frozen_date_cutoff(settings, now or planning_now())
+    scheduled, errors, conflicts = build_optimised_schedule(ScheduleOption.MINIMUM_DISRUPTION)
+    if errors or conflicts:
+        return {
+            "frozen": False,
+            "target_date": target_date.isoformat(),
+            "errors": errors or [conflict.explanation for conflict in conflicts],
+            "locked_items": 0,
+        }
+    locked_count = 0
+    with unit_of_work() as work:
+        work.schedule.replace_all(scheduled)
+        for item in scheduled:
+            if item.start_time.date() > target_date:
+                continue
+            locked = item.model_copy(update={"status": ApprovalStatus.LOCKED})
+            work.schedule.save(locked)
+            request = work.requests.get(item.request_id)
+            if request:
+                work.requests.save(
+                    request.model_copy(
+                        update={
+                            "approval_status": ApprovalStatus.LOCKED,
+                            "locked": True,
+                            "fixed_start": locked.start_time,
+                            "fixed_end": locked.end_time,
+                        }
+                    )
+                )
+            locked_count += 1
+        record_audit_event(
+            "schedule_batch_frozen",
+            f"Frozen schedule through {target_date.isoformat()}.",
+            actor="system",
+            request_ids=[item.request_id for item in scheduled if item.start_time.date() <= target_date],
+            details={"target_date": target_date.isoformat(), "locked_items": locked_count},
+        )
+    return {"frozen": True, "target_date": target_date.isoformat(), "locked_items": locked_count, "errors": []}
 
 
 def build_optimised_schedule(option: ScheduleOption) -> tuple[list[ScheduledWork], list[str], list[Conflict]]:

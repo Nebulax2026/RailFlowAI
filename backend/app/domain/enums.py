@@ -11,10 +11,12 @@ class RequestSource(StrEnum):
 
 class ApprovalStatus(StrEnum):
     DRAFT = "draft"
+    PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
     LOCKED = "locked"
     SCHEDULED = "scheduled"
     CONFLICT = "conflict"
+    REJECTED = "rejected"
 
 
 class BlockStatus(StrEnum):
