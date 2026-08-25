@@ -13,6 +13,7 @@ from app.domain.enums import ApprovalStatus, RequestSource
 from app.domain.models import MaintenanceRequest
 from app.main import app
 from app.repositories import unit_of_work
+from app.settings import allowed_hosts
 from app.storage import (
     AUDIT_EVENTS,
     BLOCKED_TIME_SLOTS,
@@ -422,6 +423,28 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(reset.status_code, 200)
         self.assertEqual(REQUESTS, {})
         self.assertEqual(SCHEDULED_WORK, {})
+
+    def test_demo_seed_and_reset_are_blocked_when_hosted_controls_are_disabled(self) -> None:
+        with patch("app.api.demo.demo_controls_enabled", return_value=False):
+            seeded = client.post("/api/demo/seed")
+            reset = client.post("/api/demo/reset")
+
+        self.assertEqual(seeded.status_code, 403)
+        self.assertEqual(reset.status_code, 403)
+        self.assertIn("disabled", seeded.json()["detail"].lower())
+        self.assertIn("disabled", reset.json()["detail"].lower())
+
+    def test_render_external_hostname_is_automatically_trusted(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {
+                "RAILFLOW_ALLOWED_HOSTS": "localhost,testserver",
+                "RENDER_EXTERNAL_HOSTNAME": "railflow-ai-backend.onrender.com",
+            },
+        ):
+            hosts = allowed_hosts()
+
+        self.assertEqual(hosts, ["localhost", "testserver", "railflow-ai-backend.onrender.com"])
 
     def test_request_patch_revalidates_payload_and_keeps_identity_stable(self) -> None:
         client.post(

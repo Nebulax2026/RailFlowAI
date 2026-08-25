@@ -69,7 +69,11 @@ NEXT_PUBLIC_API_BASE_URL=
 RAILFLOW_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 RAILFLOW_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
 RAILFLOW_DB_PATH=backend/.railflow/railflow.sqlite3
+RAILFLOW_DEMO_CONTROLS_ENABLED=true
+DATABASE_URL=
 ```
+
+`DATABASE_URL` is optional. Leave it empty to use the local SQLite file, or set it to a PostgreSQL connection string for shared cloud persistence. Store the real value only in `.env` locally or in the deployment platform's secret environment variables.
 
 By default, the frontend calls same-origin `/api/*` and Next.js rewrites those requests to `RAILFLOW_API_BASE_URL`. Leave `NEXT_PUBLIC_API_BASE_URL` empty unless the browser must call a backend directly.
 
@@ -171,11 +175,26 @@ Approve Selected
 
 ## Persistence
 
-RailFlow stores state in SQLite:
+RailFlow stores state in SQLite by default:
 
 ```text
 backend/.railflow/railflow.sqlite3
 ```
+
+For a shared deployment, set `DATABASE_URL` to a PostgreSQL connection string. The backend creates the `railflow_state` table automatically and never returns database credentials through its API.
+
+## Deploy Backend On Render
+
+The root `render.yaml` defines one free FastAPI instance in Singapore. Create a Render Blueprint from the repository and provide these values when prompted:
+
+```text
+DATABASE_URL=<pooled Neon PostgreSQL connection string>
+RAILFLOW_CORS_ORIGINS=<comma-separated frontend origins, without trailing slashes>
+```
+
+Render automatically contributes its `RENDER_EXTERNAL_HOSTNAME` to the backend trusted-host list. Add custom domains to `RAILFLOW_ALLOWED_HOSTS` if they are introduced later.
+
+Hosted demo seed/reset endpoints are disabled through `RAILFLOW_DEMO_CONTROLS_ENABLED=false`. Local development keeps them enabled by default. The deployed health check is available at `/api/health`.
 
 Persistence endpoints:
 

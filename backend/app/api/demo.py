@@ -1,20 +1,27 @@
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.adapters.csv_adapter import from_csv
 from app.audit import record_audit_event
 from app.domain.enums import ApprovalStatus
 from app.domain.models import ScheduledWork
 from app.repositories import requests_repository, schedule_repository, unit_of_work
+from app.settings import demo_controls_enabled
 
 router = APIRouter()
 
 SAMPLE_REQUESTS_PATH = Path(__file__).resolve().parents[3] / "data" / "sample_requests.csv"
 
 
+def require_demo_controls() -> None:
+    if not demo_controls_enabled():
+        raise HTTPException(status_code=403, detail="Demo seed and reset controls are disabled in this environment.")
+
+
 @router.post("/seed")
 def seed_demo_data() -> dict:
+    require_demo_controls()
     requests = from_csv(SAMPLE_REQUESTS_PATH.read_text(encoding="utf-8-sig"))
     with unit_of_work() as work:
         work.requests.clear()
@@ -63,6 +70,7 @@ def seed_demo_data() -> dict:
 
 @router.post("/reset")
 def reset_demo_data() -> dict:
+    require_demo_controls()
     with unit_of_work() as work:
         work.requests.clear()
         work.schedule.clear()
