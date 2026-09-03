@@ -761,7 +761,7 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertTrue(any(item.owner == "approver" for item in NOTIFICATIONS.values()))
 
     def test_urgent_confirm_approve_and_reject_reason_workflow(self) -> None:
-        client.post(
+        patch("app.scheduler.service.is_planning_eligible", return_value=False).start(); self.addCleanup(patch.stopall); client.post(
             "/api/requests",
             json=request_payload("M-URG", "2026-08-30T09:00:00", "2026-08-30T10:00:00", track="T08", crew=["E1"]),
         )
@@ -770,11 +770,11 @@ class MvpWorkflowTest(unittest.TestCase):
         denied = client.post("/api/approvals/M-URG/approve?role=requester")
         approved = client.post("/api/approvals/M-URG/approve?role=approver")
 
-        client.post(
+        patch("app.scheduler.service.is_planning_eligible", return_value=False).start(); client.post(
             "/api/requests",
             json=request_payload("M-REJECT", "2026-08-30T11:00:00", "2026-08-30T12:00:00", track="T09", crew=["E2"]),
         )
-        client.post("/api/requests/M-REJECT/confirm-urgent", json={})
+        patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True).start(); client.post("/api/requests/M-REJECT/confirm-urgent", json={})
         missing_reason = client.post("/api/approvals/M-REJECT/reject?role=approver", json={"reason": ""})
         rejected = client.post("/api/approvals/M-REJECT/reject?role=approver", json={"reason": "Insufficient access window."})
 
