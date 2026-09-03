@@ -314,6 +314,10 @@ def confirm_urgent_request(request_id: str, requester_message: str | None = None
     request = requests_repository.get(request_id)
     if not request:
         raise ValueError("Request not found.")
+    if request.approval_status in {ApprovalStatus.SCHEDULED, ApprovalStatus.LOCKED, ApprovalStatus.PENDING_APPROVAL}:
+        raise ValueError(
+            "Request already has an active schedule or is awaiting approval; delete or reject it before requesting urgent review again."
+        )
     recommendation = recommend_slot(request)
     updates = {
         "approval_status": ApprovalStatus.PENDING_APPROVAL,
@@ -325,19 +329,19 @@ def confirm_urgent_request(request_id: str, requester_message: str | None = None
         updates["recommended_end"] = recommendation.recommended_work.end_time
     with unit_of_work() as work:
         saved = work.requests.save(request.model_copy(update=updates))
-        create_notification(
-            owner="approver",
-            message=f"Urgent request {request_id} is waiting for approval.",
-            notification_type="urgent_approval_requested",
-            request_ids=[request_id],
-        )
-        create_notification(
-            owner="schedule_manager",
-            message=f"Urgent request {request_id} is waiting for approval.",
-            notification_type="urgent_approval_requested",
-            request_ids=[request_id],
-        )
-        return saved
+    create_notification(
+        owner="approver",
+        message=f"Urgent request {request_id} is waiting for approval.",
+        notification_type="urgent_approval_requested",
+        request_ids=[request_id],
+    )
+    create_notification(
+        owner="schedule_manager",
+        message=f"Urgent request {request_id} is waiting for approval.",
+        notification_type="urgent_approval_requested",
+        request_ids=[request_id],
+    )
+    return saved
 
 
 def approve_pending_request(request_id: str, actor: str) -> ScheduledWork:
@@ -386,20 +390,22 @@ def approve_pending_request(request_id: str, actor: str) -> ScheduledWork:
                 }
             )
         )
-        create_notification(
-            owner=request.created_by,
-            message=f"Request {request_id} was approved by an Approver.",
-            notification_type="request_approved",
-            request_ids=[request_id],
-        )
-        record_audit_event("request_approved", f"Request {request_id} was approved.", actor=actor, request_ids=[request_id])
-        return saved
+    create_notification(
+        owner=request.created_by,
+        message=f"Request {request_id} was approved by an Approver.",
+        notification_type="request_approved",
+        request_ids=[request_id],
+    )
+    record_audit_event("request_approved", f"Request {request_id} was approved.", actor=actor, request_ids=[request_id])
+    return saved
 
 
 def reject_pending_request(request_id: str, reason: str, actor: str) -> MaintenanceRequest:
     request = requests_repository.get(request_id)
     if not request:
         raise ValueError("Request not found.")
+    if request.approval_status != ApprovalStatus.PENDING_APPROVAL:
+        raise ValueError("Request is not waiting for Approver approval.")
     with unit_of_work() as work:
         saved = work.requests.save(
             request.model_copy(
@@ -411,20 +417,20 @@ def reject_pending_request(request_id: str, reason: str, actor: str) -> Maintena
             )
         )
         work.schedule.delete(request_id)
-        create_notification(
-            owner=request.created_by,
-            message=f"Request {request_id} was rejected: {reason}",
-            notification_type="request_rejected",
-            request_ids=[request_id],
-        )
-        record_audit_event(
-            "request_rejected",
-            f"Request {request_id} was rejected.",
-            actor=actor,
-            request_ids=[request_id],
-            details={"reason": reason},
-        )
-        return saved
+    create_notification(
+        owner=request.created_by,
+        message=f"Request {request_id} was rejected: {reason}",
+        notification_type="request_rejected",
+        request_ids=[request_id],
+    )
+    record_audit_event(
+        "request_rejected",
+        f"Request {request_id} was rejected.",
+        actor=actor,
+        request_ids=[request_id],
+        details={"reason": reason},
+    )
+    return saved
 
 
 def freeze_d_plus_three_batch(now: datetime | None = None) -> dict:
@@ -459,13 +465,13 @@ def freeze_d_plus_three_batch(now: datetime | None = None) -> dict:
                     )
                 )
             locked_count += 1
-        record_audit_event(
-            "schedule_batch_frozen",
-            f"Frozen schedule through {target_date.isoformat()}.",
-            actor="system",
-            request_ids=[item.request_id for item in scheduled if item.start_time.date() <= target_date],
-            details={"target_date": target_date.isoformat(), "locked_items": locked_count},
-        )
+    record_audit_event(
+        "schedule_batch_frozen",
+        f"Frozen schedule through {target_date.isoformat()}.",
+        actor="system",
+        request_ids=[item.request_id for item in scheduled if item.start_time.date() <= target_date],
+        details={"target_date": target_date.isoformat(), "locked_items": locked_count},
+    )
     return {"frozen": True, "target_date": target_date.isoformat(), "locked_items": locked_count, "errors": []}
 
 
