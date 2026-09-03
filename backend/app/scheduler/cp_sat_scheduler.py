@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timedelta
 
 from ortools.sat.python import cp_model
@@ -43,8 +44,12 @@ def optimise_schedule(
 
     for request in eligible:
         earliest_minute, latest_start_minute = windows[request.request_id]
-        start_lb = _to_slot(origin, earliest_minute)
-        start_ub = _to_slot(origin, latest_start_minute)
+        # Lower bound: never let the model start earlier than the real earliest_start,
+        # so round UP. Upper bound: never let the model's chosen start convert back to a
+        # real time later than the real deadline allows, so round DOWN. Plain round()
+        # here could otherwise widen or narrow the window by up to half a slot.
+        start_lb = _to_slot_ceil(origin, earliest_minute)
+        start_ub = _to_slot_floor(origin, latest_start_minute)
         duration_slots = _duration_slots(request.duration_minutes)
         start = model.NewIntVar(start_lb, start_ub, f"start_{request.request_id}")
         end = model.NewIntVar(start_lb + duration_slots, start_ub + duration_slots, f"end_{request.request_id}")
@@ -63,7 +68,7 @@ def optimise_schedule(
 
     objective_terms: list[cp_model.LinearExpr] = []
     for request in eligible:
-        earliest_slot = _to_slot(origin, windows[request.request_id][0])
+        earliest_slot = _to_slot_ceil(origin, windows[request.request_id][0])
         delay = model.NewIntVar(0, max(0, _to_slot(origin, horizon) - earliest_slot), f"delay_{request.request_id}")
         model.Add(delay == starts[request.request_id] - earliest_slot)
         objective_terms.append(delay * _delay_weight(request, option))
@@ -125,7 +130,24 @@ def _request_window(request: MaintenanceRequest) -> tuple[datetime, datetime]:
 
 
 def _to_slot(origin: datetime, value: datetime) -> int:
+    # Nearest-slot conversion. Only safe for values that are already slot-aligned
+    # (fixed_start/fixed_end equality constraints and existing scheduled_work times,
+    # which are always produced by _from_slot elsewhere and therefore already exact
+    # multiples of SLOT_MINUTES).
     return round((value - origin).total_seconds() / 60 / SLOT_MINUTES)
+
+
+def _to_slot_floor(origin: datetime, value: datetime) -> int:
+    # Round down. Use for upper bounds (latest permissible start, the edge right
+    # before a blocked slot) so the model can never place work later than the real
+    # constraint allows.
+    return math.floor((value - origin).total_seconds() / 60 / SLOT_MINUTES)
+
+
+def _to_slot_ceil(origin: datetime, value: datetime) -> int:
+    # Round up. Use for lower bounds (earliest start, the edge right after a blocked
+    # slot) so the model can never place work earlier than the real constraint allows.
+    return math.ceil((value - origin).total_seconds() / 60 / SLOT_MINUTES)
 
 
 def _from_slot(origin: datetime, slot: int) -> datetime:
@@ -133,7 +155,10 @@ def _from_slot(origin: datetime, slot: int) -> datetime:
 
 
 def _duration_slots(duration_minutes: int) -> int:
-    return max(1, round(duration_minutes / SLOT_MINUTES))
+    # Ceil, not round: a request's modeled duration must never be shorter than its
+    # real duration, or a same-resource job could be modeled as fitting in the gap
+    # while the real-world durations still overlap (see PR #27 review).
+    return max(1, math.ceil(duration_minutes / SLOT_MINUTES))
 
 
 def _delay_weight(request: MaintenanceRequest, option: ScheduleOption) -> int:
@@ -188,8 +213,8 @@ def _add_block_constraints(
                 continue
             before = model.NewBoolVar(f"{request.request_id}_before_{block.block_id}")
             after = model.NewBoolVar(f"{request.request_id}_after_{block.block_id}")
-            model.Add(ends[request.request_id] <= _to_slot(origin, block.start_time)).OnlyEnforceIf(before)
-            model.Add(starts[request.request_id] >= _to_slot(origin, block.end_time)).OnlyEnforceIf(after)
+            model.Add(ends[request.request_id] <= _to_slot_floor(origin, block.start_time)).OnlyEnforceIf(before)
+            model.Add(starts[request.request_id] >= _to_slot_ceil(origin, block.end_time)).OnlyEnforceIf(after)
             model.AddBoolOr([before, after])
 
 
