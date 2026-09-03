@@ -22,4 +22,4 @@ def reject_request_approval(request_id: str, payload: RejectRequest, role: str =
     try:
         return reject_pending_request(request_id, payload.reason, role)
     except ValueError as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
+        raise HTTPException(status_code=422 if str(error) != "Request not found." else 404, detail=str(error)) from error
