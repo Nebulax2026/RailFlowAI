@@ -4,13 +4,13 @@
 
 RailFlowAI is an explainable railway maintenance scheduling tool for planning maintenance, upgrades, inspections, and emergency work inside limited engineering windows. Railway assets need constant work while train services leave limited closure capacity, so requests often compete for the same track sectors, crews, equipment, and sequencing prerequisites.
 
-The product goal is to automate the tedious coordination step: validate incoming maintenance requests, place conflict-free work tentatively, generate manager-reviewed rescheduling proposals when clashes occur, explain conflicts and schedule movement clearly, and let a Schedule Manager approve selected tentative work into the locked operational baseline.
+The product goal is to automate the tedious coordination step: validate incoming maintenance requests, recommend or place conflict-free work, generate reviewed rescheduling proposals when clashes occur, explain conflicts and schedule movement clearly, and let an Approver or Schedule Manager approve selected tentative work into the locked operational baseline.
 
-RailFlowAI is a web-first, human-in-the-loop decision support system. The scheduler proposes valid options, but operational release remains a Schedule Manager decision.
+RailFlowAI is a web-first, human-in-the-loop decision support system. The scheduler proposes valid options, but operational release remains an Approver or Schedule Manager decision.
 
 ### MVP User Model
 
-The MVP uses two lightweight roles with shared visibility: Requester and Schedule Manager. There are no required separate Field Technician, Maintenance Planner, and Operations Manager roles.
+As of PR #27, the MVP uses three lightweight roles with shared visibility: Requester, Approver, and Schedule Manager. There are no required separate Field Technician, Maintenance Planner, and Operations Manager roles.
 
 Requester users can:
 
@@ -19,14 +19,20 @@ Requester users can:
 - View schedules, conflicts, proposals, explanations, and KPIs.
 - Generate and compare proposal options.
 - Import CSV or JSON seed/demo data.
+- Send urgent work for Approver review when the work falls inside the frozen lead window.
 
-Schedule Manager users can do everything a Requester can do, plus:
+Approver users can do everything a Requester can do, plus:
 
 - Apply selected rescheduling proposals.
 - Approve selected tentative scheduled work.
+- Approve or reject urgent requests that are pending review.
+- Freeze the near-term D+N schedule window.
+- Block track time and cancel active blocked slots.
 - Modify scheduled work.
 - Reject requests or scheduled decisions.
 - Finalize operational work by approval.
+
+Schedule Manager users have the same approval and schedule-control permissions as Approvers in the MVP query-parameter auth model.
 
 Manual Lock and Unlock endpoints may remain for compatibility or admin use, but they are not the primary MVP workflow. In the product UI, approval is the release/baseline action.
 
@@ -38,7 +44,7 @@ The app should describe workflows as product areas, not permission roles:
 - Proposal Options
 - KPI Dashboard
 
-Role behavior stays simple in the MVP. Everyone can see the same operational information, while final scheduling authority belongs to the Schedule Manager.
+Role behavior stays simple in the MVP. Everyone can see the same operational information, while final scheduling authority belongs to Approvers and Schedule Managers.
 
 ## 2. Functional Requirements
 
@@ -77,6 +83,10 @@ Optional request fields:
 - `notes`
 - `source`
 - `created_by`
+- `recommended_start`
+- `recommended_end`
+- `rejection_reason`
+- `requester_message`
 
 When a request is submitted, the system validates hard blockers first.
 
@@ -92,7 +102,15 @@ If the requested slot conflicts but could fit by moving upcoming work:
 - The request remains pending and visible in the Request Queue.
 - The active schedule is not mutated during request submission.
 - The response shows conflicts, affected changes, and a manager-reviewed proposal option.
-- The proposal may move upcoming tentative or locked/approved work, but only after Schedule Manager application.
+- The proposal may move upcoming tentative or locked/approved work, but only after Approver or Schedule Manager application.
+
+If the request falls inside the configured urgent lead window:
+
+- The request is marked `pending_approval`.
+- The active schedule is not mutated during request submission.
+- The system stores a recommended slot when a feasible slot exists.
+- Notifications are created for Approver and Schedule Manager review.
+- An Approver or Schedule Manager must approve or reject the pending request before it becomes scheduled work.
 
 If the request violates hard validation:
 
@@ -192,7 +210,7 @@ Proposals should be shown when:
 - A user selects pending Request Queue items and chooses Show Proposals.
 - An emergency scenario requires rescheduling existing approved work.
 
-Applying a proposal mutates the active working schedule only after Schedule Manager authorization. Any moved previously locked work becomes tentative at the new slot and must be approved again.
+Applying a proposal mutates the active working schedule only after Approver or Schedule Manager authorization. Any moved previously locked work becomes tentative at the new slot and must be approved again.
 
 ### Decision Review
 
@@ -208,9 +226,10 @@ The Decision Review experience must support:
 - Viewing KPI/proposal impact.
 - Comparing proposal options.
 - Requesters can view recommendations and understand impact.
-- Schedule Managers can apply proposals.
-- Schedule Managers can approve selected tentative calendar tasks.
-- Schedule Managers can modify or reject selected work where supported.
+- Approvers and Schedule Managers can apply proposals.
+- Approvers and Schedule Managers can approve selected tentative calendar tasks.
+- Approvers and Schedule Managers can approve or reject urgent pending requests.
+- Approvers and Schedule Managers can modify, delete, or reject selected work where supported.
 
 ### Schedule Approval
 
@@ -219,13 +238,50 @@ Approval remains human-in-the-loop. The system can recommend and tentatively pla
 Approval behavior:
 
 - Pending unscheduled requests cannot be approved directly.
-- Only a Schedule Manager can apply proposals, approve selected work, reject, or modify schedule decisions.
+- Only an Approver or Schedule Manager can apply proposals, approve selected work, reject, or modify schedule decisions.
 - `Approve Selected` approves only selected tentative scheduled tasks.
 - If no tentative calendar task is selected, `Approve Selected` is disabled.
 - Approval locks the selected tentative scheduled work.
 - Moved locked work becomes tentative after proposal application and must be approved again.
 - Locked work is preserved during normal optimization.
-- Manager-reviewed proposals may move upcoming locked work, but movement is penalized and not applied silently.
+- Reviewed proposals may move upcoming locked work, but movement is penalized and not applied silently.
+
+### Urgent Approval And Freeze Window
+
+PR #27 adds explicit urgent review and freeze-window behavior.
+
+Urgent request behavior:
+
+- The configurable lead window defaults to 3 days.
+- Requests whose `earliest_start` falls from today through D+2 require approval before scheduling.
+- Requests on D+3 can be included in the batch freeze.
+- `POST /api/requests/recommend-slot` previews a feasible recommended slot without mutating active schedule state.
+- `POST /api/requests/{request_id}/confirm-urgent` sends a saved request to Approver review with an optional requester message.
+- `POST /api/approvals/{request_id}/approve` creates scheduled work at the recommended slot when valid.
+- `POST /api/approvals/{request_id}/reject` marks the request rejected and stores a rejection reason.
+
+Freeze behavior:
+
+- `POST /api/schedule/batch/freeze-d-plus-3` optimizes the current eligible board and locks schedule items through the configured D+N cutoff date.
+- Frozen items are treated like locked work during normal optimization.
+- Manual override actions still validate schedule timing, blocks, and resource conflicts before saving.
+
+### Notifications And Displacement Approvals
+
+The backend stores lightweight notification and displacement approval records for human-in-the-loop review.
+
+Notifications support:
+
+- Urgent approval requests.
+- Request approval or rejection outcomes.
+- Blocked slot overlap warnings.
+- Displacement approval prompts.
+
+Displacement approvals support:
+
+- Creating owner-specific approval requests when urgent work would move another user's scheduled work.
+- Approving or rejecting a proposed displacement by owner.
+- Preserving the existing schedule until a displacement decision is made.
 
 ### Dashboard KPIs
 
@@ -413,7 +469,7 @@ Navigation should be mostly shared across both roles. Preferred MVP labels:
 - New Request
 - Planning Board
 
-Requester users should see decision actions as read-only or unavailable. Schedule Manager users should see proposal application, approval, modify, and reject actions.
+Requester users should see decision actions as read-only or unavailable. Approver and Schedule Manager users should see proposal application, approval, freeze, modify, delete, block, and reject actions.
 
 ### New Request Screen
 
@@ -423,7 +479,10 @@ After submission:
 
 - If the request fits, show "Your proposed slot" with start/end time.
 - If the request requires rescheduling, show that manager review is required and list affected moved tasks/owners.
+- If the request needs urgent approval, show that it was sent to an Approver and display the recommended slot when available.
 - If validation fails, show backend hard-blocker messages.
+
+The screen also supports checking a recommended slot before submission through the recommendation endpoint. The recommendation action must not mutate the active schedule.
 
 ### Planning Board
 
@@ -440,6 +499,9 @@ The Planning Board must show:
 - Conflict indicators.
 - Decision Review panel.
 - Proposal Options in Decision Review when proposals are generated.
+- Notifications for urgent approvals, blocked slots, and displacement decisions.
+- Pending urgent approval dialogs for Approvers and Schedule Managers.
+- Active blocked time slots with cancel actions.
 
 The visible day schedule should show 06:00-22:00 with 09:00-18:00 treated as the standard working window for overtime calculation.
 
@@ -469,10 +531,12 @@ The Decision Review panel must explain:
 Available primary actions:
 
 - Show Proposals
-- Apply Proposal, Schedule Manager only
-- Approve Selected, Schedule Manager only
-- Modify, Schedule Manager only
-- Reject, Schedule Manager only
+- Apply Proposal, Approver or Schedule Manager only
+- Approve Selected, Approver or Schedule Manager only
+- Freeze D+N, Approver or Schedule Manager only
+- Modify, Approver or Schedule Manager only
+- Delete, Approver or Schedule Manager only
+- Reject, Approver or Schedule Manager only
 
 Lock and Unlock are not primary UI actions. Approved work is changed through proposal application, which makes moved work tentative again.
 
@@ -495,7 +559,7 @@ backend/app/
   validation/
 ```
 
-The backend should keep adapters, validators, conflict detection, scheduling, KPI calculation, and explanations as separate modules.
+The backend should keep adapters, validators, conflict detection, scheduling, KPI calculation, notifications, audit history, proposal snapshots, and explanations as separate modules.
 
 ### Public API Baseline
 
@@ -504,11 +568,20 @@ Required API endpoints:
 - `POST /api/requests`
 - `GET /api/requests`
 - `PATCH /api/requests/{id}`
+- `POST /api/requests/recommend-slot`
+- `POST /api/requests/{request_id}/confirm-urgent`
+- `POST /api/approvals/{request_id}/approve`
+- `POST /api/approvals/{request_id}/reject`
 - `POST /api/import/preview`
 - `POST /api/import/confirm`
 - `POST /api/import/json/preview`
 - `POST /api/import/json/confirm`
 - `POST /api/conflicts/detect`
+- `GET /api/schedule`
+- `GET /api/schedule/blocks`
+- `POST /api/schedule/blocks`
+- `DELETE /api/schedule/blocks/{block_id}`
+- `POST /api/schedule/batch/freeze-d-plus-3`
 - `POST /api/schedule/optimise`
 - `POST /api/schedule/alternatives`
 - `POST /api/schedule/apply`
@@ -516,6 +589,15 @@ Required API endpoints:
 - `POST /api/schedule/approve-selected`
 - `POST /api/schedule/reject/{request_id}`
 - `PATCH /api/schedule/modify/{request_id}`
+- `DELETE /api/schedule/{request_id}`
+- `GET /api/settings/scheduling`
+- `PATCH /api/settings/scheduling`
+- `GET /api/notifications`
+- `POST /api/notifications/{notification_id}/read`
+- `GET /api/displacement-approvals`
+- `POST /api/displacement-approvals/{approval_id}/approve`
+- `POST /api/displacement-approvals/{approval_id}/reject`
+- `GET /api/audit`
 - `GET /api/kpis`
 - `POST /api/demo/seed`
 - `POST /api/demo/reset`
@@ -533,11 +615,21 @@ The current domain models are the baseline:
 
 - `MaintenanceRequest`
 - `ScheduledWork`
+- `SchedulingSettings`
+- `BlockedTimeSlot`
+- `Notification`
+- `DisplacementApproval`
 - `Conflict`
 - `KpiSnapshot`
 - `ScheduleAlternative`
+- `ProposalSnapshot`
 - `RequestFitResponse`
+- `SlotRecommendation`
+- `RejectRequest`
+- `UrgentConfirmRequest`
 - `ScheduleChange`
+- `ProposalRequest`
+- `ApproveRequest`
 
 ### Fit Status Contract
 
@@ -588,6 +680,38 @@ It approves/locks only selected scheduled tentative work. It rejects unscheduled
 
 `POST /api/schedule/approve` remains available as a backend compatibility action to approve all active tentative scheduled work.
 
+`POST /api/approvals/{request_id}/approve` is for urgent or pending approval requests. It schedules the request at the stored recommendation when valid, or recomputes the recommendation if missing.
+
+`POST /api/approvals/{request_id}/reject` stores a rejection reason and removes any associated schedule entry.
+
+### Settings, Blocks, Notifications, And Audit Contracts
+
+Scheduling settings currently expose `urgent_lead_days`, defaulting to `3`.
+
+Blocked time slots contain:
+
+- `block_id`
+- `track_sectors`
+- `start_time`
+- `end_time`
+- `reason`
+- `created_by`
+- `status`
+- `created_at`
+
+Notifications contain:
+
+- `notification_id`
+- `owner`
+- `type`
+- `message`
+- `request_ids`
+- Optional `block_id`, `proposal_id`, or `approval_id`
+- `read`
+- `created_at`
+
+Audit events capture request, proposal, approval, schedule modification, blocked-slot, and freeze actions with actor, request IDs, details, and timestamps.
+
 ### Authorization Boundary
 
 The MVP role boundary is intentionally small and implemented through query/body role fields rather than production authentication.
@@ -597,13 +721,17 @@ Requester permissions:
 - Create requests.
 - View schedules, conflicts, proposals, explanations, and KPIs.
 - Generate proposal previews.
+- Confirm urgent review for saved requests.
 
-Schedule Manager permissions:
+Approver and Schedule Manager permissions:
 
 - Create and edit requests.
 - Apply proposals.
 - Approve selected scheduled work.
-- Reject or modify schedule decisions.
+- Approve or reject pending urgent requests.
+- Freeze the D+N schedule window.
+- Create or cancel blocked time slots.
+- Reject, delete, or modify schedule decisions.
 - Finalize schedules.
 
 Full authentication, audit trails, and production-grade access control are future enhancements.
@@ -618,12 +746,14 @@ The scheduler must:
 - Preserve locked work during normal optimization.
 - Allow manager-reviewed proposal generation that can move upcoming locked work with penalty.
 - Respect hard constraints.
-- Apply selected objective/profile behavior.
+- Apply selected objective/profile behavior with CP-SAT objective weights.
 - Return `ScheduledWork` records.
 - Mark changed work with `changed_from_original`.
 - Provide enough change context for explanations.
 
-The current implementation uses a hardened greedy baseline behind the scheduler API. The long-term target is OR-Tools CP-SAT.
+As of PR #27, the current implementation uses OR-Tools CP-SAT behind the scheduler API. The model represents starts, ends, intervals, resource no-overlap constraints, blocked-slot constraints, dependency ordering, movement penalties, critical-priority delay weights, and crew-break preferences.
+
+CP-SAT schedules should be validated after solving before they are applied or approved. Slot discretization must be conservative so the solver never accepts a candidate that violates real datetime constraints after conversion back to `ScheduledWork`.
 
 ### Explanation Boundary
 
@@ -671,21 +801,31 @@ Constraint logic decides schedules. LLM usage is optional and must only polish w
 ### Demo 4: Emergency Rescheduling
 
 1. User adds an emergency maintenance request.
-2. System detects conflicts with existing scheduled work.
-3. System generates ranked feasible proposals.
-4. Existing work is moved only where necessary and explicitly listed.
-5. User reviews schedule stability and explanation.
-6. Schedule Manager applies or rejects the emergency reschedule.
+2. System checks whether the request is inside the urgent lead window.
+3. System recommends a feasible slot when available and sends the request for Approver review.
+4. Approver reviews requester notes, recommendation, affected work, and current schedule.
+5. Approver approves the urgent request or rejects it with a reason.
+6. If approved, the request becomes scheduled work; if rejected, the reason is stored on the request.
+
+### Demo 5: D+N Freeze And Blocked Slot Review
+
+1. Schedule Manager or Approver sets the urgent lead window.
+2. Schedule Manager or Approver runs the D+N freeze action.
+3. System optimizes the eligible board and locks schedule items through the target date.
+4. Schedule Manager or Approver creates a blocked track time slot.
+5. System notifies owners of any scheduled work overlapping the block.
+6. Schedule Manager or Approver revises, deletes, or re-creates work through the Decision Review panel.
 
 ## 7. Test And Acceptance Criteria
 
 ### Requirement Review
 
-- The MVP is described as two lightweight roles with shared visibility.
+- The MVP is described as three lightweight roles with shared visibility.
 - Requesters can create requests and view schedules, conflicts, proposals, explanations, and KPIs.
+- Approvers can approve/reject urgent requests and control schedule decisions.
 - Direct-fit requests create tentative scheduled work.
 - Conflicting requests remain in the unscheduled Request Queue.
-- Schedule Managers can apply proposals and approve selected tentative work.
+- Approvers and Schedule Managers can apply proposals and approve selected tentative work.
 - Manual lock/unlock is not the primary product workflow.
 
 ### Scheduling Scenarios
@@ -699,6 +839,10 @@ Constraint logic decides schedules. LLM usage is optional and must only polish w
 - Applying proposals schedules selected pending requests as tentative.
 - Moved locked work becomes tentative after proposal application.
 - Approval locks only selected tentative scheduled work.
+- Urgent requests in the frozen lead window require approval before scheduling.
+- Recommendation checks do not mutate the active schedule.
+- D+N freeze locks only schedule items through the configured cutoff date.
+- Active blocked slots prevent optimization or approval of overlapping schedule work.
 - No-valid-schedule cases return explicit blockers.
 
 ### Acceptance Criteria
@@ -706,19 +850,17 @@ Constraint logic decides schedules. LLM usage is optional and must only polish w
 - Proposals are shown when needed or when selected pending requests request comparison.
 - Every conflict has a visible reason.
 - Every proposal includes KPI impact, score context, changed jobs, and explanation.
-- Only a Schedule Manager can apply, approve, modify, or reject schedule decisions.
+- Only an Approver or Schedule Manager can apply, approve, freeze, modify, delete, or reject schedule decisions.
 - Requesters can still view proposed schedules and explanations.
 - Pending requests cannot be approved directly.
+- Pending approval requests cannot be rejected or approved from the wrong state.
 - The system does not claim an invalid schedule is conflict-free.
 
 ## 8. Future Enhancements
 
-- OR-Tools CP-SAT replacement for the greedy baseline.
-- More detailed role permissions beyond Requester and Schedule Manager.
+- More detailed role permissions beyond the MVP Requester, Approver, and Schedule Manager roles.
 - Official dataset enrichment, including MRT station or sector metadata.
-- Import UI for CSV and JSON files.
 - Schedule export.
-- Audit history for schedule decisions.
 - Robustness stress testing.
 - Natural-language explanation polish.
 - Richer optimization profiles.
@@ -729,11 +871,12 @@ Constraint logic decides schedules. LLM usage is optional and must only polish w
 ## 9. Assumptions
 
 - This document is the single PRD + technical design source for the MVP.
-- MVP has two lightweight roles: Requester and Schedule Manager.
+- MVP has three lightweight roles: Requester, Approver, and Schedule Manager.
 - Everyone has shared visibility into schedules, conflicts, proposals, explanations, and KPIs.
-- Only Schedule Managers can finalize schedule decisions.
+- Only Approvers and Schedule Managers can finalize schedule decisions.
 - Direct-fit requests may be tentatively placed immediately.
 - Conflicting requests stay pending until a proposal is applied.
+- Urgent lead-window requests require human approval before being scheduled.
 - Proposal generation uses balanced named options by default.
 - Storage remains in memory for the MVP.
 - The backend API and domain models currently in the repo are the baseline unless later implementation work changes them.
