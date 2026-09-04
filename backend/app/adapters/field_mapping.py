@@ -33,5 +33,7 @@ DEFAULT_FIELD_MAPPING = {
     "Locked": "locked",
     "Fixed Start": "fixed_start",
     "Fixed End": "fixed_end",
+    "Created By": "created_by",
+    "Requester": "created_by",
     "Notes": "notes",
 }

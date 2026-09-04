@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, ClipboardPlus, GitBranch, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarClock, ClipboardPlus, GitBranch, ListChecks, ShieldCheck } from "lucide-react";
 
 export default function Home() {
   return (
@@ -66,8 +66,8 @@ export default function Home() {
           <p>Schedule Managers can review alternatives before locking a solver-validated plan.</p>
         </article>
         <article>
-          <Sparkles size={22} />
-          <h2>Compare Options</h2>
+          <ListChecks size={22} />
+          <h2>Compare Tradeoffs</h2>
           <p>Ranked alternatives expose tradeoffs across disruption, overtime, completion, and robustness.</p>
         </article>
       </section>
