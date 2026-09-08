@@ -58,6 +58,9 @@ type ScheduleChange = {
 };
 
 type FitResponse = {
+  request: {
+    approval_status: string;
+  };
   fits_current_schedule: boolean;
   conflicts: Conflict[];
   suggested_alternatives: Alternative[];
@@ -266,6 +269,8 @@ export default function NewRequestPage() {
       setMessage(
         payload.fits_current_schedule && payload.scheduled_work
           ? "Request placed tentatively on the calendar. A Schedule Manager can approve it from the dashboard."
+          : payload.requires_manager_review && payload.request.approval_status === "pending_approval"
+            ? "Urgent request sent to an Approver for review."
           : payload.fits_current_schedule
             ? "Request queued. It will enter scheduling when it is inside the configured planning window."
           : "Request queued with conflicts. Review proposals or run Generate Schedule from the dashboard."
@@ -495,7 +500,7 @@ export default function NewRequestPage() {
                 </p>
               </div>
             )}
-            {lastRequestId && (
+            {lastRequestId && result?.request.approval_status === "draft" && !result.scheduled_work && (
               <button className="button secondary" disabled={status === "submitting"} type="button" onClick={confirmUrgentRequest}>
                 Send Urgent Review
               </button>
@@ -506,6 +511,8 @@ export default function NewRequestPage() {
                 <p>
                   {result.fits_current_schedule && result.scheduled_work
                     ? "No active conflict is reported, and the work is tentatively placed pending Schedule Manager approval."
+                    : result.requires_manager_review && result.request.approval_status === "pending_approval"
+                      ? "This request is inside the frozen lead window and is waiting for an Approver decision."
                     : result.fits_current_schedule
                       ? "No active conflict is reported, but this request is outside the current planning window."
                     : "The requested window has a conflict. A manager can review proposals from the Planning Board."}

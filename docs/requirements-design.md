@@ -253,8 +253,9 @@ PR #27 adds explicit urgent review and freeze-window behavior.
 Urgent request behavior:
 
 - The configurable lead window defaults to 3 days.
-- Requests whose `earliest_start` falls from today through D+2 require approval before scheduling.
-- Requests on D+3 can be included in the batch freeze.
+- Before the D+3 cutoff, later requests can remain queued outside the active planning horizon.
+- At the D+3 cutoff, the freeze operation schedules eligible queued work and locks the target date.
+- New requests whose `earliest_start` falls from today through D+3 require Approver review because that date is already inside the fixed window.
 - `POST /api/requests/recommend-slot` previews a feasible recommended slot without mutating active schedule state.
 - `POST /api/requests/{request_id}/confirm-urgent` sends a saved request to Approver review with an optional requester message.
 - `POST /api/approvals/{request_id}/approve` creates scheduled work at the recommended slot when valid.
@@ -264,6 +265,7 @@ Freeze behavior:
 
 - `POST /api/schedule/batch/freeze-d-plus-3` optimizes the current eligible board and locks schedule items through the configured D+N cutoff date.
 - Frozen items are treated like locked work during normal optimization.
+- Generating a normal schedule preserves tentative status; only explicit approval or the freeze operation promotes work to `locked`.
 - Manual override actions still validate schedule timing, blocks, and resource conflicts before saving.
 
 ### Notifications And Displacement Approvals
