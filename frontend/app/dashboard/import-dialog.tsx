@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, FileJson2, FileSpreadsheet, Upload, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { type DragEvent, useMemo, useState } from "react";
 
 type ImportFormat = "csv" | "json";
 
@@ -29,7 +29,7 @@ type ImportDialogProps = {
 
 function formatValue(value: unknown) {
   if (value === null || value === undefined || value === "") {
-    return "—";
+    return "-";
   }
   if (typeof value === "object") {
     return JSON.stringify(value);
@@ -104,6 +104,19 @@ export default function ImportDialog({ apiBase, onClose, onImported }: ImportDia
   }, [preview]);
 
   const busy = isPreviewing || isConfirming;
+
+  function selectFileList(files: FileList | null) {
+    selectFile(files?.[0] ?? null);
+  }
+
+  function handleFileDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (busy) {
+      return;
+    }
+    selectFileList(event.dataTransfer.files);
+  }
 
   function selectFile(nextFile: File | null) {
     setFile(nextFile);
@@ -196,7 +209,13 @@ export default function ImportDialog({ apiBase, onClose, onImported }: ImportDia
         </header>
 
         <div className="import-dialog-body">
-          <label className={`file-drop ${file ? "has-file" : ""}`} htmlFor="request-import-file">
+          <label
+            className={`file-drop ${file ? "has-file" : ""}`}
+            htmlFor="request-import-file"
+            onDragEnter={(event) => event.preventDefault()}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={handleFileDrop}
+          >
             {format === "json" ? <FileJson2 size={28} /> : <FileSpreadsheet size={28} />}
             <strong>{file?.name ?? "Choose a CSV or JSON file"}</strong>
             <span>{file ? `${(file.size / 1024).toFixed(1)} KB selected` : "UTF-8 format, up to 1 MB"}</span>
@@ -204,7 +223,7 @@ export default function ImportDialog({ apiBase, onClose, onImported }: ImportDia
               id="request-import-file"
               type="file"
               accept=".csv,.json,text/csv,application/json"
-              onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+              onChange={(event) => selectFileList(event.target.files)}
               disabled={busy}
             />
           </label>
@@ -259,7 +278,7 @@ export default function ImportDialog({ apiBase, onClose, onImported }: ImportDia
 
               {preview.suggested_mapping && Object.keys(preview.suggested_mapping).length > 0 && (
                 <section className="import-section">
-                  <div className="import-section-heading"><h3>Suggested mapping</h3><span>file → RailFlowAI</span></div>
+                  <div className="import-section-heading"><h3>Suggested mapping</h3><span>file to RailFlowAI</span></div>
                   <div className="mapping-grid">
                     {Object.entries(preview.suggested_mapping).map(([external, internal]) => (
                       <div key={external}><span>{external}</span><strong>{internal}</strong></div>

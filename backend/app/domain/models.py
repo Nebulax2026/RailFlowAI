@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,6 +41,10 @@ class MaintenanceRequest(RailFlowModel):
     notes: str | None = None
     created_by: str = "field"
     source: RequestSource = RequestSource.MANUAL
+    recommended_start: datetime | None = None
+    recommended_end: datetime | None = None
+    rejection_reason: str | None = None
+    requester_message: str | None = None
 
 
 class ScheduledWork(RailFlowModel):
@@ -181,6 +187,21 @@ class RequestFitResponse(RailFlowModel):
     requires_manager_review: bool = False
     affected_changes: list[ScheduleChange] = Field(default_factory=list)
     proposal_option: ScheduleOption | None = None
+
+
+class SlotRecommendation(RailFlowModel):
+    request: MaintenanceRequest
+    available: bool
+    recommended_work: ScheduledWork | None = None
+    message: str | None = None
+
+
+class RejectRequest(RailFlowModel):
+    reason: str = Field(min_length=1)
+
+
+class UrgentConfirmRequest(RailFlowModel):
+    requester_message: str | None = None
 
 
 class ProposalRequest(RailFlowModel):

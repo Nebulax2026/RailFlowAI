@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, CheckCircle2, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -22,9 +22,14 @@ type MaintenanceRequest = {
   required_crew: string[];
   required_equipment: string[];
   dependencies: string[];
+  notes?: string | null;
   approval_status: string;
   locked: boolean;
   created_by: string;
+  recommended_start?: string | null;
+  recommended_end?: string | null;
+  rejection_reason?: string | null;
+  requester_message?: string | null;
 };
 
 type ScheduledWork = {
@@ -81,6 +86,10 @@ type SchedulingSettings = {
   urgent_lead_days: number;
 };
 
+type DashboardCatalog = {
+  requester_accounts: string[];
+};
+
 type BlockedTimeSlot = {
   block_id: string;
   track_sectors: string[];
@@ -117,8 +126,24 @@ type DisplacementApproval = {
   created_at: string;
 };
 
-type Role = "requester" | "schedule_manager";
+type FreezeResult = {
+  frozen: boolean;
+  target_date: string;
+  locked_items: number;
+  errors: string[];
+};
+
+type ReplacementForm = {
+  title: string;
+  earliestStart: string;
+  deadline: string;
+  durationMinutes: string;
+  requesterMessage: string;
+};
+
+type Role = "requester" | "approver" | "schedule_manager";
 type StatusTone = "loading" | "success" | "error" | "info";
+const fallbackRequesterAccounts = ["field-ops", "signal-team", "track-team", "power-team", "safety-team"];
 
 const emptyKpis: Kpis = {
   unresolved_conflicts: 0,
@@ -155,7 +180,7 @@ const engineeringHours = [
   "21:00",
   "22:00"
 ];
-const timeSlotHeight = 88;
+const timeSlotHeight = 144;
 const fallbackTracks = ["T08", "T09", "T10", "T11", "T12", "T13", "T14"];
 
 function formatDate(value: Date) {
@@ -193,7 +218,7 @@ function monthDays(anchor: Date) {
   const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const start = new Date(first);
   start.setDate(first.getDate() - first.getDay());
-  return Array.from({ length: 35 }, (_, index) => {
+  return Array.from({ length: 42 }, (_, index) => {
     const day = new Date(start);
     day.setDate(start.getDate() + index);
     return day;
@@ -260,8 +285,26 @@ function calendarBlockStyle(item: ScheduledWork, timelineStartMinutes: number) {
   };
 }
 
+function scheduledDurationMinutes(item: ScheduledWork) {
+  return Math.max(0, Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000));
+}
+
+function shiftMonth(anchor: Date, direction: -1 | 1) {
+  const next = new Date(anchor);
+  const day = anchor.getDate();
+  next.setDate(1);
+  next.setMonth(next.getMonth() + direction);
+  const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+  next.setDate(Math.min(day, lastDay));
+  return next;
+}
+
 function isLockedStatus(status: string) {
   return status.toLowerCase() === "locked";
+}
+
+function localInputValue(value: string) {
+  return value.slice(0, 16);
 }
 
 async function readResponsePayload(response: Response) {
@@ -299,6 +342,8 @@ async function fetchJson<T>(endpoint: string, init?: RequestInit): Promise<T> {
 
 export default function DashboardPage() {
   const [role, setRole] = useState<Role>("requester");
+  const [activeRequester, setActiveRequester] = useState(fallbackRequesterAccounts[0]);
+  const [requesterAccounts, setRequesterAccounts] = useState(fallbackRequesterAccounts);
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [schedule, setSchedule] = useState<ScheduledWork[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
@@ -308,12 +353,16 @@ export default function DashboardPage() {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([]);
   const [selectedScheduledIds, setSelectedScheduledIds] = useState<string[]>([]);
+  const [calendarDetails, setCalendarDetails] = useState<ScheduledWork | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [settings, setSettings] = useState<SchedulingSettings>({ urgent_lead_days: 3 });
   const [urgentLeadDaysInput, setUrgentLeadDaysInput] = useState("3");
   const [blockedSlots, setBlockedSlots] = useState<BlockedTimeSlot[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [displacementApprovals, setDisplacementApprovals] = useState<DisplacementApproval[]>([]);
+  const [dismissedApprovalIds, setDismissedApprovalIds] = useState<string[]>([]);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [replacementForm, setReplacementForm] = useState<ReplacementForm | null>(null);
   const [blockTrack, setBlockTrack] = useState(fallbackTracks[0]);
   const [blockStart, setBlockStart] = useState("");
   const [blockEnd, setBlockEnd] = useState("");
@@ -328,15 +377,18 @@ export default function DashboardPage() {
     setStatusTone("loading");
     setStatus("Loading planning board...");
     try {
-      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis, loadedSettings, loadedBlocks, loadedNotifications, loadedApprovals] = await Promise.all([
+      const ownerQuery = role === "requester" ? `?owner=${encodeURIComponent(activeRequester)}` : "";
+      const approvalQuery = role === "requester" ? `?owner=${encodeURIComponent(activeRequester)}&status=pending` : "?status=pending";
+      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis, loadedSettings, loadedBlocks, loadedNotifications, loadedApprovals, loadedCatalog] = await Promise.all([
         fetchJson<MaintenanceRequest[]>("/api/requests"),
         fetchJson<ScheduledWork[]>("/api/schedule"),
         fetchJson<Conflict[]>("/api/conflicts/detect", { method: "POST" }),
         fetchJson<Kpis>("/api/kpis"),
         fetchJson<SchedulingSettings>("/api/settings/scheduling"),
         fetchJson<BlockedTimeSlot[]>("/api/schedule/blocks?active_only=true"),
-        fetchJson<Notification[]>("/api/notifications"),
-        fetchJson<DisplacementApproval[]>("/api/displacement-approvals?status=pending")
+        fetchJson<Notification[]>(`/api/notifications${ownerQuery}`),
+        fetchJson<DisplacementApproval[]>(`/api/displacement-approvals${approvalQuery}`),
+        fetchJson<DashboardCatalog>("/api/catalog")
       ]);
 
       setRequests(loadedRequests);
@@ -348,6 +400,14 @@ export default function DashboardPage() {
       setBlockedSlots(loadedBlocks);
       setNotifications(loadedNotifications);
       setDisplacementApprovals(loadedApprovals);
+      const availableAccounts = Array.from(new Set([
+        ...(loadedCatalog.requester_accounts.length ? loadedCatalog.requester_accounts : fallbackRequesterAccounts),
+        ...loadedRequests.map((request) => request.created_by)
+      ])).filter(Boolean);
+      setRequesterAccounts(availableAccounts);
+      if (!availableAccounts.includes(activeRequester)) {
+        setActiveRequester(availableAccounts[0]);
+      }
       const scheduledIds = new Set(loadedSchedule.map((item) => item.request_id));
       const pendingRequests = loadedRequests.filter(
         (request) => request.approval_status === "draft" && !request.locked && !scheduledIds.has(request.request_id)
@@ -371,6 +431,8 @@ export default function DashboardPage() {
   }
 
   async function refreshAfterImport(message: string) {
+    setDismissedApprovalIds([]);
+    setRejectionReason("");
     await loadDashboard();
     setStatusTone("success");
     setStatus(message);
@@ -438,6 +500,22 @@ export default function DashboardPage() {
     } catch (error) {
       setStatusTone("error");
       setStatus(error instanceof Error ? error.message : "Selected tasks could not be approved.");
+    }
+  }
+
+  async function freezeDPlusThreeSchedule() {
+    setStatusTone("loading");
+    setStatus(`Freezing the D+${settings.urgent_lead_days} schedule...`);
+    try {
+      const payload = await fetchJson<FreezeResult>(`/api/schedule/batch/freeze-d-plus-3?role=${role}`, { method: "POST" });
+      setSelectedAlternative(null);
+      setAlternatives([]);
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`Frozen through ${payload.target_date}; ${payload.locked_items} schedule item${payload.locked_items === 1 ? "" : "s"} locked.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "D+3 freeze could not be completed.");
     }
   }
 
@@ -566,6 +644,90 @@ export default function DashboardPage() {
     }
   }
 
+  async function deleteSelectedSchedule() {
+    if (!selectedRequestId || !selectedScheduledItem) {
+      setStatus("Select scheduled work before deleting it.");
+      setStatusTone("info");
+      return;
+    }
+    setStatusTone("loading");
+    setStatus(`Deleting ${selectedRequestId}...`);
+    try {
+      await fetchJson<ScheduledWork>(`/api/schedule/${selectedRequestId}?role=${role}`, { method: "DELETE" });
+      setSelectedScheduledIds([]);
+      setSelectedRequestId(null);
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`${selectedRequestId} removed from the active schedule.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Scheduled work could not be deleted.");
+    }
+  }
+
+  function openReplacementRequest() {
+    if (!selectedRequest || !selectedScheduledItem) {
+      setStatus("Select scheduled work before creating a replacement request.");
+      setStatusTone("info");
+      return;
+    }
+    setReplacementForm({
+      title: `${selectedRequest.title} replacement`,
+      earliestStart: localInputValue(selectedScheduledItem.start_time),
+      deadline: localInputValue(selectedRequest.deadline),
+      durationMinutes: String(selectedRequest.duration_minutes),
+      requesterMessage: selectedRequest.requester_message ?? selectedRequest.notes ?? "Emergency schedule override from Approver."
+    });
+  }
+
+  async function submitReplacementRequest() {
+    if (!selectedRequestId || !selectedRequest || !selectedScheduledItem || !replacementForm) {
+      setStatus("Select scheduled work before creating a replacement request.");
+      setStatusTone("info");
+      return;
+    }
+    const earliestStart = new Date(replacementForm.earliestStart);
+    const deadline = new Date(replacementForm.deadline);
+    const durationMinutes = Number(replacementForm.durationMinutes);
+    if (Number.isNaN(earliestStart.getTime()) || Number.isNaN(deadline.getTime()) || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+      setStatus("Enter a valid replacement window and duration.");
+      setStatusTone("info");
+      return;
+    }
+    setStatusTone("loading");
+    setStatus(`Replacing ${selectedRequestId}...`);
+    const replacementId = `${selectedRequestId}-R${Date.now().toString().slice(-5)}`;
+    try {
+      await fetchJson("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          request_id: replacementId,
+          title: replacementForm.title,
+          track_sector: selectedRequest.track_sector,
+          work_type: selectedRequest.work_type,
+          duration_minutes: durationMinutes,
+          earliest_start: earliestStart.toISOString(),
+          deadline: deadline.toISOString(),
+          priority: selectedRequest.priority,
+          required_crew: selectedRequest.required_crew,
+          required_equipment: selectedRequest.required_equipment,
+          notes: replacementForm.requesterMessage || null
+        })
+      });
+      await fetchJson<ScheduledWork>(`/api/schedule/${selectedRequestId}?role=${role}`, { method: "DELETE" });
+      setReplacementForm(null);
+      setSelectedScheduledIds([]);
+      setSelectedRequestId(replacementId);
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`${selectedRequestId} was deleted and ${replacementId} was created for review.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Replacement request could not be created.");
+    }
+  }
+
   async function seedDemoData() {
     setStatusTone("loading");
     setStatus("Loading demo data...");
@@ -576,6 +738,8 @@ export default function DashboardPage() {
       setSelectedPendingIds([]);
       setSelectedScheduledIds([]);
       setSelectedRequestId(null);
+      setDismissedApprovalIds([]);
+      setRejectionReason("");
       await loadDashboard();
       setStatusTone("success");
       setStatus(
@@ -688,9 +852,50 @@ export default function DashboardPage() {
     }
   }
 
+  async function approvePendingRequest(requestId: string) {
+    setStatusTone("loading");
+    setStatus(`Approving ${requestId}...`);
+    try {
+      await fetchJson<ScheduledWork>(`/api/approvals/${requestId}/approve?role=${role}`, { method: "POST" });
+      setDismissedApprovalIds((current) => [...current, requestId]);
+      setRejectionReason("");
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`${requestId} approved.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Request could not be approved.");
+    }
+  }
+
+  async function rejectPendingRequest(requestId: string) {
+    if (!rejectionReason.trim()) {
+      setStatus("Enter a rejection reason before rejecting.");
+      setStatusTone("info");
+      return;
+    }
+    setStatusTone("loading");
+    setStatus(`Rejecting ${requestId}...`);
+    try {
+      await fetchJson<MaintenanceRequest>(`/api/approvals/${requestId}/reject?role=${role}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: rejectionReason.trim() })
+      });
+      setDismissedApprovalIds((current) => [...current, requestId]);
+      setRejectionReason("");
+      await loadDashboard();
+      setStatusTone("success");
+      setStatus(`${requestId} rejected.`);
+    } catch (error) {
+      setStatusTone("error");
+      setStatus(error instanceof Error ? error.message : "Request could not be rejected.");
+    }
+  }
+
   useEffect(() => {
     void loadDashboard();
-  }, []);
+  }, [activeRequester, role]);
 
   const visibleSchedule = selectedAlternative?.scheduled_work ?? schedule;
   const visibleConflicts = selectedAlternative?.conflicts ?? conflicts;
@@ -734,6 +939,11 @@ export default function DashboardPage() {
   const urgentRequestIds = new Set(
     requests.filter((request) => new Date(request.deadline).getTime() <= urgencyCutoff).map((request) => request.request_id)
   );
+  const isApprover = role === "approver" || role === "schedule_manager";
+  const pendingApprovalRequests = requests.filter(
+    (request) => request.approval_status === "pending_approval" && !dismissedApprovalIds.includes(request.request_id)
+  );
+  const activeApprovalRequest = isApprover ? pendingApprovalRequests[0] ?? null : null;
 
   function dayItems(day: Date) {
     return visibleSchedule.filter((item) => sameDay(new Date(item.start_time), day));
@@ -764,6 +974,11 @@ export default function DashboardPage() {
     );
   }
 
+  function openCalendarEvent(item: ScheduledWork) {
+    setCalendarDetails(item);
+    toggleScheduledSelection(item.request_id);
+  }
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -773,8 +988,16 @@ export default function DashboardPage() {
         <nav className="nav">
           <select className="role-select" value={role} onChange={(event) => setRole(event.target.value as Role)}>
             <option value="requester">Requester</option>
+            <option value="approver">Approver</option>
             <option value="schedule_manager">Schedule Manager</option>
           </select>
+          {role === "requester" && (
+            <select className="role-select" value={activeRequester} onChange={(event) => setActiveRequester(event.target.value)} aria-label="Requester account">
+              {requesterAccounts.map((account) => (
+                <option key={account} value={account}>{account}</option>
+              ))}
+            </select>
+          )}
           <Link className="secondary" href="/request/new">
             <Plus size={18} />
             New Request
@@ -817,7 +1040,15 @@ export default function DashboardPage() {
                 {new Intl.DateTimeFormat("en", { timeZone: PLANNING_TIME_ZONE, month: "long", year: "numeric" }).format(selectedDate)}
               </h2>
             </div>
-            <span className="legend"><i /> conflict</span>
+            <div className="month-actions">
+              <span className="legend"><i /> conflict</span>
+              <button className="icon-button" onClick={() => setSelectedDate((current) => shiftMonth(current, -1))} type="button" aria-label="Previous month">
+                <ChevronLeft size={18} />
+              </button>
+              <button className="icon-button" onClick={() => setSelectedDate((current) => shiftMonth(current, 1))} type="button" aria-label="Next month">
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
           <div className="month-grid">
             {days.map((day) => {
@@ -871,15 +1102,18 @@ export default function DashboardPage() {
                       const conflict = conflictsByRequest.get(item.request_id)?.[0];
                       return (
                         <button
-                          className={`calendar-event ${conflict ? "has-conflict" : ""} ${selectedScheduledIds.includes(item.request_id) ? "selected" : ""}`}
+                          className={`calendar-event ${scheduledDurationMinutes(item) < 45 ? "compact" : ""} ${conflict ? "has-conflict" : ""} ${selectedScheduledIds.includes(item.request_id) ? "selected" : ""}`}
                           key={`${item.request_id}-${item.start_time}`}
-                          onClick={() => toggleScheduledSelection(item.request_id)}
+                          onClick={() => openCalendarEvent(item)}
+                          title={`${item.request_id} / ${request?.title ?? "Scheduled work"}`}
                           style={calendarBlockStyle(item, timelineStartMinutes)}
                         >
-                          <strong>{item.request_id}</strong>
+                          <strong>
+                            <span>{item.request_id}</span>
+                            <span className="event-status">{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
+                          </strong>
                           <span>{formatTime(item.start_time)}-{formatTime(item.end_time)}</span>
-                          <span>{workLabel(request?.work_type ?? "work")}</span>
-                          <span>{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
+                          <span className="event-meta">{workLabel(request?.work_type ?? "work")}</span>
                         </button>
                       );
                     })}
@@ -970,10 +1204,17 @@ export default function DashboardPage() {
                   onChange={(event) => setUrgentLeadDaysInput(event.target.value)}
                   aria-label="Urgent lead days"
                 />
-                <button className="button secondary" disabled={role !== "schedule_manager"} onClick={updateUrgentLeadDays}>
+                <button className="button secondary" disabled={!isApprover} onClick={updateUrgentLeadDays}>
                   Save
                 </button>
               </div>
+            </div>
+            <div className="review-block">
+              <span className="eyebrow">Freeze Window</span>
+              <button className="button secondary" disabled={!isApprover} onClick={freezeDPlusThreeSchedule}>
+                <ShieldCheck size={18} />
+                Freeze D+{settings.urgent_lead_days}
+              </button>
             </div>
             <div className="review-block">
               <span className="eyebrow">Block Track Time</span>
@@ -986,7 +1227,7 @@ export default function DashboardPage() {
                 <input type="datetime-local" value={blockStart} onChange={(event) => setBlockStart(event.target.value)} aria-label="Block start" />
                 <input type="datetime-local" value={blockEnd} onChange={(event) => setBlockEnd(event.target.value)} aria-label="Block end" />
                 <input value={blockReason} onChange={(event) => setBlockReason(event.target.value)} placeholder="Reason" />
-                <button className="button secondary" disabled={role !== "schedule_manager"} onClick={createBlockedSlot}>
+                <button className="button secondary" disabled={!isApprover} onClick={createBlockedSlot}>
                   Block Slot
                 </button>
               </div>
@@ -997,7 +1238,7 @@ export default function DashboardPage() {
               {blockedSlots.map((slot) => (
                 <p key={slot.block_id}>
                   {slot.track_sectors.join(", ")} / {formatDateTime(slot.start_time)}-{formatDateTime(slot.end_time)}
-                  <button className="inline-action" disabled={role !== "schedule_manager"} onClick={() => cancelBlockedSlot(slot.block_id)}>
+                  <button className="inline-action" disabled={!isApprover} onClick={() => cancelBlockedSlot(slot.block_id)}>
                     Cancel
                   </button>
                 </p>
@@ -1157,23 +1398,174 @@ export default function DashboardPage() {
             {selectedAlternative && (
               <p>Selected proposal applies only to the selected pending request{selectedPendingIds.length === 1 ? "" : "s"}.</p>
             )}
-            <button className="button" disabled={role !== "schedule_manager" || !selectedAlternative || selectedPendingIds.length === 0} onClick={applySelectedAlternative}>
+            <button className="button" disabled={!isApprover || !selectedAlternative || selectedPendingIds.length === 0} onClick={applySelectedAlternative}>
               <ShieldCheck size={18} />
               Apply Proposal
             </button>
-            <button className="button" disabled={role !== "schedule_manager" || selectedTentativeCount === 0} onClick={approveSelectedSchedule}>
+            <button className="button" disabled={!isApprover || selectedTentativeCount === 0} onClick={approveSelectedSchedule}>
               <ShieldCheck size={18} />
               Approve Selected
             </button>
-            <button className="button secondary" disabled={role !== "schedule_manager" || !selectedScheduledItem} onClick={modifySelectedStart}>
+            <button className="button secondary" disabled={!isApprover || !selectedScheduledItem} onClick={modifySelectedStart}>
               Modify
             </button>
-            <button className="button secondary" disabled={role !== "schedule_manager" || !selectedRequestId} onClick={rejectSelectedRequest}>
+            <button className="button secondary" disabled={!isApprover || !selectedRequestId} onClick={rejectSelectedRequest}>
               Reject
+            </button>
+            <button className="button secondary" disabled={!isApprover || !selectedScheduledItem} onClick={deleteSelectedSchedule}>
+              <Trash2 size={18} />
+              Delete
+            </button>
+            <button className="button secondary" disabled={!isApprover || !selectedScheduledItem} onClick={openReplacementRequest}>
+              <Plus size={18} />
+              Recreate Request
             </button>
           </div>
         </aside>
       </section>
+
+      {replacementForm && selectedRequest && selectedScheduledItem && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Emergency replacement request">
+          <section className="approval-dialog">
+            <div className="import-dialog-header">
+              <div>
+                <span className="eyebrow">Emergency replacement</span>
+                <h2>{selectedRequest.request_id} / {selectedRequest.title}</h2>
+              </div>
+              <button className="icon-button" onClick={() => setReplacementForm(null)} aria-label="Dismiss">
+                X
+              </button>
+            </div>
+            <div className="import-dialog-body">
+              <p>
+                Current {selectedRequest.track_sector} / {selectedRequest.required_crew.join(", ") || "no crew"} /{" "}
+                {formatDateTime(selectedScheduledItem.start_time)}-{formatDateTime(selectedScheduledItem.end_time)}
+              </p>
+              <div className="compact-form vertical">
+                <input
+                  value={replacementForm.title}
+                  onChange={(event) => setReplacementForm({ ...replacementForm, title: event.target.value })}
+                  aria-label="Replacement title"
+                />
+                <input
+                  type="datetime-local"
+                  value={replacementForm.earliestStart}
+                  onChange={(event) => setReplacementForm({ ...replacementForm, earliestStart: event.target.value })}
+                  aria-label="Replacement earliest start"
+                />
+                <input
+                  type="datetime-local"
+                  value={replacementForm.deadline}
+                  onChange={(event) => setReplacementForm({ ...replacementForm, deadline: event.target.value })}
+                  aria-label="Replacement deadline"
+                />
+                <input
+                  min="1"
+                  type="number"
+                  value={replacementForm.durationMinutes}
+                  onChange={(event) => setReplacementForm({ ...replacementForm, durationMinutes: event.target.value })}
+                  aria-label="Replacement duration"
+                />
+              </div>
+              <textarea
+                rows={3}
+                value={replacementForm.requesterMessage}
+                onChange={(event) => setReplacementForm({ ...replacementForm, requesterMessage: event.target.value })}
+                placeholder="Approver message"
+              />
+            </div>
+            <div className="import-dialog-actions">
+              <button className="button secondary" onClick={() => setReplacementForm(null)}>
+                Cancel
+              </button>
+              <button className="button" onClick={submitReplacementRequest}>
+                Create Replacement
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {calendarDetails && (() => {
+        const detailRequest = requestFor(calendarDetails, requests);
+        const detailConflict = conflictsByRequest.get(calendarDetails.request_id)?.[0];
+        return (
+          <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Scheduled work details">
+            <section className="approval-dialog calendar-detail-dialog">
+              <div className="import-dialog-header">
+                <div>
+                  <span className="eyebrow">Scheduled work</span>
+                  <h2>{calendarDetails.request_id} / {detailRequest?.title ?? "Scheduled work"}</h2>
+                </div>
+                <button className="icon-button" onClick={() => setCalendarDetails(null)} aria-label="Close details">
+                  X
+                </button>
+              </div>
+              <div className="import-dialog-body">
+                <p><strong>{calendarDetails.track_sector}</strong> / {workLabel(detailRequest?.work_type ?? "work")}</p>
+                <p>{formatDateTime(calendarDetails.start_time)} - {formatDateTime(calendarDetails.end_time)} ({scheduledDurationMinutes(calendarDetails)} minutes)</p>
+                {detailRequest && (calendarDetails.changed_from_original || calendarDetails.start_time !== detailRequest.earliest_start) && (
+                  <p>
+                    Requested: {formatDateTime(detailRequest.earliest_start)} → Scheduled: {formatDateTime(calendarDetails.start_time)}
+                  </p>
+                )}
+                <p>Status: <strong>{isLockedStatus(calendarDetails.status) ? "Locked" : "Tentative"}</strong></p>
+                <p>Crew: {calendarDetails.assigned_crew.join(", ") || "None"}</p>
+                <p>Equipment: {calendarDetails.assigned_equipment.join(", ") || "None"}</p>
+                {calendarDetails.changed_from_original && <p>{calendarDetails.change_reason ?? "Moved to satisfy scheduling constraints."}</p>}
+                {detailConflict && <p className="danger-text">Conflict: {detailConflict.explanation}</p>}
+              </div>
+              <div className="import-dialog-actions">
+                <button className="button" onClick={() => setCalendarDetails(null)}>Close</button>
+              </div>
+            </section>
+          </div>
+        );
+      })()}
+
+      {activeApprovalRequest && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Urgent approval request">
+          <section className="approval-dialog">
+            <div className="import-dialog-header">
+              <div>
+                <span className="eyebrow">Urgent approval</span>
+                <h2>{activeApprovalRequest.request_id} / {activeApprovalRequest.title}</h2>
+              </div>
+              <button className="icon-button" onClick={() => setDismissedApprovalIds((current) => [...current, activeApprovalRequest.request_id])} aria-label="Dismiss">
+                X
+              </button>
+            </div>
+            <div className="import-dialog-body">
+              <p>
+                {activeApprovalRequest.track_sector} / {workLabel(activeApprovalRequest.work_type)} / Priority {activeApprovalRequest.priority}
+              </p>
+              <p>
+                Window {formatDateTime(activeApprovalRequest.earliest_start)}-{formatDateTime(activeApprovalRequest.deadline)}
+              </p>
+              {activeApprovalRequest.recommended_start && activeApprovalRequest.recommended_end && (
+                <p>
+                  Recommended {formatDateTime(activeApprovalRequest.recommended_start)}-{formatDateTime(activeApprovalRequest.recommended_end)}
+                </p>
+              )}
+              {activeApprovalRequest.requester_message && <p>{activeApprovalRequest.requester_message}</p>}
+              <textarea
+                rows={3}
+                value={rejectionReason}
+                onChange={(event) => setRejectionReason(event.target.value)}
+                placeholder="Rejection reason"
+              />
+            </div>
+            <div className="import-dialog-actions">
+              <button className="button secondary" onClick={() => rejectPendingRequest(activeApprovalRequest.request_id)}>
+                Reject
+              </button>
+              <button className="button" onClick={() => approvePendingRequest(activeApprovalRequest.request_id)}>
+                Approve
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {showImport && (
         <ImportDialog

@@ -79,14 +79,15 @@ Backend:
 
 ```bash
 cd backend
-py -m pip install -r requirements.txt
+# Windows: py -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt
+# macOS:   python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
 ```
 
 Frontend:
 
 ```bash
 cd frontend
-npm.cmd install
+npm install
 ```
 
 ## Run Locally
@@ -116,7 +117,8 @@ Or run the backend directly:
 
 ```bash
 cd backend
-py -m uvicorn app.main:app --reload
+# Windows: py -m uvicorn app.main:app --reload
+# macOS:   python3 -m uvicorn app.main:app --reload
 ```
 
 ## Test And Build
@@ -125,21 +127,22 @@ Backend tests:
 
 ```bash
 cd backend
-py -m pytest
+# Windows: py -m pytest
+# macOS:   python3 -m pytest
 ```
 
 Frontend type-check:
 
 ```bash
 cd frontend
-npm.cmd run lint
+npm run lint
 ```
 
 Frontend production build:
 
 ```bash
 cd frontend
-npm.cmd run build
+npm run build
 ```
 
 ## Demo Data

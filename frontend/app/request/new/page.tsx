@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Clock3, MapPin, Send, Settings2, UsersRound } from "lucide-react";
+import { ArrowLeft, Clock3, MapPin, Search, Send, Settings2, UsersRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -40,6 +40,12 @@ type ScheduledWork = {
   end_time: string;
 };
 
+type SlotRecommendation = {
+  available: boolean;
+  recommended_work?: ScheduledWork | null;
+  message?: string | null;
+};
+
 type ScheduleChange = {
   request_id: string;
   owner: string;
@@ -52,6 +58,9 @@ type ScheduleChange = {
 };
 
 type FitResponse = {
+  request: {
+    approval_status: string;
+  };
   fits_current_schedule: boolean;
   conflicts: Conflict[];
   suggested_alternatives: Alternative[];
@@ -62,6 +71,7 @@ type FitResponse = {
 };
 
 type FormState = {
+  createdBy: string;
   title: string;
   trackSector: string;
   workType: string;
@@ -81,6 +91,7 @@ type Catalog = {
   equipment: string[];
   priorities: number[];
   user_roles: string[];
+  requester_accounts: string[];
 };
 
 const fallbackCatalog: Catalog = {
@@ -111,10 +122,12 @@ const fallbackCatalog: Catalog = {
     "IsolationKit-1"
   ],
   priorities: [1, 2, 3, 4, 5],
-  user_roles: ["requester", "schedule_manager"]
+  user_roles: ["requester", "schedule_manager"],
+  requester_accounts: ["field-ops", "signal-team", "track-team", "power-team", "safety-team"]
 };
 
 const initialForm: FormState = {
+  createdBy: "field-ops",
   title: "",
   trackSector: "T12",
   workType: "inspection",
@@ -167,6 +180,8 @@ export default function NewRequestPage() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<FitResponse | null>(null);
+  const [recommendation, setRecommendation] = useState<SlotRecommendation | null>(null);
+  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<Catalog>(fallbackCatalog);
 
   useEffect(() => {
@@ -184,6 +199,53 @@ export default function NewRequestPage() {
     void loadCatalog();
   }, []);
 
+  function requestPayload(requestId?: string) {
+    return {
+      request_id: requestId ?? `M-${Date.now().toString().slice(-6)}`,
+      title: form.title,
+      track_sector: form.trackSector,
+      work_type: form.workType,
+      duration_minutes: Number(form.durationMinutes),
+      earliest_start: toSingaporeIso(form.earliestStart),
+      deadline: toSingaporeIso(form.deadline),
+      priority: Number(form.priority),
+      required_crew: form.requiredCrew,
+      required_equipment: form.requiredEquipment,
+      created_by: form.createdBy,
+      notes: form.notes || null
+    };
+  }
+
+  async function checkRecommendedSlot() {
+    setStatus("submitting");
+    setMessage("");
+    setRecommendation(null);
+    try {
+      const response = await fetch(`${API_BASE}/api/requests/recommend-slot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestPayload())
+      });
+      const payload = await readResponsePayload(response);
+      if (!response.ok) {
+        const detail = Array.isArray(payload?.detail)
+          ? payload.detail.map((item: unknown) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ")
+          : payload?.detail;
+        throw new Error(detail || "Recommended slot could not be checked.");
+      }
+      setRecommendation(payload);
+      setStatus("success");
+      setMessage(
+        payload.available && payload.recommended_work
+          ? `Recommended slot: ${formatDateTime(payload.recommended_work.start_time)}-${formatDateTime(payload.recommended_work.end_time)}.`
+          : payload.message || "No slot is available. Send a message to an Approver."
+      );
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Recommended slot could not be checked.");
+    }
+  }
+
   async function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("submitting");
@@ -191,22 +253,11 @@ export default function NewRequestPage() {
     setResult(null);
 
     try {
+      const requestId = `M-${Date.now().toString().slice(-6)}`;
       const response = await fetch(`${API_BASE}/api/requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          request_id: `M-${Date.now().toString().slice(-6)}`,
-          title: form.title,
-          track_sector: form.trackSector,
-          work_type: form.workType,
-          duration_minutes: Number(form.durationMinutes),
-          earliest_start: toSingaporeIso(form.earliestStart),
-          deadline: toSingaporeIso(form.deadline),
-          priority: Number(form.priority),
-          required_crew: form.requiredCrew,
-          required_equipment: form.requiredEquipment,
-          notes: form.notes || null
-        })
+        body: JSON.stringify(requestPayload(requestId))
       });
 
       const payload = await readResponsePayload(response);
@@ -218,10 +269,13 @@ export default function NewRequestPage() {
       }
 
       setResult(payload);
+      setLastRequestId(requestId);
       setStatus("success");
       setMessage(
         payload.fits_current_schedule && payload.scheduled_work
           ? "Request placed tentatively on the calendar. A Schedule Manager can approve it from the dashboard."
+          : payload.requires_manager_review && payload.request.approval_status === "pending_approval"
+            ? "Urgent request sent to an Approver for review."
           : payload.fits_current_schedule
             ? "Request queued. It will enter scheduling when it is inside the configured planning window."
           : "Request queued with conflicts. Review proposals or run Generate Schedule from the dashboard."
@@ -229,6 +283,31 @@ export default function NewRequestPage() {
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Request could not be submitted.");
+    }
+  }
+
+  async function confirmUrgentRequest() {
+    if (!lastRequestId) {
+      setStatus("error");
+      setMessage("Submit the request before confirming urgent review.");
+      return;
+    }
+    setStatus("submitting");
+    try {
+      const response = await fetch(`${API_BASE}/api/requests/${lastRequestId}/confirm-urgent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requester_message: form.notes || null })
+      });
+      const payload = await readResponsePayload(response);
+      if (!response.ok) {
+        throw new Error(payload?.detail || "Urgent request could not be confirmed.");
+      }
+      setStatus("success");
+      setMessage("Urgent request sent to an Approver.");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Urgent request could not be confirmed.");
     }
   }
 
@@ -267,6 +346,16 @@ export default function NewRequestPage() {
                     onChange={(event) => setForm({ ...form, title: event.target.value })}
                     placeholder="Signal relay inspection"
                   />
+                </div>
+                <div className="field">
+                  <label htmlFor="createdBy">Requester Account</label>
+                  <select id="createdBy" value={form.createdBy} onChange={(event) => setForm({ ...form, createdBy: event.target.value })}>
+                    {catalog.requester_accounts.map((account) => (
+                      <option key={account} value={account}>
+                        {account}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="field">
                   <label htmlFor="workType">Work Type</label>
@@ -405,17 +494,40 @@ export default function NewRequestPage() {
               />
             </div>
             </section>
-            <button className="button" disabled={status === "submitting"} type="submit">
+            <div className="form-actions">
+              <button className="button secondary" disabled={status === "submitting"} type="button" onClick={checkRecommendedSlot}>
+                <Search size={18} />
+                Check Slot
+              </button>
+              <button className="button" disabled={status === "submitting"} type="submit">
               <Send size={18} />
               {status === "submitting" ? "Submitting" : "Submit"}
-            </button>
+              </button>
+            </div>
             {message && <div className={`notice ${status}`}>{message}</div>}
+            {recommendation && (
+              <div className="result-list">
+                <strong>{recommendation.available ? "Recommended Slot" : "Approver Review Needed"}</strong>
+                <p>
+                  {recommendation.available && recommendation.recommended_work
+                    ? `${formatDateTime(recommendation.recommended_work.start_time)}-${formatDateTime(recommendation.recommended_work.end_time)}`
+                    : recommendation.message || "No feasible slot is currently available."}
+                </p>
+              </div>
+            )}
+            {lastRequestId && result?.request.approval_status === "draft" && !result.scheduled_work && (
+              <button className="button secondary" disabled={status === "submitting"} type="button" onClick={confirmUrgentRequest}>
+                Send Urgent Review
+              </button>
+            )}
             {result && (
               <div className="result-list">
                 <strong>{result.fits_current_schedule ? "Fits Current Schedule" : "Needs Decision Review"}</strong>
                 <p>
                   {result.fits_current_schedule && result.scheduled_work
                     ? "No active conflict is reported, and the work is tentatively placed pending Schedule Manager approval."
+                    : result.requires_manager_review && result.request.approval_status === "pending_approval"
+                      ? "This request is inside the frozen lead window and is waiting for an Approver decision."
                     : result.fits_current_schedule
                       ? "No active conflict is reported, but this request is outside the current planning window."
                     : "The requested window has a conflict. A manager can review proposals from the Planning Board."}

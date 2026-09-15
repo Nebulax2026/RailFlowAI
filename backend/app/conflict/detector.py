@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from app.conflict.rules.crew import detect_crew_conflicts
 from app.conflict.rules.equipment import detect_equipment_conflicts
 from app.conflict.rules.safety import detect_safety_conflicts

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -17,6 +19,7 @@ from app.scheduler.service import (
     apply_schedule,
     build_optimised_schedule,
     create_notification,
+    freeze_d_plus_three_batch,
     generate_reschedule_proposals,
     requests_with_locked_schedule,
     validate_schedule_against_blocks,
@@ -105,6 +108,15 @@ def cancel_blocked_slot(block_id: str, role: str = "requester") -> BlockedTimeSl
     return saved
 
 
+@router.post("/batch/freeze-d-plus-3")
+def freeze_d_plus_three(role: str = "requester") -> dict:
+    require_schedule_manager(role, "run the D+3 schedule freeze")
+    result = freeze_d_plus_three_batch()
+    if not result["frozen"]:
+        raise HTTPException(status_code=422, detail=result["errors"])
+    return result
+
+
 @router.post("/optimise", response_model=list[ScheduledWork])
 def optimise(option: ScheduleOption = ScheduleOption.MINIMUM_DISRUPTION) -> list[ScheduledWork]:
     scheduled, errors, conflicts = build_optimised_schedule(option)
@@ -113,6 +125,35 @@ def optimise(option: ScheduleOption = ScheduleOption.MINIMUM_DISRUPTION) -> list
         raise HTTPException(status_code=422, detail=errors or conflict_errors)
     apply_schedule(scheduled)
     return scheduled
+
+
+@router.delete("/{request_id}", response_model=ScheduledWork)
+def delete_scheduled_work(request_id: str, role: str = "requester") -> ScheduledWork:
+    require_schedule_manager(role, "delete scheduled work")
+    scheduled = schedule_repository.get(request_id)
+    request = requests_repository.get(request_id)
+    if not scheduled:
+        raise HTTPException(status_code=404, detail="Scheduled work not found.")
+    with unit_of_work() as work:
+        deleted = work.schedule.delete(request_id)
+        if request:
+            work.requests.save(
+                request.model_copy(
+                    update={
+                        "approval_status": ApprovalStatus.DRAFT,
+                        "locked": False,
+                        "fixed_start": None,
+                        "fixed_end": None,
+                    }
+                )
+            )
+        record_audit_event(
+            "schedule_deleted",
+            f"Schedule item {request_id} was deleted.",
+            actor=role,
+            request_ids=[request_id],
+        )
+    return deleted or scheduled
 
 
 @router.post("/apply", response_model=list[ScheduledWork])
@@ -336,6 +377,18 @@ def modify_scheduled_work(request_id: str, payload: dict, role: str = "requester
         raise HTTPException(status_code=422, detail=errors or [conflict.explanation for conflict in conflicts])
     with unit_of_work() as work:
         saved = work.schedule.save(updated)
+        request = work.requests.get(request_id)
+        if request and saved.status == ApprovalStatus.LOCKED:
+            work.requests.save(
+                request.model_copy(
+                    update={
+                        "approval_status": ApprovalStatus.LOCKED,
+                        "locked": True,
+                        "fixed_start": saved.start_time,
+                        "fixed_end": saved.end_time,
+                    }
+                )
+            )
         record_audit_event(
             "schedule_modified",
             f"Schedule item {request_id} was modified.",

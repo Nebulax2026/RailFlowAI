@@ -225,7 +225,6 @@ textarea:focus-visible {
 }
 
 .signal-panel {
-  animation: rise-in 420ms ease both;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -395,7 +394,6 @@ textarea:focus-visible {
 .month-board,
 .today-board,
 .panel {
-  animation: rise-in 360ms ease both;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -422,6 +420,12 @@ textarea:focus-visible {
   font-size: 18px;
   gap: 8px;
   margin: 4px 0 0;
+}
+
+.month-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
 }
 
 .legend {
@@ -502,8 +506,7 @@ textarea:focus-visible {
 .today-list,
 .request-list,
 .result-list,
-.decision-stack,
-.dependency-list {
+.decision-stack {
   display: grid;
   gap: 10px;
 }
@@ -540,7 +543,7 @@ textarea:focus-visible {
 .day-calendar {
   display: grid;
   grid-template-columns: 64px minmax(560px, 1fr);
-  grid-template-rows: 42px minmax(520px, 68vh);
+  grid-template-rows: 42px minmax(720px, 78vh);
   overflow: auto;
 }
 
@@ -561,8 +564,8 @@ textarea:focus-visible {
 .track-columns {
   border-bottom: 1px solid var(--line);
   display: grid;
-  grid-template-columns: repeat(var(--track-count), minmax(118px, 1fr));
-  min-width: calc(var(--track-count) * 118px);
+  grid-template-columns: repeat(var(--track-count), minmax(156px, 1fr));
+  min-width: calc(var(--track-count) * 156px);
 }
 
 .track-column-header {
@@ -585,9 +588,9 @@ textarea:focus-visible {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(var(--track-count), minmax(118px, 1fr));
+  grid-template-columns: repeat(var(--track-count), minmax(156px, 1fr));
   min-height: calc(var(--slot-count) * var(--slot-height));
-  min-width: calc(var(--track-count) * 118px);
+  min-width: calc(var(--track-count) * 156px);
   position: relative;
 }
 
@@ -610,13 +613,23 @@ textarea:focus-visible {
   color: white;
   cursor: pointer;
   display: grid;
-  gap: 2px;
-  left: 7px;
+  gap: 4px;
+  grid-template-rows: auto auto auto;
+  left: 8px;
   overflow: hidden;
-  padding: 6px 7px;
+  padding: 8px;
   position: absolute;
-  right: 7px;
+  right: 8px;
   text-align: left;
+}
+
+.calendar-event.compact {
+  gap: 1px;
+  padding: 4px 6px;
+}
+
+.calendar-event.compact .event-meta {
+  display: none;
 }
 
 .calendar-event:hover,
@@ -633,8 +646,8 @@ textarea:focus-visible {
 .calendar-event strong,
 .calendar-event span {
   color: white;
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: 12px;
+  line-height: 1.25;
   margin: 0;
   min-width: 0;
   overflow: hidden;
@@ -643,7 +656,25 @@ textarea:focus-visible {
 }
 
 .calendar-event strong {
-  font-size: 12px;
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.calendar-event strong span:first-child {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.calendar-event .event-status {
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 6px;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 5px;
+  text-transform: uppercase;
 }
 
 .calendar-empty {
@@ -709,7 +740,7 @@ textarea:focus-visible {
 .ops-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(220px, 0.68fr) minmax(260px, 0.7fr) minmax(340px, 1.05fr);
+  grid-template-columns: minmax(260px, 0.85fr) minmax(340px, 1fr) minmax(340px, 1fr);
   padding: 18px clamp(16px, 3vw, 28px);
 }
 
@@ -1010,6 +1041,12 @@ textarea:focus-visible {
   gap: 8px;
 }
 
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .compact-form.vertical {
   align-items: stretch;
   display: grid;
@@ -1115,6 +1152,29 @@ textarea:focus-visible {
   max-height: min(880px, calc(100vh - 40px));
   max-width: 980px;
   overflow: hidden;
+  width: 100%;
+}
+
+.approval-dialog {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 26px 70px rgba(20, 32, 51, 0.3);
+  display: grid;
+  max-width: 620px;
+  overflow: hidden;
+  width: min(100%, 620px);
+}
+
+.approval-dialog textarea {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 92px;
+  padding: 10px 12px;
+  resize: vertical;
   width: 100%;
 }
 
@@ -1448,55 +1508,6 @@ textarea:focus-visible {
   gap: 6px;
 }
 
-.dependency-rule {
-  align-items: center;
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 18px;
-  grid-template-columns: 1fr 1fr;
-  min-height: 56px;
-  padding: 10px;
-  position: relative;
-}
-
-.dependency-rule::after {
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--accent-dark);
-  content: "then";
-  font-size: 11px;
-  font-weight: 800;
-  left: 50%;
-  padding: 3px 6px;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.dependency-rule span,
-.dependency-rule strong {
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.dependency-rule strong {
-  text-align: right;
-}
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes pulse {
   0% {
     background-position: 220% 0;
@@ -1584,8 +1595,8 @@ textarea:focus-visible {
   }
 
   .day-calendar {
-    grid-template-columns: 54px minmax(520px, 1fr);
-    grid-template-rows: 40px minmax(480px, 64vh);
+    grid-template-columns: 54px minmax(680px, 1fr);
+    grid-template-rows: 40px minmax(640px, 72vh);
   }
 
   .today-item {
@@ -1623,4 +1634,47 @@ textarea:focus-visible {
   .feature-band article {
     padding-right: 0;
   }
+}
+
+.dependency-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dependency-rule {
+  align-items: center;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  min-height: 56px;
+  padding: 10px;
+  position: relative;
+}
+
+.dependency-rule::after {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--accent-dark);
+  content: "then";
+  font-size: 11px;
+  font-weight: 800;
+  left: 50%;
+  padding: 3px 6px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.dependency-rule span,
+.dependency-rule strong {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.dependency-rule strong {
+  text-align: right;
 }
