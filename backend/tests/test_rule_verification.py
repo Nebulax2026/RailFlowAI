@@ -12,8 +12,8 @@
   - test_confirm_urgent_on_already_scheduled_request_is_now_rejected: PENDING_APPROVAL로
     바뀌는 걸 확인하던 걸 → 422로 거부되고 상태/스케줄이 보존되는 걸 확인하도록 변경
 
-"확인 필요"라고 표시된 나머지 항목들(D+3 경계값 포함 여부, displacement approval 소유자)은
-스펙 vs 구현 불일치이지 버그가 아니라서, 이번 수정 범위에서 의도적으로 제외했습니다.
+D+3 경계값은 자정 프리즈 이후 승인자 검토가 필요한 것으로 확정하여 회귀 테스트를 추가했습니다.
+Displacement approval 소유자 정책은 아직 명세 확인이 필요하여 이번 수정 범위에서 제외했습니다.
 
 사용법:
     backend/tests/ 밑에 이 파일을 넣고
@@ -23,7 +23,7 @@
 
 import sys
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -111,13 +111,7 @@ class BusinessRuleVerificationTest(unittest.TestCase):
     # ---------------------------------------------------------------
     # 2. 3일 리드타임 / D+3 경계값
     # ---------------------------------------------------------------
-    def test_earliest_start_exactly_d_plus_3_is_not_forced_into_approver_review(self) -> None:
-        """
-        ⚠️ 확인 필요: requires_urgent_approver_review는 `< cutoff`(D+3 미포함)라서
-        earliest_start가 정확히 D+3인 요청은 승인자 검토 없이 자동 배치됩니다.
-        "3일 전에는 무조건 요청" 요구사항의 "3일 전" 정의(D+3 포함 여부)와
-        실제 동작이 일치하는지 이 테스트로 직접 확인하세요.
-        """
+    def test_earliest_start_exactly_d_plus_3_requires_approver_review(self) -> None:
         with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)), \
              patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)), \
              patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
@@ -126,8 +120,10 @@ class BusinessRuleVerificationTest(unittest.TestCase):
                 json=request_payload("M-D3-EDGE", "2026-08-28T09:00:00", "2026-08-28T10:00:00"),
             )
 
-        # 실제 관찰값을 출력해서 눈으로 확인하기 쉽게
-        print("D+3 당일 요청 결과:", response.json()["fits_current_schedule"], response.json()["requires_manager_review"])
+        self.assertFalse(response.json()["fits_current_schedule"])
+        self.assertTrue(response.json()["requires_manager_review"])
+        self.assertEqual(REQUESTS["M-D3-EDGE"].approval_status, ApprovalStatus.PENDING_APPROVAL)
+        self.assertNotIn("M-D3-EDGE", SCHEDULED_WORK)
 
     def test_earliest_start_d_plus_2_is_forced_into_approver_review(self) -> None:
         with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)), \
@@ -149,8 +145,9 @@ class BusinessRuleVerificationTest(unittest.TestCase):
                              ("2026-08-29", datetime(2026, 8, 26, 0, 0, 0)),
                              ("2026-08-30", datetime(2026, 8, 27, 0, 0, 0))]:
             request_id = f"M-ROLL-{day}"
-            with patch("app.scheduler.policy.planning_now", return_value=anchor), \
-                 patch("app.scheduler.service.planning_now", return_value=anchor), \
+            submission_time = anchor - timedelta(days=1)
+            with patch("app.scheduler.policy.planning_now", return_value=submission_time), \
+                 patch("app.scheduler.service.planning_now", return_value=submission_time), \
                  patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=True):
                 created = client.post(
                     "/api/requests",
@@ -167,6 +164,8 @@ class BusinessRuleVerificationTest(unittest.TestCase):
                 if request_id in SCHEDULED_WORK:
                     print(f"[{day}] pre-freeze start_time={SCHEDULED_WORK[request_id].start_time} status={SCHEDULED_WORK[request_id].status}")
 
+            with patch("app.scheduler.policy.planning_now", return_value=anchor), \
+                 patch("app.scheduler.service.planning_now", return_value=anchor):
                 frozen = client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
                 print(f"[{day}] freeze status={frozen.status_code} body={frozen.json()}")
                 print(f"[{day}] in SCHEDULED_WORK after freeze? {request_id in SCHEDULED_WORK}")
