@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, CheckCircle2, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -86,6 +86,10 @@ type SchedulingSettings = {
   urgent_lead_days: number;
 };
 
+type DashboardCatalog = {
+  requester_accounts: string[];
+};
+
 type BlockedTimeSlot = {
   block_id: string;
   track_sectors: string[];
@@ -139,6 +143,7 @@ type ReplacementForm = {
 
 type Role = "requester" | "approver" | "schedule_manager";
 type StatusTone = "loading" | "success" | "error" | "info";
+const fallbackRequesterAccounts = ["field-ops", "signal-team", "track-team", "power-team", "safety-team"];
 
 const emptyKpis: Kpis = {
   unresolved_conflicts: 0,
@@ -175,7 +180,7 @@ const engineeringHours = [
   "21:00",
   "22:00"
 ];
-const timeSlotHeight = 88;
+const timeSlotHeight = 144;
 const fallbackTracks = ["T08", "T09", "T10", "T11", "T12", "T13", "T14"];
 
 function formatDate(value: Date) {
@@ -213,7 +218,7 @@ function monthDays(anchor: Date) {
   const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   const start = new Date(first);
   start.setDate(first.getDate() - first.getDay());
-  return Array.from({ length: 35 }, (_, index) => {
+  return Array.from({ length: 42 }, (_, index) => {
     const day = new Date(start);
     day.setDate(start.getDate() + index);
     return day;
@@ -284,6 +289,16 @@ function scheduledDurationMinutes(item: ScheduledWork) {
   return Math.max(0, Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000));
 }
 
+function shiftMonth(anchor: Date, direction: -1 | 1) {
+  const next = new Date(anchor);
+  const day = anchor.getDate();
+  next.setDate(1);
+  next.setMonth(next.getMonth() + direction);
+  const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+  next.setDate(Math.min(day, lastDay));
+  return next;
+}
+
 function isLockedStatus(status: string) {
   return status.toLowerCase() === "locked";
 }
@@ -327,6 +342,8 @@ async function fetchJson<T>(endpoint: string, init?: RequestInit): Promise<T> {
 
 export default function DashboardPage() {
   const [role, setRole] = useState<Role>("requester");
+  const [activeRequester, setActiveRequester] = useState(fallbackRequesterAccounts[0]);
+  const [requesterAccounts, setRequesterAccounts] = useState(fallbackRequesterAccounts);
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [schedule, setSchedule] = useState<ScheduledWork[]>([]);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
@@ -360,15 +377,18 @@ export default function DashboardPage() {
     setStatusTone("loading");
     setStatus("Loading planning board...");
     try {
-      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis, loadedSettings, loadedBlocks, loadedNotifications, loadedApprovals] = await Promise.all([
+      const ownerQuery = role === "requester" ? `?owner=${encodeURIComponent(activeRequester)}` : "";
+      const approvalQuery = role === "requester" ? `?owner=${encodeURIComponent(activeRequester)}&status=pending` : "?status=pending";
+      const [loadedRequests, loadedSchedule, loadedConflicts, loadedKpis, loadedSettings, loadedBlocks, loadedNotifications, loadedApprovals, loadedCatalog] = await Promise.all([
         fetchJson<MaintenanceRequest[]>("/api/requests"),
         fetchJson<ScheduledWork[]>("/api/schedule"),
         fetchJson<Conflict[]>("/api/conflicts/detect", { method: "POST" }),
         fetchJson<Kpis>("/api/kpis"),
         fetchJson<SchedulingSettings>("/api/settings/scheduling"),
         fetchJson<BlockedTimeSlot[]>("/api/schedule/blocks?active_only=true"),
-        fetchJson<Notification[]>("/api/notifications"),
-        fetchJson<DisplacementApproval[]>("/api/displacement-approvals?status=pending")
+        fetchJson<Notification[]>(`/api/notifications${ownerQuery}`),
+        fetchJson<DisplacementApproval[]>(`/api/displacement-approvals${approvalQuery}`),
+        fetchJson<DashboardCatalog>("/api/catalog")
       ]);
 
       setRequests(loadedRequests);
@@ -380,6 +400,14 @@ export default function DashboardPage() {
       setBlockedSlots(loadedBlocks);
       setNotifications(loadedNotifications);
       setDisplacementApprovals(loadedApprovals);
+      const availableAccounts = Array.from(new Set([
+        ...(loadedCatalog.requester_accounts.length ? loadedCatalog.requester_accounts : fallbackRequesterAccounts),
+        ...loadedRequests.map((request) => request.created_by)
+      ])).filter(Boolean);
+      setRequesterAccounts(availableAccounts);
+      if (!availableAccounts.includes(activeRequester)) {
+        setActiveRequester(availableAccounts[0]);
+      }
       const scheduledIds = new Set(loadedSchedule.map((item) => item.request_id));
       const pendingRequests = loadedRequests.filter(
         (request) => request.approval_status === "draft" && !request.locked && !scheduledIds.has(request.request_id)
@@ -867,7 +895,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
-  }, []);
+  }, [activeRequester, role]);
 
   const visibleSchedule = selectedAlternative?.scheduled_work ?? schedule;
   const visibleConflicts = selectedAlternative?.conflicts ?? conflicts;
@@ -963,6 +991,13 @@ export default function DashboardPage() {
             <option value="approver">Approver</option>
             <option value="schedule_manager">Schedule Manager</option>
           </select>
+          {role === "requester" && (
+            <select className="role-select" value={activeRequester} onChange={(event) => setActiveRequester(event.target.value)} aria-label="Requester account">
+              {requesterAccounts.map((account) => (
+                <option key={account} value={account}>{account}</option>
+              ))}
+            </select>
+          )}
           <Link className="secondary" href="/request/new">
             <Plus size={18} />
             New Request
@@ -1005,7 +1040,15 @@ export default function DashboardPage() {
                 {new Intl.DateTimeFormat("en", { timeZone: PLANNING_TIME_ZONE, month: "long", year: "numeric" }).format(selectedDate)}
               </h2>
             </div>
-            <span className="legend"><i /> conflict</span>
+            <div className="month-actions">
+              <span className="legend"><i /> conflict</span>
+              <button className="icon-button" onClick={() => setSelectedDate((current) => shiftMonth(current, -1))} type="button" aria-label="Previous month">
+                <ChevronLeft size={18} />
+              </button>
+              <button className="icon-button" onClick={() => setSelectedDate((current) => shiftMonth(current, 1))} type="button" aria-label="Next month">
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
           <div className="month-grid">
             {days.map((day) => {
@@ -1065,10 +1108,12 @@ export default function DashboardPage() {
                           title={`${item.request_id} / ${request?.title ?? "Scheduled work"}`}
                           style={calendarBlockStyle(item, timelineStartMinutes)}
                         >
-                          <strong>{item.request_id}</strong>
+                          <strong>
+                            <span>{item.request_id}</span>
+                            <span className="event-status">{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
+                          </strong>
                           <span>{formatTime(item.start_time)}-{formatTime(item.end_time)}</span>
                           <span className="event-meta">{workLabel(request?.work_type ?? "work")}</span>
-                          <span className="event-meta">{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
                         </button>
                       );
                     })}

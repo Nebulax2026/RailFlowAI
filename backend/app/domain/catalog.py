@@ -35,6 +35,14 @@ PRIORITIES = [1, 2, 3, 4, 5]
 
 USER_ROLES = ["requester", "approver", "schedule_manager"]
 
+REQUESTER_ACCOUNTS = [
+    "field-ops",
+    "signal-team",
+    "track-team",
+    "power-team",
+    "safety-team",
+]
+
 
 def catalog_response() -> dict[str, list[str] | list[int]]:
     return {
@@ -44,4 +52,5 @@ def catalog_response() -> dict[str, list[str] | list[int]]:
         "equipment": EQUIPMENT,
         "priorities": PRIORITIES,
         "user_roles": USER_ROLES,
+        "requester_accounts": REQUESTER_ACCOUNTS,
     }

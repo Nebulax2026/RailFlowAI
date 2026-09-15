@@ -744,6 +744,34 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(frozen.status_code, 200)
         self.assertEqual(SCHEDULED_WORK["M-D3-TENTATIVE"].status, ApprovalStatus.LOCKED)
 
+    def test_near_term_tentative_work_moves_around_new_block_without_locking(self) -> None:
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 24)):
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-TENTATIVE-BLOCK", "2026-08-28T09:00:00", "2026-08-28T11:00:00"),
+            )
+        self.assertEqual(created.status_code, 200)
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25)):
+            generated = client.post("/api/schedule/optimise?option=minimum_disruption")
+            self.assertEqual(generated.status_code, 200)
+            original = SCHEDULED_WORK["M-TENTATIVE-BLOCK"]
+            block = client.post(
+                "/api/schedule/blocks?role=schedule_manager",
+                json={
+                    "track_sectors": ["T08"],
+                    "start_time": original.start_time.isoformat(),
+                    "end_time": original.end_time.isoformat(),
+                    "reason": "New possession after tentative planning",
+                },
+            )
+            self.assertEqual(block.status_code, 200)
+            regenerated = client.post("/api/schedule/optimise?option=minimum_disruption")
+        self.assertEqual(regenerated.status_code, 200)
+        moved = SCHEDULED_WORK["M-TENTATIVE-BLOCK"]
+        self.assertGreaterEqual(moved.start_time, original.end_time)
+        self.assertEqual(moved.status, ApprovalStatus.SCHEDULED)
+        self.assertFalse(REQUESTS["M-TENTATIVE-BLOCK"].locked)
+
     def test_exact_d_plus_three_submission_after_freeze_requires_approval(self) -> None:
         with (
             patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),

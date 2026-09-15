@@ -71,6 +71,7 @@ type FitResponse = {
 };
 
 type FormState = {
+  createdBy: string;
   title: string;
   trackSector: string;
   workType: string;
@@ -90,6 +91,7 @@ type Catalog = {
   equipment: string[];
   priorities: number[];
   user_roles: string[];
+  requester_accounts: string[];
 };
 
 const fallbackCatalog: Catalog = {
@@ -120,10 +122,12 @@ const fallbackCatalog: Catalog = {
     "IsolationKit-1"
   ],
   priorities: [1, 2, 3, 4, 5],
-  user_roles: ["requester", "schedule_manager"]
+  user_roles: ["requester", "schedule_manager"],
+  requester_accounts: ["field-ops", "signal-team", "track-team", "power-team", "safety-team"]
 };
 
 const initialForm: FormState = {
+  createdBy: "field-ops",
   title: "",
   trackSector: "T12",
   workType: "inspection",
@@ -207,6 +211,7 @@ export default function NewRequestPage() {
       priority: Number(form.priority),
       required_crew: form.requiredCrew,
       required_equipment: form.requiredEquipment,
+      created_by: form.createdBy,
       notes: form.notes || null
     };
   }
@@ -341,6 +346,16 @@ export default function NewRequestPage() {
                     onChange={(event) => setForm({ ...form, title: event.target.value })}
                     placeholder="Signal relay inspection"
                   />
+                </div>
+                <div className="field">
+                  <label htmlFor="createdBy">Requester Account</label>
+                  <select id="createdBy" value={form.createdBy} onChange={(event) => setForm({ ...form, createdBy: event.target.value })}>
+                    {catalog.requester_accounts.map((account) => (
+                      <option key={account} value={account}>
+                        {account}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="field">
                   <label htmlFor="workType">Work Type</label>
