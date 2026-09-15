@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.domain.enums import ApprovalStatus, RequestSource, ScheduleOption
-from app.domain.models import MaintenanceRequest
+from app.domain.models import BlockedTimeSlot, MaintenanceRequest
 from app.main import app
 from app.repositories import unit_of_work
 from app.scheduler.cp_sat_scheduler import optimise_schedule
@@ -662,11 +662,16 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertTrue(any("blocked slot" in item["message"] for item in notifications.json()))
 
     def test_urgent_conflict_waits_for_approver_before_schedule_changes(self) -> None:
-        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 10, 0, 0, 0)):
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 9, 0, 0, 0)):
             client.post(
                 "/api/requests",
                 json=request_payload("M-001", "2026-08-13T10:00:00", "2026-08-13T12:00:00", crew=["E1"]),
             )
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 10, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 10, 0, 0, 0)),
+        ):
+            client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
         with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 12, 0, 0, 0)):
             original_start = SCHEDULED_WORK["M-001"].start_time
             response = client.post(
@@ -696,7 +701,7 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(approved.json()["urgent_lead_days"], 4)
 
     def test_d_plus_three_batch_freezes_target_day(self) -> None:
-        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)):
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 24, 0, 0, 0)):
             created = client.post(
                 "/api/requests",
                 json=request_payload("M-D3", "2026-08-28T09:00:00", "2026-08-28T11:00:00"),
@@ -713,6 +718,71 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(frozen.json()["target_date"], "2026-08-28")
         self.assertEqual(SCHEDULED_WORK["M-D3"].status, ApprovalStatus.LOCKED)
         self.assertTrue(REQUESTS["M-D3"].locked)
+
+    def test_generate_keeps_near_term_work_tentative_until_freeze(self) -> None:
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 24, 0, 0, 0)):
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-D3-TENTATIVE", "2026-08-28T09:00:00", "2026-08-28T11:00:00"),
+            )
+
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)):
+            generated = client.post("/api/schedule/optimise?option=minimum_disruption")
+            regenerated = client.post("/api/schedule/optimise?option=minimum_disruption")
+
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(generated.status_code, 200)
+        self.assertEqual(regenerated.status_code, 200)
+        self.assertEqual(SCHEDULED_WORK["M-D3-TENTATIVE"].status, ApprovalStatus.SCHEDULED)
+
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            frozen = client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
+
+        self.assertEqual(frozen.status_code, 200)
+        self.assertEqual(SCHEDULED_WORK["M-D3-TENTATIVE"].status, ApprovalStatus.LOCKED)
+
+    def test_exact_d_plus_three_submission_after_freeze_requires_approval(self) -> None:
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            frozen = client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
+            created = client.post(
+                "/api/requests",
+                json=request_payload("M-LATE-D3", "2026-08-28T09:00:00", "2026-08-28T10:00:00"),
+            )
+
+        self.assertEqual(frozen.status_code, 200)
+        self.assertEqual(created.status_code, 200)
+        self.assertTrue(created.json()["requires_manager_review"])
+        self.assertEqual(REQUESTS["M-LATE-D3"].approval_status, ApprovalStatus.PENDING_APPROVAL)
+        self.assertNotIn("M-LATE-D3", SCHEDULED_WORK)
+
+    def test_urgent_no_slot_submission_copies_notes_for_approver(self) -> None:
+        BLOCKED_TIME_SLOTS["BLOCK-D1"] = BlockedTimeSlot(
+            block_id="BLOCK-D1",
+            track_sectors=["T08"],
+            start_time=datetime(2026, 8, 26, 9, 0, 0),
+            end_time=datetime(2026, 8, 26, 10, 0, 0),
+            reason="No access",
+            created_at=datetime(2026, 8, 25, 0, 0, 0),
+        )
+        payload = request_payload("M-D1-NOTE", "2026-08-26T09:00:00", "2026-08-26T10:00:00")
+        payload["notes"] = "Please move another job if needed."
+
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
+            created = client.post("/api/requests", json=payload)
+
+        self.assertEqual(created.status_code, 200)
+        self.assertTrue(created.json()["requires_manager_review"])
+        self.assertIsNone(created.json()["request"]["recommended_start"])
+        self.assertEqual(REQUESTS["M-D1-NOTE"].requester_message, "Please move another job if needed.")
 
     def test_recommend_slot_returns_earliest_feasible_gap_without_moving_current_schedule(self) -> None:
         with patch("app.scheduler.service.is_planning_eligible", return_value=True):
@@ -805,14 +875,16 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(REQUESTS["M-DELETE"].approval_status, ApprovalStatus.DRAFT)
 
     def test_approver_can_delete_frozen_scheduled_work(self) -> None:
-        with (
-            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
-            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
-        ):
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 24, 0, 0, 0)):
             client.post(
                 "/api/requests",
                 json=request_payload("M-FROZEN-DELETE", "2026-08-28T09:00:00", "2026-08-28T11:00:00", crew=["E1"]),
             )
+
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
             client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
 
         deleted = client.delete("/api/schedule/M-FROZEN-DELETE?role=approver")
@@ -823,14 +895,16 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertFalse(REQUESTS["M-FROZEN-DELETE"].locked)
 
     def test_approver_can_move_frozen_work_inside_deadline(self) -> None:
-        with (
-            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
-            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
-        ):
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 24, 0, 0, 0)):
             client.post(
                 "/api/requests",
                 json=request_payload("M-FROZEN-MOVE", "2026-08-28T09:00:00", "2026-08-28T11:00:00", crew=["E1"]),
             )
+
+        with (
+            patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+            patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
+        ):
             client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
 
         moved = client.patch(
@@ -923,6 +997,12 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertNotIn("M-DRAFT-FUTURE", SCHEDULED_WORK)
 
     def test_d_plus_three_batch_locks_target_day_while_d_plus_two_request_needs_approval(self) -> None:
+        with patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 24, 0, 0, 0)):
+            client.post(
+                "/api/requests",
+                json=request_payload("M-D3", "2026-08-28T09:00:00", "2026-08-28T10:00:00", crew=["E2"]),
+            )
+
         with (
             patch("app.scheduler.policy.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
             patch("app.scheduler.service.planning_now", return_value=datetime(2026, 8, 25, 0, 0, 0)),
@@ -930,10 +1010,6 @@ class MvpWorkflowTest(unittest.TestCase):
             client.post(
                 "/api/requests",
                 json=request_payload("M-D2", "2026-08-27T09:00:00", "2026-08-27T10:00:00", crew=["E1"]),
-            )
-            client.post(
-                "/api/requests",
-                json=request_payload("M-D3", "2026-08-28T09:00:00", "2026-08-28T10:00:00", crew=["E2"]),
             )
             frozen = client.post("/api/schedule/batch/freeze-d-plus-3?role=approver")
 

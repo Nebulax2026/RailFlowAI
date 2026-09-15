@@ -281,6 +281,7 @@ def evaluate_fit(request: MaintenanceRequest) -> RequestFitResponse:
         updates = {
             "approval_status": ApprovalStatus.PENDING_APPROVAL,
             "source": RequestSource.EMERGENCY,
+            "requester_message": request.requester_message or request.notes,
         }
         if recommendation.recommended_work:
             updates["recommended_start"] = recommendation.recommended_work.start_time
@@ -499,6 +500,15 @@ def freeze_d_plus_three_batch(now: datetime | None = None) -> dict:
 def build_optimised_schedule(option: ScheduleOption) -> tuple[list[ScheduledWork], list[str], list[Conflict]]:
     requests = requests_with_locked_schedule()
     scheduled = optimise_schedule(requests, option)
+    current_by_request = {item.request_id: item for item in schedule_repository.list()}
+    scheduled = [
+        item.model_copy(update={"status": current_by_request[item.request_id].status})
+        if item.request_id in current_by_request
+        and current_by_request[item.request_id].status != ApprovalStatus.LOCKED
+        and item.status == ApprovalStatus.LOCKED
+        else item
+        for item in scheduled
+    ]
     errors = validate_scheduled_work(scheduled, requests)
     errors.extend(validate_schedule_against_blocks(scheduled))
     if len(scheduled) != len(requests):

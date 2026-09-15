@@ -40,7 +40,7 @@ def is_frozen_time(value: datetime, settings: SchedulingSettings, now: datetime 
 def requires_urgent_approver_review(request: MaintenanceRequest, settings: SchedulingSettings, now: datetime | None = None) -> bool:
     anchor = comparable_time(now or planning_now()).date()
     target = comparable_time(request.earliest_start).date()
-    return anchor <= target < frozen_date_cutoff(settings, now)
+    return anchor <= target <= frozen_date_cutoff(settings, now)
 
 
 def is_frozen_work(item: ScheduledWork, settings: SchedulingSettings, now: datetime | None = None) -> bool:
