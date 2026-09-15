@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from datetime import datetime, timedelta
 
@@ -25,7 +27,15 @@ def optimise_schedule(
 ) -> list[ScheduledWork]:
     settings = scheduling_settings_repository.get()
     active_blocks = blocked_slots if blocked_slots is not None else blocked_time_slot_repository.list(active_only=True)
-    eligible = [request for request in requests if request.locked or is_planning_eligible(request, settings)]
+    existing_request_ids = {item.request_id for item in schedule_repository.list()}
+    # D+3 limits new planning work. Existing calendar entries remain eligible
+    # for re-optimisation so a refresh cannot silently delete future tentative
+    # work that was already imported or scheduled.
+    eligible = [
+        request
+        for request in requests
+        if request.locked or is_planning_eligible(request, settings) or request.request_id in existing_request_ids
+    ]
     if not eligible:
         return []
 

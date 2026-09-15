@@ -1,4 +1,14 @@
-from enum import StrEnum
+from enum import Enum
+
+try:
+    from enum import StrEnum
+except ImportError:
+    # StrEnum was added in Python 3.11. Keep the same string-valued enum
+    # behaviour for the Python 3.9+ runtimes commonly installed on macOS and
+    # Windows.
+    class StrEnum(str, Enum):
+        def __str__(self) -> str:
+            return str(self.value)
 
 
 class RequestSource(StrEnum):

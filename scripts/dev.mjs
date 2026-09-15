@@ -1,16 +1,20 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const isWindows = process.platform === "win32";
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const backendDir = resolve(rootDir, "backend");
+const venvPython = resolve(backendDir, ".venv", isWindows ? "Scripts/python.exe" : "bin/python");
+const pythonCommand = existsSync(venvPython) ? venvPython : (isWindows ? "py" : "python3");
 
 const processes = [
   {
     name: "backend",
-    command: "py",
+    command: pythonCommand,
     args: ["-m", "uvicorn", "app.main:app", "--reload"],
-    cwd: resolve(rootDir, "backend")
+    cwd: backendDir
   },
   {
     name: "frontend",

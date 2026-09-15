@@ -280,6 +280,10 @@ function calendarBlockStyle(item: ScheduledWork, timelineStartMinutes: number) {
   };
 }
 
+function scheduledDurationMinutes(item: ScheduledWork) {
+  return Math.max(0, Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000));
+}
+
 function isLockedStatus(status: string) {
   return status.toLowerCase() === "locked";
 }
@@ -332,6 +336,7 @@ export default function DashboardPage() {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([]);
   const [selectedScheduledIds, setSelectedScheduledIds] = useState<string[]>([]);
+  const [calendarDetails, setCalendarDetails] = useState<ScheduledWork | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [settings, setSettings] = useState<SchedulingSettings>({ urgent_lead_days: 3 });
   const [urgentLeadDaysInput, setUrgentLeadDaysInput] = useState("3");
@@ -398,6 +403,8 @@ export default function DashboardPage() {
   }
 
   async function refreshAfterImport(message: string) {
+    setDismissedApprovalIds([]);
+    setRejectionReason("");
     await loadDashboard();
     setStatusTone("success");
     setStatus(message);
@@ -703,6 +710,8 @@ export default function DashboardPage() {
       setSelectedPendingIds([]);
       setSelectedScheduledIds([]);
       setSelectedRequestId(null);
+      setDismissedApprovalIds([]);
+      setRejectionReason("");
       await loadDashboard();
       setStatusTone("success");
       setStatus(
@@ -937,6 +946,11 @@ export default function DashboardPage() {
     );
   }
 
+  function openCalendarEvent(item: ScheduledWork) {
+    setCalendarDetails(item);
+    toggleScheduledSelection(item.request_id);
+  }
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -1045,15 +1059,16 @@ export default function DashboardPage() {
                       const conflict = conflictsByRequest.get(item.request_id)?.[0];
                       return (
                         <button
-                          className={`calendar-event ${conflict ? "has-conflict" : ""} ${selectedScheduledIds.includes(item.request_id) ? "selected" : ""}`}
+                          className={`calendar-event ${scheduledDurationMinutes(item) < 45 ? "compact" : ""} ${conflict ? "has-conflict" : ""} ${selectedScheduledIds.includes(item.request_id) ? "selected" : ""}`}
                           key={`${item.request_id}-${item.start_time}`}
-                          onClick={() => toggleScheduledSelection(item.request_id)}
+                          onClick={() => openCalendarEvent(item)}
+                          title={`${item.request_id} / ${request?.title ?? "Scheduled work"}`}
                           style={calendarBlockStyle(item, timelineStartMinutes)}
                         >
                           <strong>{item.request_id}</strong>
                           <span>{formatTime(item.start_time)}-{formatTime(item.end_time)}</span>
-                          <span>{workLabel(request?.work_type ?? "work")}</span>
-                          <span>{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
+                          <span className="event-meta">{workLabel(request?.work_type ?? "work")}</span>
+                          <span className="event-meta">{isLockedStatus(item.status) ? "Locked" : "Tentative"}</span>
                         </button>
                       );
                     })}
@@ -1425,6 +1440,43 @@ export default function DashboardPage() {
           </section>
         </div>
       )}
+
+      {calendarDetails && (() => {
+        const detailRequest = requestFor(calendarDetails, requests);
+        const detailConflict = conflictsByRequest.get(calendarDetails.request_id)?.[0];
+        return (
+          <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Scheduled work details">
+            <section className="approval-dialog calendar-detail-dialog">
+              <div className="import-dialog-header">
+                <div>
+                  <span className="eyebrow">Scheduled work</span>
+                  <h2>{calendarDetails.request_id} / {detailRequest?.title ?? "Scheduled work"}</h2>
+                </div>
+                <button className="icon-button" onClick={() => setCalendarDetails(null)} aria-label="Close details">
+                  X
+                </button>
+              </div>
+              <div className="import-dialog-body">
+                <p><strong>{calendarDetails.track_sector}</strong> / {workLabel(detailRequest?.work_type ?? "work")}</p>
+                <p>{formatDateTime(calendarDetails.start_time)} - {formatDateTime(calendarDetails.end_time)} ({scheduledDurationMinutes(calendarDetails)} minutes)</p>
+                {detailRequest && (calendarDetails.changed_from_original || calendarDetails.start_time !== detailRequest.earliest_start) && (
+                  <p>
+                    Requested: {formatDateTime(detailRequest.earliest_start)} → Scheduled: {formatDateTime(calendarDetails.start_time)}
+                  </p>
+                )}
+                <p>Status: <strong>{isLockedStatus(calendarDetails.status) ? "Locked" : "Tentative"}</strong></p>
+                <p>Crew: {calendarDetails.assigned_crew.join(", ") || "None"}</p>
+                <p>Equipment: {calendarDetails.assigned_equipment.join(", ") || "None"}</p>
+                {calendarDetails.changed_from_original && <p>{calendarDetails.change_reason ?? "Moved to satisfy scheduling constraints."}</p>}
+                {detailConflict && <p className="danger-text">Conflict: {detailConflict.explanation}</p>}
+              </div>
+              <div className="import-dialog-actions">
+                <button className="button" onClick={() => setCalendarDetails(null)}>Close</button>
+              </div>
+            </section>
+          </div>
+        );
+      })()}
 
       {activeApprovalRequest && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Urgent approval request">

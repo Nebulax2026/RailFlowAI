@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 요청하신 6가지 비즈니스 규칙을 검증하기 위한 추가 테스트.
 
@@ -18,7 +20,8 @@
 사용법:
     backend/tests/ 밑에 이 파일을 넣고
     cd backend
-    py -m pytest tests/test_business_rule_verification.py -v
+    Windows: py -m pytest tests/test_rule_verification.py -v
+    macOS:   python3 -m pytest tests/test_rule_verification.py -v
 """
 
 import sys
@@ -32,7 +35,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.domain.enums import ApprovalStatus, ScheduleOption
-from app.domain.models import MaintenanceRequest
+from app.domain.models import MaintenanceRequest, ScheduledWork
 from app.main import app
 from app.scheduler.cp_sat_scheduler import optimise_schedule
 from app.storage import (
@@ -107,6 +110,30 @@ class BusinessRuleVerificationTest(unittest.TestCase):
         self.assertEqual(allowed_modify.status_code, 200)
         self.assertEqual(denied_delete.status_code, 403)
         self.assertEqual(allowed_delete.status_code, 200)
+
+    def test_existing_tentative_work_outside_d_plus_3_is_preserved(self) -> None:
+        request = MaintenanceRequest.model_validate(
+            request_payload("M-FUTURE-TENTATIVE", "2026-09-12T09:00:00", "2026-09-12T11:00:00", track="T09", crew=["TG1"])
+        ).model_copy(update={"approval_status": ApprovalStatus.SCHEDULED})
+        REQUESTS[request.request_id] = request
+        SCHEDULED_WORK[request.request_id] = ScheduledWork(
+            schedule_id="imported",
+            request_id=request.request_id,
+            start_time=datetime(2026, 9, 12, 9, 0, 0),
+            end_time=datetime(2026, 9, 12, 9, 30, 0),
+            assigned_crew=["TG1"],
+            assigned_equipment=[],
+            track_sector="T09",
+            status=ApprovalStatus.SCHEDULED,
+        )
+
+        with patch("app.scheduler.service.is_planning_eligible", return_value=False), \
+             patch("app.scheduler.cp_sat_scheduler.is_planning_eligible", return_value=False):
+            response = client.post("/api/schedule/optimise?option=minimum_disruption")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(request.request_id, SCHEDULED_WORK)
+        self.assertEqual(SCHEDULED_WORK[request.request_id].status, ApprovalStatus.SCHEDULED)
 
     # ---------------------------------------------------------------
     # 2. 3일 리드타임 / D+3 경계값

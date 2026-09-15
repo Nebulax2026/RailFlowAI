@@ -1,0 +1,9 @@
+Request ID,Title,Track Sector,Work Type,Duration Minutes,Earliest Start,Deadline,Priority,Required Crew,Required Equipment,Dependencies,Incompatible Work Types,Approval Status,Locked,Fixed Start,Fixed End,Notes
+VF-LOCKED-01,Locked signal replacement,T08,signal_replacement,60,2026-09-11T09:00:00,2026-09-11T11:00:00,5,SIG1,SignalKit-1,,,locked,true,2026-09-11T09:00:00,2026-09-11T10:00:00,Locked baseline for preservation and conflict checks
+VF-TENTATIVE-01,Track inspection baseline,T09,track_inspection,45,2026-09-11T09:00:00,2026-09-11T11:00:00,4,TG1,GeometryCar-1,,,scheduled,false,2026-09-11T09:00:00,2026-09-11T09:45:00,Tentative work for selected approval and modification
+VF-DEPENDENT-01,Track renewal follow-up,T09,track_renewal,60,2026-09-11T09:45:00,2026-09-11T13:00:00,5,TG1,RailGrinder-1,VF-TENTATIVE-01,,draft,false,,,Pending work with a scheduled prerequisite
+VF-CONFLICT-01,Signal corridor inspection,T08,inspection,30,2026-09-11T09:15:00,2026-09-11T10:30:00,3,SIG1,DiagnosticKit-1,,,draft,false,,,Pending request that conflicts with the locked baseline
+VF-ALTERNATIVE-01,Independent electrical inspection,T10,electrical,45,2026-09-11T10:00:00,2026-09-11T13:00:00,2,E2,PowerUnit-2,,,draft,false,,,Pending request for proposal comparison
+VF-URGENT-APPROVE,Emergency brake inspection,T14,emergency,30,2026-09-10T13:00:00,2026-09-10T16:00:00,5,MECH1,DiagnosticKit-1,,,pending_approval,false,,,D+2 approval path: approve this request
+VF-URGENT-REJECT,Emergency electrical check,T13,emergency,30,2026-09-10T14:00:00,2026-09-10T17:00:00,4,E1,PowerUnit-1,,,pending_approval,false,,,D+2 approval path: reject this request with a reason
+VF-FREEZE-01,Freeze window tentative inspection,T11,inspection,45,2026-09-11T11:00:00,2026-09-11T13:00:00,3,MECH2,DiagnosticKit-1,,,scheduled,false,2026-09-11T11:00:00,2026-09-11T11:45:00,D+3 candidate for batch freeze

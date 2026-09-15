@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -39,10 +41,16 @@ def requests_with_locked_schedule() -> list[MaintenanceRequest]:
     for request in requests_repository.list():
         if request.approval_status == ApprovalStatus.PENDING_APPROVAL:
             continue
-        if not request.locked and not is_planning_eligible(request, settings):
-            continue
         scheduled = schedule_repository.get(request.request_id)
-        if scheduled and (scheduled.status == ApprovalStatus.LOCKED or is_frozen_work(scheduled, settings)):
+        # Existing tentative work must remain visible to a full-board
+        # re-optimisation even when it falls beyond the rolling D+3 planning
+        # window. The window limits new work; it must not delete work already
+        # placed on the active calendar.
+        if not request.locked and not is_planning_eligible(request, settings) and not scheduled:
+            continue
+        # Generate Schedule must keep existing tentative work tentative. Only
+        # an explicit approval or Freeze D+N action writes LOCKED status.
+        if scheduled and scheduled.status == ApprovalStatus.LOCKED:
             prepared.append(
                 request.model_copy(
                     update={
@@ -50,6 +58,19 @@ def requests_with_locked_schedule() -> list[MaintenanceRequest]:
                         "locked": True,
                         "fixed_start": scheduled.start_time,
                         "fixed_end": scheduled.end_time,
+                    }
+                )
+            )
+        elif scheduled:
+            prepared.append(
+                request.model_copy(
+                    update={
+                        "locked": False,
+                        # Keep the existing item in the model, but allow a
+                        # tentative task to move when a new hard block or
+                        # conflict requires it.
+                        "fixed_start": None,
+                        "fixed_end": None,
                     }
                 )
             )

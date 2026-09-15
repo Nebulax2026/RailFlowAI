@@ -619,6 +619,15 @@ textarea:focus-visible {
   text-align: left;
 }
 
+.calendar-event.compact {
+  gap: 1px;
+  padding: 4px 6px;
+}
+
+.calendar-event.compact .event-meta {
+  display: none;
+}
+
 .calendar-event:hover,
 .calendar-event.selected {
   box-shadow: var(--shadow-soft);
@@ -643,6 +652,12 @@ textarea:focus-visible {
 }
 
 .calendar-event strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-event:not(.compact) strong {
   font-size: 12px;
 }
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 TRACK_SECTORS = ["T08", "T09", "T10", "T11", "T12", "T13", "T14"]
 
 WORK_TYPES = [
