@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import ImportDialog from "./import-dialog";
+import AgentChat from "./agent-chat";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const PLANNING_TIME_ZONE = "Asia/Singapore";
@@ -341,6 +342,7 @@ async function fetchJson<T>(endpoint: string, init?: RequestInit): Promise<T> {
 }
 
 export default function DashboardPage() {
+  const [agentMode, setAgentMode] = useState(false);
   const [role, setRole] = useState<Role>("requester");
   const [activeRequester, setActiveRequester] = useState(fallbackRequesterAccounts[0]);
   const [requesterAccounts, setRequesterAccounts] = useState(fallbackRequesterAccounts);
@@ -925,8 +927,8 @@ export default function DashboardPage() {
     };
   }, [activeRequester, role]);
 
-  const visibleSchedule = selectedAlternative?.scheduled_work ?? schedule;
-  const visibleConflicts = selectedAlternative?.conflicts ?? conflicts;
+  const visibleSchedule = agentMode ? schedule : selectedAlternative?.scheduled_work ?? schedule;
+  const visibleConflicts = agentMode ? conflicts : selectedAlternative?.conflicts ?? conflicts;
   const displayedKpis = selectedAlternative?.kpis ?? kpis;
   const scheduledIds = new Set(schedule.map((item) => item.request_id));
   const pendingRequests = requests.filter(
@@ -1026,6 +1028,10 @@ export default function DashboardPage() {
               ))}
             </select>
           )}
+          <button className="button secondary" type="button" aria-pressed={agentMode} onClick={() => setAgentMode((current) => !current)}>
+            {agentMode ? "Standard Mode" : "AI Agent Mode"}
+          </button>
+          {!agentMode && <>
           <Link className="secondary" href="/request/new">
             <Plus size={18} />
             New Request
@@ -1050,6 +1056,7 @@ export default function DashboardPage() {
             <SlidersHorizontal size={18} />
             Generate Schedule
           </button>
+          </>}
         </nav>
       </header>
 
@@ -1058,6 +1065,7 @@ export default function DashboardPage() {
         {status}
       </section>
 
+      <div className={agentMode ? "agent-layout" : "standard-layout"}><div className={agentMode ? "agent-calendar" : "standard-calendar"}>
       <section className="planning-hero">
         <section className="month-board">
           <div className="section-heading">
@@ -1155,6 +1163,11 @@ export default function DashboardPage() {
         </section>
       </section>
 
+      </div>
+      {agentMode && <AgentChat role={role} owner={activeRequester} onChanged={loadDashboard} />}
+      </div>
+
+      {!agentMode && <>
       <section className="kpis">
         <div className="kpi danger"><span>Open Conflicts</span><strong>{displayedKpis.unresolved_conflicts}</strong></div>
         <div className="kpi"><span>Window Utilisation</span><strong>{displayedKpis.engineering_hours_utilisation}%</strong></div>
@@ -1513,6 +1526,7 @@ export default function DashboardPage() {
           </section>
         </div>
       )}
+      </>}
 
       {calendarDetails && (() => {
         const detailRequest = requestFor(calendarDetails, requests);
@@ -1551,7 +1565,7 @@ export default function DashboardPage() {
         );
       })()}
 
-      {activeApprovalRequest && (
+      {!agentMode && activeApprovalRequest && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Urgent approval request">
           <section className="approval-dialog">
             <div className="import-dialog-header">
@@ -1595,7 +1609,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {showImport && (
+      {!agentMode && showImport && (
         <ImportDialog
           apiBase={API_BASE}
           onClose={() => setShowImport(false)}

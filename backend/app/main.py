@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import (
+    agent,
     approvals,
     audit,
     catalog,
@@ -62,6 +63,7 @@ app.include_router(displacement_approvals.router, prefix="/api/displacement-appr
 app.include_router(scenarios.router, prefix="/api/scenarios", tags=["scenarios"])
 app.include_router(stress_test.router, prefix="/api/stress-test", tags=["stress-test"])
 app.include_router(kpis.router, prefix="/api/kpis", tags=["kpis"])
+app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
 
 
 @app.get("/api/health")

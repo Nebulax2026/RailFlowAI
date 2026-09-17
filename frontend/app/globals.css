@@ -391,6 +391,76 @@ textarea:focus-visible {
   padding: 16px clamp(16px, 3vw, 28px) 0;
 }
 
+.standard-layout,
+.standard-calendar {
+  display: contents;
+}
+
+.agent-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  padding: 16px clamp(16px, 3vw, 28px) 24px;
+  min-height: calc(100vh - 145px);
+}
+
+.agent-calendar {
+  min-width: 0;
+}
+
+.agent-calendar .planning-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+}
+
+.agent-calendar .today-board {
+  grid-column: auto;
+}
+
+.agent-chat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: calc(100vh - 145px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.agent-chat-header,
+.agent-composer {
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.agent-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.agent-chat-header h2 { margin: 3px 0 0; }
+.agent-live, .agent-state, .agent-message-role { color: var(--muted); font-size: 12px; }
+.agent-messages { flex: 1; overflow-y: auto; padding: 18px; }
+.agent-message { max-width: 95%; padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.agent-message.user { margin-left: auto; background: var(--bg-soft); }
+.agent-message p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.agent-approval { border-top: 1px solid var(--line); padding-top: 12px; }
+.agent-message pre { max-height: 240px; overflow: auto; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agent-approval-actions, .agent-composer > div { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+.agent-composer { border-top: 1px solid var(--line); border-bottom: 0; }
+.agent-composer textarea { width: 100%; resize: vertical; }
+.agent-thinking { color: var(--muted); }
+
+@media (max-width: 760px) {
+  .agent-layout { grid-template-columns: minmax(0, 1fr); }
+  .agent-chat { min-height: 520px; max-height: 70vh; }
+}
+
 .month-board,
 .today-board,
 .panel {

@@ -30,6 +30,8 @@ DATABASE_URL=<Supabase session-pooler URL; secret>
 RAILFLOW_CORS_ORIGINS=<deployed Vercel origin>
 RAILFLOW_HOSTED=true
 RAILFLOW_DEMO_CONTROLS_ENABLED=false
+OPENAI_API_KEY=<OpenAI API key; secret, required for AI Agent mode>
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 Do not add a persistent disk. Supabase is the durable store. Keep the service at one instance; multiple instances would retain separate in-memory copies.

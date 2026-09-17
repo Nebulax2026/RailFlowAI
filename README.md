@@ -1,5 +1,7 @@
 # RailFlow AI
 
+AI Agent mode setup and approval behavior: [docs/agent-mode.md](docs/agent-mode.md).
+
 Explainable Railway Maintenance Scheduling System for NEBULA X Hackathon.
 
 RailFlow AI is a web-first, human-in-the-loop scheduling system. Field teams submit maintenance requests through a browser interface, while planners generate schedules, inspect conflicts, compare alternatives, and approve solver-validated changes.
