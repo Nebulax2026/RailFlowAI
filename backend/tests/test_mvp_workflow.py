@@ -12,10 +12,11 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.domain.enums import ApprovalStatus, RequestSource, ScheduleOption
-from app.domain.models import BlockedTimeSlot, MaintenanceRequest
+from app.domain.models import BlockedTimeSlot, MaintenanceRequest, ScheduledWork
 from app.main import app
 from app.repositories import unit_of_work
 from app.scheduler.cp_sat_scheduler import optimise_schedule
+from app.settings import allowed_hosts, demo_controls_enabled
 from app.storage import (
     AUDIT_EVENTS,
     BLOCKED_TIME_SLOTS,
@@ -25,7 +26,10 @@ from app.storage import (
     REQUESTS,
     SCHEDULED_WORK,
     SETTINGS,
+    load_state_from_database,
+    persistence_transaction,
 )
+import app.storage as storage
 
 
 client = TestClient(app)
@@ -448,6 +452,38 @@ class MvpWorkflowTest(unittest.TestCase):
         self.assertEqual(REQUESTS, {})
         self.assertEqual(SCHEDULED_WORK, {})
 
+    def test_hosted_environment_blocks_demo_and_manual_persistence_mutations(self) -> None:
+        with patch("app.api.demo.demo_controls_enabled", return_value=False), patch(
+            "app.api.persistence.hosted_environment", return_value=True
+        ):
+            responses = [
+                client.post("/api/demo/seed"),
+                client.post("/api/demo/reset"),
+                client.post("/api/persistence/save"),
+                client.post("/api/persistence/load"),
+                client.post("/api/persistence/clear"),
+            ]
+
+        self.assertTrue(all(response.status_code == 403 for response in responses))
+        with patch.dict("os.environ", {"RENDER": "true", "RAILFLOW_DEMO_CONTROLS_ENABLED": "true"}):
+            self.assertFalse(demo_controls_enabled())
+
+    def test_persistence_status_is_safe_and_render_hostname_is_trusted(self) -> None:
+        status = client.get("/api/persistence/status")
+        with patch.dict(
+            "os.environ",
+            {
+                "RAILFLOW_ALLOWED_HOSTS": "localhost,testserver",
+                "RENDER_EXTERNAL_HOSTNAME": "railflow-ai-backend.onrender.com",
+            },
+        ):
+            hosts = allowed_hosts()
+
+        self.assertEqual(status.status_code, 200)
+        self.assertEqual(status.json()["database_backend"], "sqlite")
+        self.assertNotIn("database_url", status.json())
+        self.assertEqual(hosts, ["localhost", "testserver", "railflow-ai-backend.onrender.com"])
+
     def test_request_patch_revalidates_payload_and_keeps_identity_stable(self) -> None:
         client.post(
             "/api/requests",
@@ -534,6 +570,47 @@ class MvpWorkflowTest(unittest.TestCase):
 
         self.assertEqual(loaded.status_code, 200)
         self.assertNotIn("M-ROLLBACK", REQUESTS)
+
+    def test_multi_collection_flush_is_atomic_when_database_write_fails(self) -> None:
+        baseline = MaintenanceRequest.model_validate(
+            request_payload("M-BASE", "2026-08-13T01:00:00", "2026-08-13T02:00:00")
+        )
+        REQUESTS[baseline.request_id] = baseline
+        failed_request = MaintenanceRequest.model_validate(
+            request_payload("M-ATOMIC", "2026-08-13T03:00:00", "2026-08-13T04:00:00")
+        )
+        failed_schedule = ScheduledWork(
+            schedule_id="atomic-test",
+            request_id=failed_request.request_id,
+            start_time=failed_request.earliest_start,
+            end_time=failed_request.earliest_start.replace(minute=30),
+            assigned_crew=failed_request.required_crew,
+            assigned_equipment=failed_request.required_equipment,
+            track_sector=failed_request.track_sector,
+            status=ApprovalStatus.SCHEDULED,
+        )
+        original_replace = storage._replace_collection_on_connection
+        calls = 0
+
+        def fail_after_second_write(connection, collection, values):  # type: ignore[no-untyped-def]
+            nonlocal calls
+            original_replace(connection, collection, values)
+            calls += 1
+            if calls == 2:
+                raise RuntimeError("Simulated database failure.")
+
+        with patch("app.storage._replace_collection_on_connection", side_effect=fail_after_second_write):
+            with self.assertRaises(RuntimeError):
+                with persistence_transaction():
+                    REQUESTS[failed_request.request_id] = failed_request
+                    SCHEDULED_WORK[failed_request.request_id] = failed_schedule
+
+        self.assertNotIn(failed_request.request_id, REQUESTS)
+        self.assertNotIn(failed_request.request_id, SCHEDULED_WORK)
+        load_state_from_database()
+        self.assertIn(baseline.request_id, REQUESTS)
+        self.assertNotIn(failed_request.request_id, REQUESTS)
+        self.assertNotIn(failed_request.request_id, SCHEDULED_WORK)
 
     def test_proposal_snapshots_are_saved_and_marked_applied(self) -> None:
         client.post(

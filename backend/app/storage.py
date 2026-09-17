@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import sqlite3
+import ssl
 from collections.abc import Iterable, Mapping
 from contextlib import closing, contextmanager
 from pathlib import Path
 from threading import RLock
 from typing import Generic, TypeVar
+from urllib.parse import unquote, urlparse
 
 from app.domain.models import (
     AuditEvent,
@@ -17,7 +19,7 @@ from app.domain.models import (
     ScheduledWork,
     SchedulingSettings,
 )
-from app.settings import database_path
+from app.settings import database_path, database_url
 
 
 T = TypeVar(
@@ -43,6 +45,7 @@ COLLECTION_DISPLACEMENT_APPROVALS = "displacement_approvals"
 
 _lock = RLock()
 _db_path = database_path()
+_db_url = database_url()
 _transaction_depth = 0
 _dirty_collections: set[str] = set()
 
@@ -51,19 +54,27 @@ def get_database_path() -> Path:
     return _db_path
 
 
+def get_database_backend() -> str:
+    return "postgresql" if _db_url else "sqlite"
+
+
 def initialize_database() -> None:
-    _db_path.parent.mkdir(parents=True, exist_ok=True)
-    with closing(_connect()) as connection, connection:
-        connection.execute(
-            """
+    if not _db_url:
+        _db_path.parent.mkdir(parents=True, exist_ok=True)
+    payload_type = "JSONB" if _db_url else "TEXT"
+    timestamp_type = "TIMESTAMPTZ" if _db_url else "TEXT"
+    with _connection(commit=True) as connection:
+        _execute_and_close(
+            connection,
+            f"""
             CREATE TABLE IF NOT EXISTS railflow_state (
                 collection TEXT NOT NULL,
                 item_key TEXT NOT NULL,
-                payload TEXT NOT NULL,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                payload {payload_type} NOT NULL,
+                updated_at {timestamp_type} NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (collection, item_key)
             )
-            """
+            """,
         )
 
 
@@ -100,14 +111,7 @@ def load_state_from_database() -> dict[str, int]:
 
 def save_state_to_database() -> dict[str, int]:
     initialize_database()
-    _replace_collection(COLLECTION_REQUESTS, REQUESTS)
-    _replace_collection(COLLECTION_SCHEDULED_WORK, SCHEDULED_WORK)
-    _replace_collection(COLLECTION_PROPOSAL_SNAPSHOTS, PROPOSAL_SNAPSHOTS)
-    _replace_collection(COLLECTION_AUDIT_EVENTS, AUDIT_EVENTS)
-    _replace_collection(COLLECTION_SETTINGS, SETTINGS)
-    _replace_collection(COLLECTION_BLOCKED_TIME_SLOTS, BLOCKED_TIME_SLOTS)
-    _replace_collection(COLLECTION_NOTIFICATIONS, NOTIFICATIONS)
-    _replace_collection(COLLECTION_DISPLACEMENT_APPROVALS, DISPLACEMENT_APPROVALS)
+    _flush_dirty_collections(set(_state_snapshot()))
     return {
         "requests": len(REQUESTS),
         "scheduled_work": len(SCHEDULED_WORK),
@@ -122,8 +126,8 @@ def save_state_to_database() -> dict[str, int]:
 
 def clear_database_state() -> dict[str, int]:
     initialize_database()
-    with _lock, closing(_connect()) as connection, connection:
-        connection.execute("DELETE FROM railflow_state")
+    with _lock, _connection(commit=True) as connection:
+        _execute_and_close(connection, "DELETE FROM railflow_state")
     REQUESTS.replace_without_persist({})
     SCHEDULED_WORK.replace_without_persist({})
     PROPOSAL_SNAPSHOTS.replace_without_persist({})
@@ -147,33 +151,26 @@ def clear_database_state() -> dict[str, int]:
 @contextmanager
 def persistence_transaction():
     global _transaction_depth
-    snapshots = _state_snapshot() if _transaction_depth == 0 else None
     with _lock:
+        snapshots = _state_snapshot() if _transaction_depth == 0 else None
         _transaction_depth += 1
-    try:
-        yield
-    except Exception:
-        with _lock:
+        depth_released = False
+        try:
+            yield
             _transaction_depth -= 1
-            if _transaction_depth == 0:
-                _dirty_collections.clear()
-                if snapshots is not None:
-                    REQUESTS.replace_without_persist(snapshots[COLLECTION_REQUESTS])
-                    SCHEDULED_WORK.replace_without_persist(snapshots[COLLECTION_SCHEDULED_WORK])
-                    PROPOSAL_SNAPSHOTS.replace_without_persist(snapshots[COLLECTION_PROPOSAL_SNAPSHOTS])
-                    AUDIT_EVENTS.replace_without_persist(snapshots[COLLECTION_AUDIT_EVENTS])
-                    SETTINGS.replace_without_persist(snapshots[COLLECTION_SETTINGS])
-                    BLOCKED_TIME_SLOTS.replace_without_persist(snapshots[COLLECTION_BLOCKED_TIME_SLOTS])
-                    NOTIFICATIONS.replace_without_persist(snapshots[COLLECTION_NOTIFICATIONS])
-                    DISPLACEMENT_APPROVALS.replace_without_persist(snapshots[COLLECTION_DISPLACEMENT_APPROVALS])
-        raise
-    else:
-        with _lock:
-            _transaction_depth -= 1
+            depth_released = True
             if _transaction_depth == 0:
                 dirty = set(_dirty_collections)
                 _dirty_collections.clear()
                 _flush_dirty_collections(dirty)
+        except Exception:
+            if not depth_released:
+                _transaction_depth -= 1
+            if _transaction_depth == 0:
+                _dirty_collections.clear()
+                if snapshots is not None:
+                    _restore_snapshot(snapshots)
+            raise
 
 
 class PersistentDict(dict[str, T], Generic[T]):
@@ -220,8 +217,52 @@ NOTIFICATIONS: PersistentDict[Notification] = PersistentDict(COLLECTION_NOTIFICA
 DISPLACEMENT_APPROVALS: PersistentDict[DisplacementApproval] = PersistentDict(COLLECTION_DISPLACEMENT_APPROVALS)
 
 
-def _connect() -> sqlite3.Connection:
+def _connect():  # type: ignore[no-untyped-def]
+    if _db_url:
+        import pg8000.dbapi
+
+        parsed = urlparse(_db_url)
+        if parsed.scheme not in {"postgres", "postgresql"} or not parsed.hostname:
+            raise ValueError("DATABASE_URL must be a valid PostgreSQL connection string.")
+        return pg8000.dbapi.connect(
+            user=unquote(parsed.username or ""),
+            password=unquote(parsed.password or ""),
+            host=parsed.hostname,
+            port=parsed.port or 5432,
+            database=unquote(parsed.path.lstrip("/")) or "postgres",
+            ssl_context=ssl.create_default_context(),
+        )
     return sqlite3.connect(_db_path)
+
+
+def _sql(statement: str) -> str:
+    return statement.replace("?", "%s") if _db_url else statement
+
+
+def _execute(connection, statement: str, parameters: tuple = ()):  # type: ignore[no-untyped-def]
+    cursor = connection.cursor()
+    cursor.execute(_sql(statement), parameters)
+    return cursor
+
+
+def _execute_and_close(connection, statement: str, parameters: tuple = ()) -> None:  # type: ignore[no-untyped-def]
+    with closing(_execute(connection, statement, parameters)):
+        pass
+
+
+@contextmanager
+def _connection(*, commit: bool = False):  # type: ignore[no-untyped-def]
+    connection = _connect()
+    try:
+        yield connection
+        if commit:
+            connection.commit()
+    except Exception:
+        if commit:
+            connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def _state_snapshot() -> dict[str, dict]:
@@ -237,6 +278,29 @@ def _state_snapshot() -> dict[str, dict]:
     }
 
 
+def _restore_snapshot(snapshot: dict[str, dict]) -> None:
+    REQUESTS.replace_without_persist(snapshot[COLLECTION_REQUESTS])
+    SCHEDULED_WORK.replace_without_persist(snapshot[COLLECTION_SCHEDULED_WORK])
+    PROPOSAL_SNAPSHOTS.replace_without_persist(snapshot[COLLECTION_PROPOSAL_SNAPSHOTS])
+    AUDIT_EVENTS.replace_without_persist(snapshot[COLLECTION_AUDIT_EVENTS])
+    SETTINGS.replace_without_persist(snapshot[COLLECTION_SETTINGS])
+    BLOCKED_TIME_SLOTS.replace_without_persist(snapshot[COLLECTION_BLOCKED_TIME_SLOTS])
+    NOTIFICATIONS.replace_without_persist(snapshot[COLLECTION_NOTIFICATIONS])
+    DISPLACEMENT_APPROVALS.replace_without_persist(snapshot[COLLECTION_DISPLACEMENT_APPROVALS])
+
+
+def persistence_counts() -> dict[str, int]:
+    initialize_database()
+    counts = {collection: 0 for collection in _state_snapshot()}
+    with _lock, _connection() as connection, closing(
+        _execute(connection, "SELECT collection, COUNT(*) FROM railflow_state GROUP BY collection")
+    ) as cursor:
+        for collection, count in cursor.fetchall():
+            if collection in counts:
+                counts[collection] = count
+    return counts
+
+
 def _persist_or_mark_dirty(collection: str, operation) -> None:  # type: ignore[no-untyped-def]
     if _transaction_depth > 0:
         _dirty_collections.add(collection)
@@ -245,52 +309,62 @@ def _persist_or_mark_dirty(collection: str, operation) -> None:  # type: ignore[
 
 
 def _flush_dirty_collections(collections: set[str]) -> None:
-    if COLLECTION_REQUESTS in collections:
-        _replace_collection(COLLECTION_REQUESTS, REQUESTS)
-    if COLLECTION_SCHEDULED_WORK in collections:
-        _replace_collection(COLLECTION_SCHEDULED_WORK, SCHEDULED_WORK)
-    if COLLECTION_PROPOSAL_SNAPSHOTS in collections:
-        _replace_collection(COLLECTION_PROPOSAL_SNAPSHOTS, PROPOSAL_SNAPSHOTS)
-    if COLLECTION_AUDIT_EVENTS in collections:
-        _replace_collection(COLLECTION_AUDIT_EVENTS, AUDIT_EVENTS)
-    if COLLECTION_SETTINGS in collections:
-        _replace_collection(COLLECTION_SETTINGS, SETTINGS)
-    if COLLECTION_BLOCKED_TIME_SLOTS in collections:
-        _replace_collection(COLLECTION_BLOCKED_TIME_SLOTS, BLOCKED_TIME_SLOTS)
-    if COLLECTION_NOTIFICATIONS in collections:
-        _replace_collection(COLLECTION_NOTIFICATIONS, NOTIFICATIONS)
-    if COLLECTION_DISPLACEMENT_APPROVALS in collections:
-        _replace_collection(COLLECTION_DISPLACEMENT_APPROVALS, DISPLACEMENT_APPROVALS)
+    if not collections:
+        return
+    current = _state_snapshot()
+    with _lock, _connection(commit=True) as connection:
+        for collection in collections:
+            _replace_collection_on_connection(connection, collection, current[collection])
 
 
 def _load_collection(collection: str, model: type[T]) -> dict[str, T]:
-    with _lock, closing(_connect()) as connection:
-        rows = connection.execute(
-            "SELECT item_key, payload FROM railflow_state WHERE collection = ? ORDER BY item_key",
+    payload_expression = "payload::text" if _db_url else "payload"
+    with _lock, _connection() as connection, closing(
+        _execute(
+            connection,
+            f"SELECT item_key, {payload_expression} FROM railflow_state WHERE collection = ? ORDER BY item_key",
             (collection,),
-        ).fetchall()
+        )
+    ) as cursor:
+        rows = cursor.fetchall()
     return {key: model.model_validate_json(payload) for key, payload in rows}
 
 
 def _replace_collection(collection: str, values: Mapping[str, T]) -> None:
-    with _lock, closing(_connect()) as connection, connection:
-        connection.execute("DELETE FROM railflow_state WHERE collection = ?", (collection,))
-        connection.executemany(
-            """
-            INSERT INTO railflow_state (collection, item_key, payload, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-            [(collection, key, value.model_dump_json()) for key, value in values.items()],
+    with _lock, _connection(commit=True) as connection:
+        _replace_collection_on_connection(connection, collection, values)
+
+
+def _replace_collection_on_connection(connection, collection: str, values: Mapping[str, T]) -> None:  # type: ignore[no-untyped-def]
+    _execute_and_close(connection, "DELETE FROM railflow_state WHERE collection = ?", (collection,))
+    rows = [(collection, key, value.model_dump_json()) for key, value in values.items()]
+    if not rows:
+        return
+    payload_value = "CAST(? AS JSONB)" if _db_url else "?"
+    cursor = connection.cursor()
+    try:
+        cursor.executemany(
+            _sql(
+                f"""
+                INSERT INTO railflow_state (collection, item_key, payload, updated_at)
+                VALUES (?, ?, {payload_value}, CURRENT_TIMESTAMP)
+                """
+            ),
+            rows,
         )
+    finally:
+        cursor.close()
 
 
 def _upsert_item(collection: str, key: str, value: T) -> None:
     initialize_database()
-    with _lock, closing(_connect()) as connection, connection:
-        connection.execute(
-            """
+    payload_value = "CAST(? AS JSONB)" if _db_url else "?"
+    with _lock, _connection(commit=True) as connection:
+        _execute_and_close(
+            connection,
+            f"""
             INSERT INTO railflow_state (collection, item_key, payload, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, {payload_value}, CURRENT_TIMESTAMP)
             ON CONFLICT(collection, item_key)
             DO UPDATE SET payload = excluded.payload, updated_at = CURRENT_TIMESTAMP
             """,
@@ -300,8 +374,9 @@ def _upsert_item(collection: str, key: str, value: T) -> None:
 
 def _delete_item(collection: str, key: str) -> None:
     initialize_database()
-    with _lock, closing(_connect()) as connection, connection:
-        connection.execute(
+    with _lock, _connection(commit=True) as connection:
+        _execute_and_close(
+            connection,
             "DELETE FROM railflow_state WHERE collection = ? AND item_key = ?",
             (collection, key),
         )
@@ -309,8 +384,5 @@ def _delete_item(collection: str, key: str) -> None:
 
 def _delete_collection(collection: str) -> None:
     initialize_database()
-    with _lock, closing(_connect()) as connection, connection:
-        connection.execute("DELETE FROM railflow_state WHERE collection = ?", (collection,))
-
-
-load_state_from_database()
+    with _lock, _connection(commit=True) as connection:
+        _execute_and_close(connection, "DELETE FROM railflow_state WHERE collection = ?", (collection,))
