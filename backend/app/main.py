@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -20,12 +22,20 @@ from app.api import (
     stress_test,
 )
 from app.settings import allowed_hosts, cors_origins
+from app.storage import load_state_from_database
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    load_state_from_database()
+    yield
 
 
 app = FastAPI(
     title="RailFlow AI API",
     description="Explainable railway maintenance scheduling system.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

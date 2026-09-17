@@ -9,7 +9,7 @@ RailFlow AI is a web-first, human-in-the-loop scheduling system. Field teams sub
 ```text
 New Request submitted
         |
-Request is validated and saved to SQLite
+Request is validated and saved to the configured database
         |
 Request appears in the Planning Board queue
         |
@@ -69,6 +69,9 @@ NEXT_PUBLIC_API_BASE_URL=
 RAILFLOW_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 RAILFLOW_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
 RAILFLOW_DB_PATH=backend/.railflow/railflow.sqlite3
+RAILFLOW_DEMO_CONTROLS_ENABLED=true
+RAILFLOW_HOSTED=false
+DATABASE_URL=
 ```
 
 By default, the frontend calls same-origin `/api/*` and Next.js rewrites those requests to `RAILFLOW_API_BASE_URL`. Leave `NEXT_PUBLIC_API_BASE_URL` empty unless the browser must call a backend directly.
@@ -174,11 +177,13 @@ Approve Selected
 
 ## Persistence
 
-RailFlow stores state in SQLite:
+RailFlow stores state in SQLite by default:
 
 ```text
 backend/.railflow/railflow.sqlite3
 ```
+
+When `DATABASE_URL` is set, the backend instead stores requests, schedules, approvals, settings, notifications, and audit records in a shared PostgreSQL `railflow_state` table. Supabase's session-pooler URL is recommended for the deployed Render backend. The database is initialized and loaded automatically when FastAPI starts.
 
 Persistence endpoints:
 
@@ -188,6 +193,14 @@ POST /api/persistence/save
 POST /api/persistence/load
 POST /api/persistence/clear
 ```
+
+The status endpoint remains available when hosted. Manual save, load, and clear operations, along with demo seed/reset, return `403` in hosted environments.
+
+## Cloud Deployment
+
+The supported demonstration deployment uses Supabase PostgreSQL, one Render backend instance, and a Vercel-hosted Next.js frontend. The dashboard silently refreshes shared state every 15 seconds while its browser tab is visible.
+
+See [`docs/cloud-deployment.md`](docs/cloud-deployment.md) for setup, secrets, deployment, and verification instructions.
 
 ## Imports
 

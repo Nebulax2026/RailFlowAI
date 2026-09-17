@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, GitBranch, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, Upload } from "lucide-react";
 import type { CSSProperties } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import ImportDialog from "./import-dialog";
 
@@ -371,11 +371,19 @@ export default function DashboardPage() {
   const [showImport, setShowImport] = useState(false);
   const [statusTone, setStatusTone] = useState<StatusTone>("loading");
   const [isLoading, setIsLoading] = useState(true);
+  const refreshInFlight = useRef(false);
 
-  async function loadDashboard() {
-    setIsLoading(true);
-    setStatusTone("loading");
-    setStatus("Loading planning board...");
+  async function loadDashboard(options: { silent?: boolean } = {}) {
+    const silent = options.silent ?? false;
+    if (silent && refreshInFlight.current) {
+      return;
+    }
+    refreshInFlight.current = true;
+    if (!silent) {
+      setIsLoading(true);
+      setStatusTone("loading");
+      setStatus("Loading planning board...");
+    }
     try {
       const ownerQuery = role === "requester" ? `?owner=${encodeURIComponent(activeRequester)}` : "";
       const approvalQuery = role === "requester" ? `?owner=${encodeURIComponent(activeRequester)}&status=pending` : "?status=pending";
@@ -420,13 +428,20 @@ export default function DashboardPage() {
         const next = defaultBoardDate(loadedSchedule, loadedRequests, current);
         return sameDay(current, next) ? current : next;
       });
-      setStatusTone("success");
-      setStatus("Planning board is synced with the backend.");
+      if (!silent) {
+        setStatusTone("success");
+        setStatus("Planning board is synced with the backend.");
+      }
     } catch (error) {
-      setStatusTone("error");
-      setStatus(error instanceof Error ? error.message : "Could not load planning board data.");
+      if (!silent) {
+        setStatusTone("error");
+        setStatus(error instanceof Error ? error.message : "Could not load planning board data.");
+      }
     } finally {
-      setIsLoading(false);
+      refreshInFlight.current = false;
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -895,6 +910,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
+
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadDashboard({ silent: true });
+      }
+    };
+    const intervalId = window.setInterval(refreshIfVisible, 15_000);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
   }, [activeRequester, role]);
 
   const visibleSchedule = selectedAlternative?.scheduled_work ?? schedule;
@@ -1006,7 +1034,7 @@ export default function DashboardPage() {
             <Upload size={18} />
             Import Data
           </button>
-          <button className="button secondary" onClick={loadDashboard}>
+          <button className="button secondary" onClick={() => void loadDashboard()}>
             <RefreshCw size={18} />
             Refresh
           </button>
