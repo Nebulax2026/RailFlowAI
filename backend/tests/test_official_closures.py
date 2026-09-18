@@ -11,8 +11,9 @@ from app.ps1.exporter import scenario_csvs
 from app.ps1.models import AccessAssignment, OccupancyAssignment, Scenario
 from app.ps1.parser import EXPECTED_FILES, parse_instance
 from app.ps1.safety import weekly_closure_errors
-from app.ps1.scenario_a.search import SearchConfig, solve as solve_a
-from app.ps1.scenario_a.validation import independent_footprints, validate_csvs
+from app.ps1.strategy import SearchConfig
+from app.ps1.topology_audit import independent_footprints
+from app.ps1.scenario_search import solve as solve_strategy
 from app.ps1.solver import solve_scenario
 from app.ps1.topology import activity_locations, closure_locations
 from app.ps1.validator import validate_exported_csvs
@@ -49,14 +50,12 @@ def test_weekly_closure_cannot_be_waived_by_nights_or_supply(public, scenario):
     report = validate_exported_csvs(roomy, scenario, scenario_csvs(solution))
     assert any(v["rule"] == "closure" and "A025/A028" in v["detail"] for v in report.hard_violations)
     assert not report.feasible and "objective_score" not in report.soft_scores
-    if scenario == Scenario.A:
-        assert not validate_csvs(roomy, scenario_csvs(solution)).feasible
 
 
 @pytest.mark.parametrize("strategy", ["integrated", "random_lns", "alns"])
 def test_a_strategies_use_same_closure_gate(public, strategy):
     instance = conflicting_pair(public)
-    result = solve_a(instance, SearchConfig(strategy=strategy, time_limit_seconds=3, workers=1))
+    result = solve_strategy(instance, Scenario.A, SearchConfig(strategy=strategy, time_limit_seconds=3, workers=1))
     assert result.solution and result.solution.validation.feasible
     assert len({r.week for r in result.solution.accesses}) == 2
     assert result.diagnostics["policy"] == "observed-weekly-closures-v4"

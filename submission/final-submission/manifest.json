@@ -1,0 +1,34 @@
+﻿{
+    "generated_at":  "2026-09-18T18:03:17.4660663Z",
+    "submissions":  {
+                        "A":  {
+                                  "score":  608.3,
+                                  "official_status":  "accepted",
+                                  "archive":  "A.zip"
+                              },
+                        "B":  {
+                                  "score":  50,
+                                  "official_status":  "accepted",
+                                  "archive":  "B.zip"
+                              },
+                        "C":  {
+                                  "score":  122.4,
+                                  "official_status":  "pending_official_validation",
+                                  "archive":  "C.zip"
+                              }
+                    },
+    "archives":  [
+                     {
+                         "file":  "A.zip",
+                         "sha256":  "A9CA0EC16587E6461EC2564C50B7B8DC244C93EEB64BC8B5A26E7E98DCD100E5"
+                     },
+                     {
+                         "file":  "B.zip",
+                         "sha256":  "234936F3FAFDD81999F5B749F9B0441A4859EEDE7A459E4B0FE2A865B600D940"
+                     },
+                     {
+                         "file":  "C.zip",
+                         "sha256":  "797F0B2B3D1F3D1BA6470F954C68D4804E54F02355CF90F5909E0E1D6F2E7A8F"
+                     }
+                 ]
+}

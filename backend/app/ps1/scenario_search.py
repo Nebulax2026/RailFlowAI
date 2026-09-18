@@ -17,7 +17,7 @@ from ortools.sat.python import cp_model
 from app.ps1.exporter import scenario_csvs
 from app.ps1.models import Scenario
 from app.ps1.safety import POLICY_VERSION, legal_mix
-from app.ps1.scenario_a.search import OPERATORS, SearchResult
+from app.ps1.strategy import OPERATORS, SearchResult
 from app.ps1.scoring import delay_coefficient, week_end
 from app.ps1.solver import SolveFailure, build_scenario_model
 from app.ps1.topology import affected_lines

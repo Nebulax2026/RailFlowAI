@@ -15,8 +15,8 @@ from app.ps1 import jobs
 from app.ps1.exporter import scenario_csvs
 from app.ps1.jobs import JobManager
 from app.ps1.models import JobStatus, Scenario
-from app.ps1.scenario_a.search import SearchConfig, SearchResult
-from app.ps1.scenario_a import worker
+from app.ps1.strategy import SearchConfig, SearchResult
+from app.ps1 import strategy_worker as worker
 from app.ps1.scenario_search import solve, neighborhood
 from app.ps1.solver import build_scenario_model
 from app.ps1.scoring import week_end

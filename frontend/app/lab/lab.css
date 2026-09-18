@@ -1,29 +1,15 @@
 ﻿.lab-shell .lab-toolbar { flex-shrink: 0; padding: 8px 16px; display: flex; gap: 20px; align-items: start; border-bottom: 1px solid var(--line); background: white; }
-.lab-shell .lab-tabs { display: flex; gap: 6px; padding-top: 5px; flex-shrink: 0; }
-.lab-shell .lab-tabs [aria-pressed=true] { color: var(--green-dark); background: var(--green-soft); border-color: var(--green); }
 .lab-shell .algorithm-picker { border: 0; margin: 0; padding: 0; min-width: 0; flex: 1; }
 .lab-shell .algorithm-picker legend { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
 .lab-shell .solver-options { display: flex; gap: 10px; }
 .lab-shell .solver-options label { display: grid; gap: 3px; font-size: 11px; min-width: 0; }
 .lab-shell .solver-options select, .lab-shell .solver-options input { width: 100%; min-width: 0; max-width: 220px; border: 1px solid var(--line); border-radius: 4px; padding: 5px 7px; background: white; color: var(--ink); }
 .lab-shell .solver-note { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
-.lab-shell .dataset-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; margin: 12px 16px 16px; overflow: auto; }
-.lab-shell .dataset-panel > * { flex-shrink: 0; }
-.lab-shell .dataset-panel p { margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); }
-.lab-shell .dataset-panel h2, .lab-shell .dataset-panel h3 { font-size: 14px; margin: 0; }
-.lab-shell .dataset-panel .button-row { flex-wrap: wrap; }
-.lab-shell .dataset-panel > .batch-summary { flex: 0 1 160px; min-height: 65px; margin: 0; }
-.lab-shell .batch-detail { flex: 1; min-height: 100px; display: flex; flex-direction: column; }
-.lab-shell .batch-detail .table-wrap { flex: 1; margin-top: 5px; }
-.lab-shell .dataset-panel > a { align-self: flex-start; }
 @media (max-width: 900px), (max-height: 620px) {
  .lab-shell .lab-toolbar { flex-wrap: wrap; }
  .lab-shell .algorithm-picker { flex-basis: 100%; }
- .lab-shell .dataset-panel { flex: none; overflow: visible; }
- .lab-shell .batch-summary, .lab-shell .batch-detail .table-wrap { max-height: 280px; flex: none; }
 }
 @media (max-width: 600px) {
  .lab-shell .solver-options { flex-wrap: wrap; }
  .lab-shell .solver-options label { flex: 1 1 110px; }
- .lab-shell .dataset-panel { margin: 10px; }
 }

@@ -19,9 +19,6 @@ from app.ps1.parser import EXPECTED_FILES, InstanceValidationError
 from app.ps1.evidence import activity_details
 from app.ps1.assistant import enforce_query_rate
 
-
-from app.ps1.benchmark import benchmark_manager, catalog
-
 router = APIRouter()
 MAX_FILE_BYTES = 2_000_000
 MAX_TOTAL_BYTES = 16_000_000
@@ -72,62 +69,15 @@ def _baseline_token(job: SolveJob, scenario: Scenario) -> str:
     return hashlib.sha256(f"{job.job_id}:{scenario.value}:{revision}".encode()).hexdigest()
 
 
-@router.get("/benchmark/datasets")
-def benchmark_datasets() -> dict:
-    return {"datasets": [
-        {key: row[key] for key in ("case_id", "profile", "split", "activities",
-                                   "contracts", "horizon_weeks", "predecessor_links", "live_activities")}
-        for row in catalog()
-    ], "count": 30, "scenarios_per_dataset": 3,
-        "provenance": "Synthetic, with internally validated A/B/C feasible witness schedules; not organizer hidden data."}
-
-
-@router.get("/benchmark/datasets/download")
-def download_benchmark_datasets() -> Response:
-    from app.ps1.benchmark import SUITE
-    return Response((SUITE / "all_30_inputs.zip").read_bytes(),
-                    media_type="application/zip",
-                    headers={"Content-Disposition": 'attachment; filename="30-common-datasets.zip"'})
-
-
-@router.post("/benchmark/runs", status_code=202)
-def create_benchmark(method: Literal["legacy", "integrated", "random_lns", "alns", "all"] = "all",
-                     time_limit_seconds: float = Query(default=15, ge=5, le=120),
-                     seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
-    return benchmark_manager.create(method, time_limit_seconds, seed)
-
-
-@router.get("/benchmark/runs/{run_id}")
-def get_benchmark(run_id: str) -> dict:
-    run = benchmark_manager.get(run_id)
-    if not run: raise HTTPException(status_code=404, detail="Benchmark run not found or expired.")
-    return run
-
-
-@router.delete("/benchmark/runs/{run_id}")
-def cancel_benchmark(run_id: str) -> dict:
-    run = benchmark_manager.cancel(run_id)
-    if not run: raise HTTPException(status_code=404, detail="Benchmark run not found or expired.")
-    return run
-
-
-@router.get("/benchmark/runs/{run_id}/report")
-def benchmark_report(run_id: str) -> Response:
-    run = benchmark_manager.get(run_id)
-    if not run: raise HTTPException(status_code=404, detail="Benchmark run not found or expired.")
-    return Response(json.dumps(run, indent=2), media_type="application/json",
-                    headers={"Content-Disposition": 'attachment; filename="dataset-benchmark.json"'})
-
-
 @router.post("/jobs", status_code=202)
 async def create_job(files: list[UploadFile] | None = File(default=None), public: bool = False,
-                     algorithm: Literal["legacy", "scenario_a", "strategies"] = "legacy",
+                     algorithm: Literal["legacy", "strategies"] = "legacy",
                      strategy: Literal["integrated", "alns", "random_lns"] = "alns",
                      time_limit_seconds: float = Query(default=15, ge=5, le=120),
                      seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
     config = None
     if algorithm != "legacy":
-        from app.ps1.scenario_a.search import SearchConfig
+        from app.ps1.strategy import SearchConfig
         config = asdict(SearchConfig(strategy=strategy, time_limit_seconds=time_limit_seconds, seed=seed))
     try:
         if public:
@@ -171,7 +121,7 @@ def cancel_job(job_id: str) -> dict:
 def get_scenario(job_id: str, scenario: Scenario) -> dict:
     job = _require_job(job_id)
     if scenario not in job.scenarios:
-        raise HTTPException(status_code=404, detail="This run only includes Scenario A.")
+        raise HTTPException(status_code=404, detail="Unknown scenario.")
     run = job.scenarios[scenario]
     if not run.solution:
         raise HTTPException(status_code=409, detail=run.error or f"Scenario {scenario.value} is not complete.")
@@ -344,7 +294,7 @@ def download_job(job_id: str) -> Response:
 def download_scenario_file(job_id: str, scenario: Scenario, filename: str, revision: int | None = None) -> Response:
     job = _require_job(job_id)
     if scenario not in job.scenarios:
-        raise HTTPException(status_code=404, detail="This run only includes Scenario A.")
+        raise HTTPException(status_code=404, detail="Unknown scenario.")
     solution = job.scenarios[scenario].solution
     if not solution or not solution.validation.feasible:
         raise HTTPException(status_code=409, detail="A validated scenario output is not available.")

@@ -33,7 +33,7 @@ class JobManager:
             expires_at=now + timedelta(minutes=JOB_TTL_MINUTES),
             source=source,
             instance=instance,
-            scenarios={scenario: ScenarioRun() for scenario in ([Scenario.A] if algorithm == "scenario_a" else Scenario)},
+            scenarios={scenario: ScenarioRun() for scenario in Scenario},
             algorithm=algorithm, solver_config=solver_config or {},
             input_files=files if algorithm != "legacy" else {},
         )
@@ -106,8 +106,8 @@ class JobManager:
             job = self._jobs.get(job_id)
             if not job or job.cancel_requested: return
             event = self._events[job_id]; job.status = JobStatus.RUNNING
-        if job.algorithm != "legacy":
-            self._run_scenario_a(job)
+        if job.algorithm == "strategies":
+            self._run_strategies(job)
             return
         budget = self.first_seconds + self.improve_seconds
         for scenario in Scenario:
@@ -181,9 +181,8 @@ class JobManager:
                 replan.phase = "finished"; replan.progress = 100
 
 
-    def _run_scenario_a(self, job: SolveJob) -> None:
-        # The old scenario_a API remains A-only; strategies runs A/B/C.
-        from app.ps1.scenario_a.worker import run_worker
+    def _run_strategies(self, job: SolveJob) -> None:
+        from app.ps1.strategy_worker import run_worker
         event = self._events[job.job_id]
         try:
             for scenario, run in job.scenarios.items():

@@ -1,6 +1,6 @@
 # Closure compatibility fix for A, B and C
 
-The official checker rejected Scenario A from `railflow-98b06b7e-results` with 64 closure messages across 13 weeks. The same CSVs passed our previous local policy at score 25.2. The [original comparison](official-validator-98b06b7e-audit.json) records their hashes and all messages; it is historical evidence, not current validation.
+The official checker rejected a historical Scenario A submission with 64 closure messages across 13 weeks. The same CSVs passed our previous local policy at score 25.2. The [original comparison](official-validator-98b06b7e-audit.json) records their hashes and all messages; it is historical evidence, not current validation.
 
 The replacement policy, `observed-weekly-closures-v4`, makes two changes:
 
@@ -25,4 +25,4 @@ After correcting the objective, a fresh exact search proved A's accepted 608.3 s
 
 The official validator remains inaccessible, so hidden cases may still reveal further grouping or geometry rules. In particular, the evidence does not settle crossover triggered solely by a buffer reaching the interchange, or every possible group-level closure construction on hidden inputs.
 
-Historical benchmark claims are not reused as validation. All 90 stored synthetic witnesses now fail the conservative weekly gate; `benchmarks/dataset-suite/current-validation.json` records their current outcomes. This does not establish infeasibility of those inputs.
+Historical synthetic benchmark claims were removed with the obsolete benchmark suite. Official results and strict CSV validation remain the evidence used for submission candidates.

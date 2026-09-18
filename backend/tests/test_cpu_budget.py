@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from app.ps1 import cpu_budget
-from app.ps1.scenario_a.search import SearchConfig
+from app.ps1.strategy import SearchConfig
 
 
 @pytest.mark.parametrize("cpus,expected", [(0.5, 1), (1, 1), (2, 1), (3, 2), (4, 2),
@@ -77,12 +77,3 @@ def test_unlimited_or_unreadable_cgroup(monkeypatch, quota):
              Path("/sys/fs/cgroup/cpu.max"): quota}
     monkeypatch.setattr(cpu_budget, "_read", lambda path: files.get(path, ""))
     assert list(cpu_budget._cgroup_limits()) == []
-
-
-def test_solver_reports_resolved_workers(monkeypatch):
-    from tests.test_scenario_a import tiny
-    from app.ps1.scenario_a.search import solve
-    monkeypatch.setattr(cpu_budget, "available_cpus", lambda: 4)
-    result = solve(tiny(), SearchConfig(time_limit_seconds=3))
-    assert result.solution is not None
-    assert result.diagnostics["config"]["workers"] == 2

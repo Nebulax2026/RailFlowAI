@@ -24,12 +24,12 @@ export function ScheduleResults({ job, details }: { job: Job; details: Partial<R
   return (      <section className={`dashboard ${agentMode ? "agent-page" : ""}`} aria-label="Results dashboard">
         <section className="comparison-panel data-panel" aria-label="Policy comparison">
           <div className="subheading"><div><h2>Policy comparison</h2><span>Select a policy to inspect its results</span></div><button className={agentMode ? "secondary-button" : "primary-button"} onClick={() => setAgentMode(value => !value)}>{agentMode ? "Exit Agent Mode" : "AI Agent Mode"}</button></div>
-          <div className="table-wrap"><table><thead><tr><th>Policy</th><th>Work complete</th><th>Overrun days</th><th>Excess slots</th><th>ECLO nights</th><th>Score</th><th>Search state</th></tr></thead>
+          <div className="table-wrap"><table><thead><tr><th>Policy</th><th>Work complete</th><th>Overrun days</th><th>Excess slots</th><th>ECLO nights</th><th>Score</th><th>Total search</th><th>Search state</th></tr></thead>
             <tbody>{(Object.keys(job.scenarios) as Scenario[]).map(scenario => {
               const run = job.scenarios[scenario]!;
               return <tr key={scenario} className={selectedScenario === scenario ? "selected-policy" : ""} onClick={() => setSelectedScenario(scenario)}>
                 <th scope="row"><button className="policy-select" aria-pressed={selectedScenario === scenario} onClick={() => setSelectedScenario(scenario)}><span className="scenario-code">{scenario}</span>{POLICIES[scenario]}</button></th>
-                <td>{run.scores ? `${run.scores.completion_percent}%` : "Pending"}</td><td>{run.scores?.overrun_days_total ?? "—"}</td><td>{run.scores?.excess_access_nights_total ?? "—"}</td><td>{run.scores?.eclo_nights_total ?? "—"}</td><td>{run.objective_score ?? "—"}</td>
+                <td>{run.scores ? `${run.scores.completion_percent}%` : "Pending"}</td><td>{run.scores?.overrun_days_total ?? "—"}</td><td>{run.scores?.excess_access_nights_total ?? "—"}</td><td>{run.scores?.eclo_nights_total ?? "—"}</td><td>{run.objective_score ?? "—"}</td><td>{formatSeconds(run.diagnostics?.elapsed_seconds ?? run.solver_stats.elapsed_seconds)}</td>
                 <td className="search-state"><span title={run.error || run.message}>{runLabel(run)}</span><progress aria-label={`Policy ${scenario} progress`} value={run.progress} max={100} /></td>
               </tr>;
             })}
@@ -42,6 +42,10 @@ export function ScheduleResults({ job, details }: { job: Job; details: Partial<R
         </div>}
       </section>);
 }
+function formatSeconds(value?: number | null) {
+  return value == null ? "—" : `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} s`;
+}
+
 function runLabel(run: RunState) {
   if (["optimal", "optimal_for_policy"].includes(run.termination_reason ?? "")) return "Optimality proved";
   if (run.phase === "improving") return "Improving";
@@ -72,7 +76,7 @@ function ReplanRow({ replan }: { replan: ReplanState }) {
   return <tr className={`replan-row ${replan.status}`}>
     <th scope="row"><span className="replan-policy"><span className="scenario-code">{replan.scenario}</span>Re-plan · {replan.disruption.location_id}</span></th>
     <td>{running ? <LoaderCircle size={13} className="spin" /> : typeof completion === "number" ? `${completion}%` : "—"}</td>
-    <td>{scores?.overrun_days_total ?? "—"}</td><td>{scores?.excess_access_nights_total ?? "—"}</td><td>{scores?.eclo_nights_total ?? "—"}</td><td>{scores?.objective_score ?? "—"}</td>
+    <td>{scores?.overrun_days_total ?? "—"}</td><td>{scores?.excess_access_nights_total ?? "—"}</td><td>{scores?.eclo_nights_total ?? "—"}</td><td>{scores?.objective_score ?? "—"}</td><td>{formatSeconds(replan.elapsed_seconds)}</td>
     <td className="search-state"><span title={replan.error || replan.message}>{replanLabel(replan)} · {replan.progress}%</span><progress aria-label={`Scenario ${replan.scenario} re-plan progress: ${replan.progress}%`} value={replan.progress} max={100} /></td>
   </tr>;
 }
@@ -99,7 +103,7 @@ function SearchProgress({ scenario, diagnostics: d, requested }: { scenario: Sce
       <div><dt>Time budget</dt><dd>{config?.time_limit_seconds == null ? "Not reported" : `${config.time_limit_seconds}s`}</dd></div>
       <div><dt>Seed</dt><dd>{config?.seed ?? "Not reported"}</dd></div>
     </dl>
-    <div className="metric-grid"><Metric label="Best cost" value={format(d?.objective)} /><Metric label="Model lower bound" value={format(d?.global_lower_bound)} /><Metric label="Absolute gap" value={format(d?.absolute_gap)} /><Metric label="First feasible (s)" value={format(d?.time_to_first_feasible)} /></div>
+    <div className="metric-grid"><Metric label="Best cost" value={format(d?.objective)} /><Metric label="Model lower bound" value={format(d?.global_lower_bound)} /><Metric label="Absolute gap" value={format(d?.absolute_gap)} /><Metric label="Total search time" value={formatSeconds(d?.elapsed_seconds)} /></div>
     <p className="muted">Bounds and validation apply to the documented safety policy. Official validator not supplied. A feasible result does not by itself prove optimality.</p>
     {!!d?.trajectory?.length && <details><summary>Cost improvements ({d.trajectory.length})</summary><div className="table-wrap"><table><thead><tr><th>Elapsed seconds</th><th>Validated cost</th></tr></thead><tbody>{d.trajectory.map((point, index) => <tr key={index}><td>{format(point.seconds)}</td><td>{format(point.objective)}</td></tr>)}</tbody></table></div></details>}
   </section>;
@@ -127,7 +131,7 @@ function ScenarioView({ detail, run, scenario, jobId, job, tab, onTabChange, onO
       {detail && <span className={`validation-badge ${detail.validation.feasible ? "valid" : "invalid"}`}><ShieldCheck size={15} />{detail.validation.feasible ? "Internally validated" : "Hard violations"}</span>}
       <button ref={detailButton} className="secondary-button" disabled={!detail && !run.diagnostics} onClick={() => dialog.current?.showModal()}>Result details</button>
     </div></div>
-    <div className="metric-grid"><Metric label="Objective score" value={String(scores?.objective_score ?? "—")} /><Metric label="Overrun days" value={String(scores?.overrun_days_total ?? "—")} /><Metric label="Excess access" value={String(scores?.excess_access_nights_total ?? "—")} /><Metric label="ECLO nights" value={String(scores?.eclo_nights_total ?? "—")} /></div>
+    <div className="metric-grid"><Metric label="Objective score" value={String(scores?.objective_score ?? "—")} /><Metric label="Overrun days" value={String(scores?.overrun_days_total ?? "—")} /><Metric label="Excess access" value={String(scores?.excess_access_nights_total ?? "—")} /><Metric label="ECLO nights" value={String(scores?.eclo_nights_total ?? "—")} /><Metric label="Total search time" value={formatSeconds(run.diagnostics?.elapsed_seconds ?? run.solver_stats.elapsed_seconds)} /></div>
     <div className="detail-tabs" role="tablist" aria-label="Policy details">{TABS.map((item, index) => <button key={item.id} id={`tab-${item.id}`} role="tab" aria-selected={tab === item.id} aria-controls={`panel-${item.id}`} tabIndex={tab === item.id ? 0 : -1} onClick={() => onTabChange(item.id)} onKeyDown={event => {
       let next = index;
       if (event.key === "ArrowRight") next = (index + 1) % TABS.length;

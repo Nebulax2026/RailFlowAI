@@ -1,16 +1,39 @@
 from dataclasses import replace
+from datetime import date, timedelta
 
 import pytest
 
 from app.ps1.exporter import scenario_csvs
-from app.ps1.models import Scenario
+from app.ps1.models import Activity, BufferRule, Contract, Instance, Line, LocationSupply, Scenario, Sector, Station
 from app.ps1.parser import EXPECTED_FILES, parse_instance
-from app.ps1.scenario_a.policy import prepare
 from app.ps1.solver import solve_scenario
 from app.ps1.topology import activity_locations, closure_locations
 from app.ps1.validator import validate_exported_csvs
 from .test_ps1 import DATA
-from .test_scenario_a import tiny
+
+
+def tiny(types=("C", "C"), capacity=1, weeks=3, sectors=1):
+    start = date(2027, 1, 4)
+    stations = {("L", f"S{i}"): Station(f"S{i}", "L", i + 1, False) for i in range(sectors + 1)}
+    edges = {f"SEC:L:S{i}_S{i+1}": Sector(f"SEC:L:S{i}_S{i+1}", "L", f"S{i}", f"S{i+1}", i + 1, False) for i in range(sectors)}
+    supply = {}
+    for bound in ("EB", "WB"):
+        for sector_id in edges:
+            location_id = f"{sector_id}:{bound}"
+            supply[location_id] = LocationSupply(location_id, "tunnel sector", "L", bound, capacity)
+        for _, station_id in stations:
+            location_id = f"PLAT:L:{station_id}:{bound}"
+            supply[location_id] = LocationSupply(location_id, "platform sector", "L", bound, capacity)
+    contracts, activities = {}, {}
+    for number, access_type in enumerate(types):
+        contract_id, activity_id = f"C{number}", f"A{number}"
+        contracts[contract_id] = Contract(contract_id, contract_id, start, "Renewal", "Non-live (Others)", 3,
+                                          start + timedelta(days=365), start + timedelta(days=6), 1, access_type, 1)
+        activities[activity_id] = Activity(activity_id, contract_id, "Renewal", "SEC:L:S0_S1:EB", "SEC:L:S0_S1:EB", 1, start, None, 3)
+    return Instance({"L": Line("L", "Line")}, stations, edges, supply,
+                    {"Non-live (Others)": BufferRule("Non-live (Others)", 0, False),
+                     "Non-live (Consist)": BufferRule("Non-live (Consist)", 1, False),
+                     "Live": BufferRule("Live", 2, True)}, start, weeks, contracts, activities)
 
 
 @pytest.mark.parametrize("start,end,stations,sectors", [
@@ -29,7 +52,6 @@ def test_platform_work_spans_in_both_orders(start, end, stations, sectors):
         instance.activities["A0"] = activity
         assert activity_locations(instance, activity) == expected
         assert closure_locations(instance, activity) == set()
-        assert prepare(instance).work["A0"] == frozenset(expected)
 
 
 @pytest.mark.parametrize("nature,radius,mirror", [
