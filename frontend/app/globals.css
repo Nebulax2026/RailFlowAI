@@ -2792,6 +2792,144 @@ tr:hover td {
   line-height: 1.55;
   overflow-wrap: anywhere;
   color: var(--text-primary);
+  font-size: 12px;
+}
+
+.agent-markdown > *:first-child {
+  margin-top: 0;
+}
+
+.agent-markdown > *:last-child {
+  margin-bottom: 0;
+}
+
+.agent-markdown h1,
+.agent-markdown h2,
+.agent-markdown h3,
+.agent-markdown h4 {
+  color: #ffffff;
+  font-weight: 700;
+  margin: 10px 0 4px 0;
+  line-height: 1.35;
+}
+
+.agent-markdown h1 {
+  font-size: 15px;
+}
+
+.agent-markdown h2 {
+  font-size: 14px;
+}
+
+.agent-markdown h3 {
+  font-size: 13px;
+  color: var(--cyan);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 3px;
+}
+
+.agent-markdown h4 {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.agent-markdown p {
+  margin: 6px 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.agent-markdown strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.agent-markdown em {
+  color: var(--cyan);
+  font-style: italic;
+}
+
+.agent-markdown ul,
+.agent-markdown ol {
+  margin: 6px 0 8px 0;
+  padding-left: 20px;
+}
+
+.agent-markdown li {
+  margin: 3px 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.agent-markdown li::marker {
+  color: var(--cyan);
+}
+
+.agent-markdown ul ul,
+.agent-markdown ol ul,
+.agent-markdown ul ol,
+.agent-markdown ol ol {
+  margin: 3px 0;
+  padding-left: 16px;
+}
+
+.agent-markdown code {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+  color: var(--cyan);
+  font-family: monospace;
+}
+
+.agent-markdown pre {
+  background: rgba(11, 15, 25, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.agent-markdown pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.agent-markdown blockquote {
+  border-left: 3px solid var(--cyan);
+  margin: 6px 0;
+  padding-left: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.agent-markdown hr {
+  border: 0;
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 10px 0;
+}
+
+.agent-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 11px;
+}
+
+.agent-markdown th,
+.agent-markdown td {
+  padding: 5px 8px;
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.agent-markdown th {
+  background: rgba(15, 23, 42, 0.8);
+  color: #ffffff;
 }
 
 .agent-composer {

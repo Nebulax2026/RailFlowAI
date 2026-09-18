@@ -1,11 +1,12 @@
 "use client";
 
-import { Download, LoaderCircle, MapPin, Send, Sparkles, Wrench } from "lucide-react";
+import { Download, LoaderCircle, MapPin, Send, Sparkles } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { LocationUsage } from "./inspection";
 import {
-  formatLocationName,
   type ContractResult,
   type ReplanState,
   type Scenario,
@@ -99,8 +100,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 function AnswerBody({ text }: { text: string }) {
   return (
-    <div className="agent-markdown" style={{ whiteSpace: "pre-wrap", lineHeight: 1.5, fontSize: "12px", color: "var(--text-primary)" }}>
-      {text}
+    <div className="agent-markdown">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
     </div>
   );
 }
@@ -547,124 +548,49 @@ export function BonusTools({
 }
 
 /**
- * Permanent right-column AI Assistant & Replan Panel for 2-column dashboard
+ * Permanent right-column AI Assistant Panel for 2-column dashboard
  */
 export function AIAssistantPanel({
   jobId,
   scenario,
-  runStatus,
-  usage,
-  hotspots,
-  locations,
+  runStatus: _runStatus,
+  usage: _usage,
+  hotspots: _hotspots,
+  locations: _locations,
   onOpenAgentMode,
 }: {
   jobId: string;
   scenario: Scenario;
-  runStatus: string;
-  usage: LocationUsage[];
-  hotspots: LocationUsage[];
-  locations: { location_id: string; capacity: number }[];
+  runStatus?: string;
+  usage?: LocationUsage[];
+  hotspots?: LocationUsage[];
+  locations?: { location_id: string; capacity: number }[];
   onOpenAgentMode?: () => void;
 }) {
-  const suggested = hotspots[0] ?? usage[0];
-  const [location, setLocation] = useState(suggested?.location_id ?? locations[0]?.location_id ?? "");
-  const [startWeek, setStartWeek] = useState(suggested?.week ?? 1);
-  const [endWeek, setEndWeek] = useState(suggested?.week ?? 1);
-  const [capacity, setCapacity] = useState(0);
-  const [reason, setReason] = useState("urgent_maintenance");
-  const [replan, setReplan] = useState<LegacyReplan | null>(null);
-  const [view, setView] = useState<"baseline" | "revised">("baseline");
-  const [starting, setStarting] = useState(false);
-  const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState<{ question: string; answer: Answer }[]>([]);
   const [asking, setAsking] = useState(false);
   const [assistantError, setAssistantError] = useState("");
   const askingRef = useRef(false);
-  const startingRef = useRef(false);
-  const [mode, setMode] = useState<"chat" | "replan">("chat");
   const [showLocationGuide, setShowLocationGuide] = useState(false);
 
-  useEffect(() => {
-    if (!location && suggested) {
-      setLocation(suggested.location_id);
-      setStartWeek(suggested.week);
-      setEndWeek(suggested.week);
-      setCapacity(Math.max(0, suggested.capacity - 1));
-    }
-  }, [location, suggested]);
-
-  const nominal = locations.find((item) => item.location_id === location)?.capacity ?? 1;
-  useEffect(() => {
-    if (capacity >= nominal) setCapacity(Math.max(0, nominal - 1));
-  }, [capacity, nominal]);
-
-  useEffect(() => {
-    if (!replan || !["queued", "running"].includes(replan.status)) return;
-    const replanId = replan.replan_id;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    async function poll() {
-      try {
-        const next = await request<LegacyReplan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans/${replanId}`);
-        if (disposed) return;
-        setReplan(next);
-        if (next.status === "completed") setView("revised");
-      } catch (err) {
-        if (!disposed) {
-          setError(err instanceof Error ? err.message : "Could not refresh re-plan.");
-          timer = setTimeout(poll, 1500);
-        }
-      }
-    }
-    timer = setTimeout(poll, 1500);
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-    };
-  }, [jobId, replan, scenario]);
-
-  async function startReplan(event: FormEvent) {
-    event.preventDefault();
-    if (startingRef.current || runStatus !== "completed" || (replan && ["queued", "running"].includes(replan.status))) {
-      return;
-    }
-    startingRef.current = true;
-    setStarting(true);
-    setError("");
-    try {
-      const next = await request<LegacyReplan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location_id: location, start_week: startWeek, end_week: endWeek, capacity, reason }),
-      });
-      setReplan(next);
-      setView("baseline");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start re-plan.");
-    } finally {
-      startingRef.current = false;
-      setStarting(false);
-    }
-  }
-
   async function ask(text = question) {
-    if (!text.trim() || askingRef.current) return;
+    const query = text.trim();
+    if (!query || askingRef.current) return;
     askingRef.current = true;
     setAsking(true);
     setAssistantError("");
-    setQuestion(text);
+    setQuestion("");
     try {
       const next = await request<Answer>(`/api/ps1/jobs/${jobId}/assistant/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           scenario,
-          replan_id: view === "revised" ? replan?.replan_id : null,
-          question: text.trim(),
+          question: query,
         }),
       });
-      setConversation((current) => [...current, { question: text.trim(), answer: next }]);
+      setConversation((current) => [...current, { question: query, answer: next }]);
     } catch (err) {
       setAssistantError(err instanceof Error ? err.message : "Schedule Assistant could not answer.");
     } finally {
@@ -673,14 +599,11 @@ export function AIAssistantPanel({
     }
   }
 
-  const summary = replan?.diff.summary;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (mode === "chat") {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [conversation, asking, mode]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversation, asking]);
 
   return (
     <aside className="permanent-ai-sidebar" aria-label="AI Schedule Assistant">
@@ -713,33 +636,70 @@ export function AIAssistantPanel({
               Expand
             </button>
           )}
-          <div className="segmented-control" role="group" style={{ margin: 0 }}>
-            <button
-              type="button"
-              className={`secondary-button ${mode === "chat" ? "primary-button" : ""}`}
-              style={{ fontSize: "11px", padding: "3px 8px" }}
-              onClick={() => setMode("chat")}
-            >
-              Chat
-            </button>
-            <button
-              type="button"
-              className={`secondary-button ${mode === "replan" ? "primary-button" : ""}`}
-              style={{ fontSize: "11px", padding: "3px 8px" }}
-              onClick={() => setMode("replan")}
-            >
-              Re-plan
-            </button>
-          </div>
         </div>
       </div>
 
-      {mode === "chat" ? (
-        <div className="messenger-container">
-          {/* Quick Location Reference Drawer when toggled */}
-          {showLocationGuide && conversation.length > 0 && (
-            <div style={{ padding: "0 12px", borderBottom: "1px solid var(--border-subtle)" }}>
-              <div className="location-reference-card" style={{ margin: "10px 0" }}>
+      <div className="messenger-container">
+        {/* Quick Location Reference Drawer when toggled */}
+        {showLocationGuide && conversation.length > 0 && (
+          <div style={{ padding: "0 12px", borderBottom: "1px solid var(--border-subtle)" }}>
+            <div className="location-reference-card" style={{ margin: "10px 0" }}>
+              <div className="location-reference-title">
+                <MapPin size={13} color="var(--cyan)" />
+                <span>Location Code Reference</span>
+              </div>
+              <div className="location-code-format">
+                <code>&lt;TYPE&gt;:&lt;LINE&gt;:&lt;SECTION&gt;[:BOUND]</code>
+              </div>
+              <div className="location-ref-grid">
+                <div className="location-ref-col">
+                  <span className="ref-tag">Type</span>
+                  <div className="ref-item"><code>SEC</code> Tunnel Sector</div>
+                  <div className="ref-item"><code>STN</code> Station Platform</div>
+                  <div className="ref-item"><code>BUF</code> Buffer Track</div>
+                </div>
+                <div className="location-ref-col">
+                  <span className="ref-tag">Line</span>
+                  <div className="ref-item"><code>ALP</code> Alpha Line</div>
+                  <div className="ref-item"><code>BET</code> Beta Line</div>
+                </div>
+                <div className="location-ref-col">
+                  <span className="ref-tag">Section</span>
+                  <div className="ref-item"><code>S01_S02</code> Station 1 ↔ 2</div>
+                  <div className="ref-item"><code>H01</code> Hub 1</div>
+                </div>
+                <div className="location-ref-col">
+                  <span className="ref-tag">Direction</span>
+                  <div className="ref-item"><code>EB</code> Eastbound</div>
+                  <div className="ref-item"><code>WB</code> Westbound</div>
+                </div>
+              </div>
+              <div className="location-ref-example">
+                <span className="example-label">Example:</span>
+                <code>SEC:ALP:S01_S02:EB</code>
+                <span className="example-text">→ Alpha Line eastbound tunnel between S01 & S02</span>
+              </div>
+              <div className="location-ref-tip">
+                💡 <em>Natural names supported:</em> Type natural descriptions like &quot;Alpha Line eastbound between S01 and S02&quot; and the Assistant automatically resolves the code.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable Chat Stream (Grows upwards from bottom) */}
+        <div className="messenger-stream" role="log">
+          {!conversation.length ? (
+            <div className="messenger-empty-state">
+              <div className="empty-avatar">
+                <Sparkles size={22} color="var(--cyan)" />
+              </div>
+              <h4>AI Schedule Assistant</h4>
+              <p>
+                Ask evidence-grounded questions about schedules, capacity, delay risks, or request validated disruption re-plans.
+              </p>
+
+              {/* Location Code Reference Cheat Sheet Card */}
+              <div className="location-reference-card">
                 <div className="location-reference-title">
                   <MapPin size={13} color="var(--cyan)" />
                   <span>Location Code Reference</span>
@@ -779,302 +739,130 @@ export function AIAssistantPanel({
                   💡 <em>Natural names supported:</em> Type natural descriptions like &quot;Alpha Line eastbound between S01 and S02&quot; and the Assistant automatically resolves the code.
                 </div>
               </div>
+
+              <div className="query-suggestions-title">Recommended Prompts</div>
+              <div className="query-suggestions-grid">
+                {[
+                  "Compare scenarios A, B and C",
+                  "Why was Scenario A scheduled this way?",
+                  "What are the largest delay drivers?",
+                  "Check capacity at Alpha Line eastbound between S01 and S02",
+                  "Reduce capacity at SEC:ALP:S01_S02:EB to 1 in week 12 for Scenario A",
+                ].map((item) => (
+                  <button type="button" key={item} onClick={() => void ask(item)}>
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            conversation.map((entry, idx) => (
+              <div key={idx} className="message-exchange">
+                {/* User Bubble (Right) */}
+                <div className="chat-bubble-row user">
+                  <div className="chat-bubble user">
+                    <p>{entry.question}</p>
+                    <span className="bubble-meta">You</span>
+                  </div>
+                </div>
+
+                {/* Assistant Bubble (Left) */}
+                <div className="chat-bubble-row bot">
+                  <div className="bot-avatar-icon">
+                    <Sparkles size={13} color="var(--cyan)" />
+                  </div>
+                  <div className="chat-bubble bot">
+                    <span className="bot-sender-title">RailFlow Assistant</span>
+                    <AnswerBody text={entry.answer.answer} />
+                    {entry.answer.evidence && entry.answer.evidence.length > 0 && (
+                      <div className="bubble-evidence-wrap">
+                        {entry.answer.evidence.slice(0, 4).map((ev) => (
+                          <span key={ev} className="evidence-chip">
+                            {ev}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {asking && (
+            <div className="chat-bubble-row bot">
+              <div className="bot-avatar-icon">
+                <Sparkles size={13} color="var(--cyan)" />
+              </div>
+              <div className="chat-bubble bot thinking">
+                <span className="bot-sender-title">RailFlow Assistant</span>
+                <div className="typing-indicator">
+                  <LoaderCircle size={13} className="spin" />
+                  <span>Analyzing schedule data…</span>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Scrollable Chat Stream (Grows upwards from bottom) */}
-          <div className="messenger-stream" role="log">
-            {!conversation.length ? (
-              <div className="messenger-empty-state">
-                <div className="empty-avatar">
-                  <Sparkles size={22} color="var(--cyan)" />
-                </div>
-                <h4>AI Schedule Assistant</h4>
-                <p>
-                  Ask evidence-grounded questions about schedules, capacity, delay risks, or request validated disruption re-plans.
-                </p>
-
-                {/* Location Code Reference Cheat Sheet Card */}
-                <div className="location-reference-card">
-                  <div className="location-reference-title">
-                    <MapPin size={13} color="var(--cyan)" />
-                    <span>Location Code Reference</span>
-                  </div>
-                  <div className="location-code-format">
-                    <code>&lt;TYPE&gt;:&lt;LINE&gt;:&lt;SECTION&gt;[:BOUND]</code>
-                  </div>
-                  <div className="location-ref-grid">
-                    <div className="location-ref-col">
-                      <span className="ref-tag">Type</span>
-                      <div className="ref-item"><code>SEC</code> Tunnel Sector</div>
-                      <div className="ref-item"><code>STN</code> Station Platform</div>
-                      <div className="ref-item"><code>BUF</code> Buffer Track</div>
-                    </div>
-                    <div className="location-ref-col">
-                      <span className="ref-tag">Line</span>
-                      <div className="ref-item"><code>ALP</code> Alpha Line</div>
-                      <div className="ref-item"><code>BET</code> Beta Line</div>
-                    </div>
-                    <div className="location-ref-col">
-                      <span className="ref-tag">Section</span>
-                      <div className="ref-item"><code>S01_S02</code> Station 1 ↔ 2</div>
-                      <div className="ref-item"><code>H01</code> Hub 1</div>
-                    </div>
-                    <div className="location-ref-col">
-                      <span className="ref-tag">Direction</span>
-                      <div className="ref-item"><code>EB</code> Eastbound</div>
-                      <div className="ref-item"><code>WB</code> Westbound</div>
-                    </div>
-                  </div>
-                  <div className="location-ref-example">
-                    <span className="example-label">Example:</span>
-                    <code>SEC:ALP:S01_S02:EB</code>
-                    <span className="example-text">→ Alpha Line eastbound tunnel between S01 & S02</span>
-                  </div>
-                  <div className="location-ref-tip">
-                    💡 <em>Natural names supported:</em> Type natural descriptions like &quot;Alpha Line eastbound between S01 and S02&quot; and the Assistant automatically resolves the code.
-                  </div>
-                </div>
-
-                <div className="query-suggestions-title">Recommended Prompts</div>
-                <div className="query-suggestions-grid">
-                  {[
-                    "Compare scenarios A, B and C",
-                    "Why was Scenario A scheduled this way?",
-                    "What are the largest delay drivers?",
-                    "Check capacity at Alpha Line eastbound between S01 and S02",
-                    "Reduce capacity at SEC:ALP:S01_S02:EB to 1 in week 12 for Scenario A",
-                  ].map((item) => (
-                    <button type="button" key={item} onClick={() => void ask(item)}>
-                      {item}
-                    </button>
-                  ))}
-                </div>
+          {assistantError && (
+            <div className="chat-bubble-row bot">
+              <div className="chat-bubble bot error">
+                <p>{assistantError}</p>
               </div>
-            ) : (
-              conversation.map((entry, idx) => (
-                <div key={idx} className="message-exchange">
-                  {/* User Bubble (Right) */}
-                  <div className="chat-bubble-row user">
-                    <div className="chat-bubble user">
-                      <p>{entry.question}</p>
-                      <span className="bubble-meta">You</span>
-                    </div>
-                  </div>
-
-                  {/* Assistant Bubble (Left) */}
-                  <div className="chat-bubble-row bot">
-                    <div className="bot-avatar-icon">
-                      <Sparkles size={13} color="var(--cyan)" />
-                    </div>
-                    <div className="chat-bubble bot">
-                      <span className="bot-sender-title">RailFlow Assistant</span>
-                      <AnswerBody text={entry.answer.answer} />
-                      {entry.answer.evidence && entry.answer.evidence.length > 0 && (
-                        <div className="bubble-evidence-wrap">
-                          {entry.answer.evidence.slice(0, 4).map((ev) => (
-                            <span key={ev} className="evidence-chip">
-                              {ev}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-
-            {asking && (
-              <div className="chat-bubble-row bot">
-                <div className="bot-avatar-icon">
-                  <Sparkles size={13} color="var(--cyan)" />
-                </div>
-                <div className="chat-bubble bot thinking">
-                  <span className="bot-sender-title">RailFlow Assistant</span>
-                  <div className="typing-indicator">
-                    <LoaderCircle size={13} className="spin" />
-                    <span>Analyzing schedule data…</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {assistantError && (
-              <div className="chat-bubble-row bot">
-                <div className="chat-bubble bot error">
-                  <p>{assistantError}</p>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Suggestions Chips above composer if in conversation */}
-          {conversation.length > 0 && (
-            <div className="messenger-quick-bar">
-              {[
-                "Compare A/B/C",
-                "Scenario A design",
-                "Delay drivers",
-                "Alpha Line capacity",
-              ].map((item) => (
-                <button type="button" key={item} onClick={() => void ask(item)}>
-                  {item}
-                </button>
-              ))}
             </div>
           )}
 
-          {/* Fixed Bottom Composer Dock */}
-          <form
-            className="messenger-composer-dock"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void ask();
-            }}
-          >
-            <input
-              className="messenger-input"
-              value={question}
-              maxLength={500}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask Assistant or request disruption re-plan…"
-              disabled={asking}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-            />
-            <button
-              type="submit"
-              className="messenger-send-btn"
-              disabled={asking || !question.trim()}
-              aria-label="Send message"
-            >
-              {asking ? <LoaderCircle size={15} className="spin" /> : <Send size={15} />}
-            </button>
-          </form>
+          <div ref={messagesEndRef} />
         </div>
-      ) : (
-        <div className="ai-sidebar-body">
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <span className="muted" style={{ fontSize: "11px" }}>
-              Simulate mid-horizon disruption & emergency quota drops.
-            </span>
 
-            <form className="disruption-form" onSubmit={startReplan}>
-              <label>
-                Disrupted Location
-                <select value={location} onChange={(e) => setLocation(e.target.value)} required>
-                  {locations.map((item) => (
-                    <option key={item.location_id} value={item.location_id}>
-                      {formatLocationName(item.location_id).primary}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <label>
-                  Start Week
-                  <input type="number" min={1} value={startWeek} onChange={(e) => setStartWeek(Number(e.target.value))} />
-                </label>
-                <label>
-                  End Week
-                  <input type="number" min={startWeek} value={endWeek} onChange={(e) => setEndWeek(Number(e.target.value))} />
-                </label>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <label>
-                  Quota Limit
-                  <input
-                    type="number"
-                    min={0}
-                    max={Math.max(0, nominal - 1)}
-                    value={capacity}
-                    onChange={(e) => setCapacity(Number(e.target.value))}
-                  />
-                </label>
-                <label>
-                  Reason
-                  <select value={reason} onChange={(e) => setReason(e.target.value)}>
-                    <option value="urgent_maintenance">Urgent Maintenance</option>
-                    <option value="defect">Track Defect</option>
-                    <option value="access_restriction">Access Restriction</option>
-                  </select>
-                </label>
-              </div>
-
-              <button
-                className="primary-button"
-                disabled={
-                  starting ||
-                  runStatus !== "completed" ||
-                  !location ||
-                  replan?.status === "running" ||
-                  replan?.status === "queued"
-                }
-              >
-                {starting || (replan && ["running", "queued"].includes(replan.status)) ? (
-                  <LoaderCircle size={14} className="spin" />
-                ) : (
-                  <Wrench size={14} />
-                )}
-                Run Re-plan
+        {/* Quick Suggestions Chips above composer if in conversation */}
+        {conversation.length > 0 && (
+          <div className="messenger-quick-bar">
+            {[
+              "Compare A/B/C",
+              "Scenario A design",
+              "Delay drivers",
+              "Alpha Line capacity",
+            ].map((item) => (
+              <button type="button" key={item} onClick={() => void ask(item)}>
+                {item}
               </button>
-            </form>
-
-            {error && <p className="alert error">{error}</p>}
-
-            {summary && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "6px" }}>
-                  <div className="detail-field">
-                    <span>Moved</span>
-                    <strong>{summary.moved_activities}</strong>
-                  </div>
-                  <div className="detail-field">
-                    <span>Preserved</span>
-                    <strong>{summary.preserved_percent}%</strong>
-                  </div>
-                  <div className="detail-field">
-                    <span>Delta</span>
-                    <strong>{summary.score_delta >= 0 ? `+${summary.score_delta}` : summary.score_delta}</strong>
-                  </div>
-                </div>
-
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Activity</th>
-                        <th>Old</th>
-                        <th>New</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(replan?.diff.activity_changes ?? []).slice(0, 5).map((ch) => (
-                        <tr key={ch.activity_id}>
-                          <td>
-                            <strong>{ch.activity_id}</strong>
-                          </td>
-                          <td>{ch.before.map((b) => `W${b.week}`).join(", ")}</td>
-                          <td>{ch.after.map((a) => `W${a.week}`).join(", ")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Fixed Bottom Composer Dock */}
+        <form
+          className="messenger-composer-dock"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void ask();
+          }}
+        >
+          <input
+            className="messenger-input"
+            value={question}
+            maxLength={500}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Ask Assistant or request disruption re-plan…"
+            disabled={asking}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          <button
+            type="submit"
+            className="messenger-send-btn"
+            disabled={asking || !question.trim()}
+            aria-label="Send message"
+          >
+            {asking ? <LoaderCircle size={15} className="spin" /> : <Send size={15} />}
+          </button>
+        </form>
+      </div>
     </aside>
   );
 }
