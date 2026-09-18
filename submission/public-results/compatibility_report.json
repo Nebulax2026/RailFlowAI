@@ -6,182 +6,322 @@
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H01:WB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A023', 'A070']."
+        "detail": "Week 11: A003/A041 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H01:WB week 27: 2 possessions including 1 protection reservations exceed supply 1; activities ['A023', 'A070']."
+        "detail": "Week 12: A003/A041 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:EB week 21: 2 possessions including 1 protection reservations exceed supply 1; activities ['A004', 'A025', 'A074']."
+        "detail": "Week 13: A003/A019 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:EB week 22: 2 possessions including 2 protection reservations exceed supply 1; activities ['A004', 'A009']."
+        "detail": "Week 13: A003/A019 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:EB week 23: 2 possessions including 2 protection reservations exceed supply 1; activities ['A004', 'A009']."
+        "detail": "Week 13: A003/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A009', 'A072']."
+        "detail": "Week 13: A003/A060 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:WB week 9: 2 possessions including 1 protection reservations exceed supply 1; activities ['A046', 'A058']."
+        "detail": "Week 13: A019/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:WB week 10: 2 possessions including 1 protection reservations exceed supply 1; activities ['A031', 'A046', 'A058']."
+        "detail": "Week 13: A019/A040 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:WB week 11: 2 possessions including 1 protection reservations exceed supply 1; activities ['A031', 'A046', 'A069']."
+        "detail": "Week 13: A040/A060 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:WB week 12: 2 possessions including 1 protection reservations exceed supply 1; activities ['A046', 'A069']."
+        "detail": "Week 14: A003/A019 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:WB week 25: 3 possessions including 2 protection reservations exceed supply 1; activities ['A013', 'A023', 'A046', 'A056', 'A066']."
+        "detail": "Week 14: A003/A019 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:H02:WB week 26: 2 possessions including 2 protection reservations exceed supply 1; activities ['A013', 'A035', 'A070']."
+        "detail": "Week 14: A003/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:ALP:S02:WB week 27: 3 possessions including 2 protection reservations exceed supply 2; activities ['A023', 'A035', 'A070']."
+        "detail": "Week 14: A003/A060 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H01:EB week 24: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A036', 'A042', 'A043', 'A055']."
+        "detail": "Week 14: A040/A060 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H01:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A036', 'A043']."
+        "detail": "Week 15: A021/A039 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:S11_S12:WB', 'SEC:BET:S12_S13:WB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H01:WB week 18: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+        "detail": "Week 16: A003/A007 forced onto the same physical night by local access/sharing, but require different nights: distinct local access nights."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H01:WB week 20: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+        "detail": "Week 16: A003/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H02:EB week 11: 2 possessions including 1 protection reservations exceed supply 1; activities ['A003', 'A041']."
+        "detail": "Week 16: A003/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H02:EB week 12: 2 possessions including 1 protection reservations exceed supply 1; activities ['A003', 'A041']."
+        "detail": "Week 16: A007/A011 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'SEC:BET:H02_S15:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H02:EB week 16: 2 possessions including 1 protection reservations exceed supply 1; activities ['A003', 'A007', 'A011', 'A040', 'A057']."
+        "detail": "Week 16: A011/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:H02:EB week 23: 4 possessions including 3 protection reservations exceed supply 1; activities ['A001', 'A011', 'A042', 'A057']."
+        "detail": "Week 16: A011/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S14:WB week 16: 3 possessions including 2 protection reservations exceed supply 2; activities ['A012', 'A021', 'A039', 'A049']."
+        "detail": "Week 16: A021/A039 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S12:WB', 'PLAT:BET:S13:WB', 'SEC:BET:S11_S12:WB', 'SEC:BET:S12_S13:WB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S14:WB week 17: 3 possessions including 2 protection reservations exceed supply 2; activities ['A012', 'A021', 'A039', 'A064']."
+        "detail": "Week 16: A040/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S14:WB week 18: 3 possessions including 2 protection reservations exceed supply 2; activities ['A002', 'A012', 'A039']."
+        "detail": "Week 17: A017/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:H02_S15:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S16:EB week 17: 3 possessions including 1 protection reservations exceed supply 2; activities ['A008', 'A017', 'A040', 'A057']."
+        "detail": "Week 17: A017/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S16:EB week 20: 3 possessions including 1 protection reservations exceed supply 2; activities ['A008', 'A017', 'A040', 'A057']."
+        "detail": "Week 17: A021/A039 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:S11_S12:WB', 'SEC:BET:S12_S13:WB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S17:EB week 11: 3 possessions including 2 protection reservations exceed supply 2; activities ['A003', 'A038', 'A041']."
+        "detail": "Week 17: A040/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S17:EB week 13: 3 possessions including 2 protection reservations exceed supply 2; activities ['A003', 'A019', 'A040']."
+        "detail": "Week 18: A002/A039 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S13:WB', 'SEC:BET:S11_S12:WB', 'SEC:BET:S12_S13:WB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S17:EB week 16: 3 possessions including 2 protection reservations exceed supply 2; activities ['A003', 'A007', 'A011', 'A040']."
+        "detail": "Week 18: A012/A049 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:H02_S15:WB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "PLAT:BET:S18:EB week 23: 3 possessions including 2 protection reservations exceed supply 2; activities ['A001', 'A011', 'A042']."
+        "detail": "Week 20: A012/A049 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:WB', 'SEC:BET:H02_S15:WB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "SEC:ALP:H01_H02:EB week 21: 2 possessions including 1 protection reservations exceed supply 1; activities ['A004', 'A025', 'A074']."
+        "detail": "Week 20: A017/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "SEC:BET:H01_H02:EB week 24: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A042', 'A043', 'A055']."
+        "detail": "Week 20: A017/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "SEC:BET:H01_H02:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A043']."
+        "detail": "Week 20: A040/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:S15_S16:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "SEC:BET:H01_H02:WB week 18: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+        "detail": "Week 21: A025/A074 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:ALP:S03:EB', 'PLAT:ALP:S04:EB', 'SEC:ALP:S03_S04:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "SEC:BET:H01_H02:WB week 20: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+        "detail": "Week 22: A001/A007 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'SEC:BET:H02_S15:EB']."
       },
       {
         "rule": "closure",
         "severity": "hard",
-        "detail": "SEC:BET:H02_S15:EB week 23: 4 possessions including 3 protection reservations exceed supply 2; activities ['A001', 'A011', 'A042', 'A057']."
+        "detail": "Week 23: A001/A011 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 23: A001/A042 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'PLAT:BET:S17:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 23: A001/A042 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H02:EB', 'PLAT:BET:S18:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S17_S18:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 23: A001/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 23: A011/A042 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'PLAT:BET:S17:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 23: A011/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 23: A042/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:S15_S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 24: A036/A043 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H01:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 24: A036/A055 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S14:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 24: A042/A043 forced onto the same physical night by local access/sharing, but require different nights: distinct local access nights."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 24: A042/A055 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H02:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A013/A056 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:ALP:S06:WB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A017/A040 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A017/A042 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A017/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A017/A073 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:BET:H02_S15:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A040/A042 forced onto the same physical night by local access/sharing, but require different nights: distinct local access nights."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A040/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A042/A057 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A042/A057 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H02:EB', 'SEC:BET:H02_S15:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A046/A056 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:ALP:S06:WB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 25: A057/A073 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB', 'SEC:BET:H02_S15:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 26: A017/A043 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:BET:S15:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 26: A023/A035 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:ALP:S03:WB', 'PLAT:ALP:S04:WB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 26: A023/A070 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:ALP:S03:WB', 'PLAT:ALP:S04:WB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 26: A036/A043 forced onto the same physical night by local access/sharing, but require different nights: overlapping work/protection at ['PLAT:BET:H01:EB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 27: A023/A035 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:ALP:S04:WB', 'SEC:ALP:S03_S04:WB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 27: A023/A070 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['SEC:ALP:S03_S04:WB']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "Week 27: A035/A070 forced onto the same physical night by local access/sharing, but require different nights: different possessions at ['PLAT:ALP:S04:WB']."
       }
     ],
     "soft_scores": {
@@ -206,7 +346,8 @@
         "excess_supply": 0,
         "eclo": 0
       },
-      "safety_policy": "local-protection-reservations-v1"
+      "safety_policy": "readme-physical-night-v3",
+      "sample_role": "format_only_per_user_clarification"
     }
   },
   "previous_A": {

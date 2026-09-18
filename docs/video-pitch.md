@@ -28,14 +28,22 @@ Show weekly access load, hotspots, and the contract table.
 
 “Controllers can see where workload clusters, which locations reach capacity, which contracts overrun, and why. Compatible PC and C work is packed into auditable possession groups. The schedule is not a black box.”
 
-## 1:55-2:20 - Proof and Export
+## 1:55-2:25 - Urgent Re-planning
+
+Select a capacity hotspot, reduce its available slots, and click **Re-plan**.
+
+?When urgent maintenance cuts access, RailFlowAI treats the reduced capacity as a physical limit, preserves completed work, and finds the best policy result with minimum disruption to the remaining plan. Controllers see exactly which activities and contracts moved.?
+
+Ask **Why was A001 moved?** in Schedule Assistant and show the grounded evidence IDs.
+
+## 2:25-2:45 - Proof and Export
 
 Download one CSV and then the combined ZIP.
 
 “Before downloads are enabled, RailFlowAI serializes the official files, reads them back, and independently checks workload, dates, predecessors, weekly allocation, workfronts, occupancy, capacity, ECLO, and results. We validate the artifact the judges receive.”
 
-## 2:20-2:40 - Live Context and Close
+## 2:45-3:00 - Decision Evidence and Close
 
-Point to the DataMall panel.
+Select an activity and show its scheduled weeks, shared possessions, and protection footprint.
 
-“LTA train alerts provide live operating context, while remaining safely separated from the synthetic judging network. RailFlowAI gives planners a complete, explainable, validator-ready decision in minutes.”
+?Planners can trace each activity from its workload through its scheduled access and protection requirements. Compare the three policies, inspect the evidence, and export the internally validated result.?

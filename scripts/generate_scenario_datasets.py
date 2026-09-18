@@ -6,7 +6,6 @@ import csv
 import hashlib
 import io
 import json
-import math
 import random
 import sys
 import zipfile
@@ -65,6 +64,7 @@ def generate(source, scenario, index, seed):
     window_start = max(2, horizon // 2)
     windows = {line: {window_start + offset, window_start + offset + 1} for offset, line in enumerate(lines)}
     contracts, activities, placements, cohorts = [], [], {}, []
+    cohort_weeks = Counter()
     contract_pools = defaultdict(list)
 
     def contract_for(kind, nature):
@@ -93,18 +93,25 @@ def generate(source, scenario, index, seed):
         route = sectors[line]
         anchor = next(i for i, r in enumerate(route) if r["from_station_id"] == "H01") if profile["cluster"] else rng.randrange(len(route))
         n = rng.randint(1, min(6, horizon // 3))
-        first = rng.randint(1, horizon-n+1)
-        available = list(range(first, min(horizon, first+n+rng.randint(0, 3)-1)+1))
-        weeks = sorted(rng.sample(available, n))
+        # A cohort occupies one anonymous physical night. Keep at most seven
+        # cohorts per week so the current cross-contract safety validator can
+        # always color them without relying on accidental spatial separation.
+        available = [w for w in range(1, horizon+1) if cohort_weeks[w] < 7]
+        if len(available) < n:
+            raise ValueError(f"{profile['name']}: insufficient physical nights for the witness")
+        candidate_windows = [available[max(0, i-n+1):i+1] for i in range(n-1, len(available))]
+        local = rng.choice(candidate_windows)
+        weeks = sorted(local)
+        for week in weeks: cohort_weeks[week] += 1
         group = f"g{len(cohorts)+1:03d}"
         members = []
+        left = max(0, anchor-rng.randrange(profile["span"]))
+        right = min(len(route)-1, anchor+rng.randrange(profile["span"]))
         for kind in kinds:
             if kind == "PM": nature = "Live"
             elif rng.random() < profile["live"]: nature = "Live"
             else: nature = rng.choice(["Non-live (Consist)", "Non-live (Others)"])
             contract = contract_for(kind, nature)
-            left = max(0, anchor-rng.randrange(profile["span"]))
-            right = min(len(route)-1, anchor+rng.randrange(profile["span"]))
             aid = f"A{len(activities)+1:03d}"
             extra = []
             for w in weeks:
@@ -129,12 +136,24 @@ def generate(source, scenario, index, seed):
         cohorts.append((group, members))
 
     activity_map = {a["activity_id"]: a for a in activities}
-    front_counts = Counter((activity_map[aid]["contract_number"], week) for aid, schedule in placements.items() for week, _ in schedule)
+    contract_groups = defaultdict(set)
+    group_fronts = Counter()
+    for group, members in cohorts:
+        for week, _ in placements[members[0]]:
+            for aid in members:
+                contract = activity_map[aid]["contract_number"]
+                contract_groups[contract, week].add(group)
+                group_fronts[contract, week, group] += 1
+    group_nights = {}
+    for key, groups in contract_groups.items():
+        for night, group in enumerate(sorted(groups), 1):
+            group_nights[key[0], key[1], group] = night
+    group_of = {aid: group for group, members in cohorts for aid in members}
     for c in contracts:
         aids = [a["activity_id"] for a in activities if a["contract_number"] == c["contract_number"]]
         last = max(w for a in aids for w, _ in placements[a])
-        peak = max(front_counts[c["contract_number"], w] for w in range(1, horizon+1))
-        c["number_of_workfronts"] = max(1, math.ceil(peak/c["number_of_maximum_access_per_week"]))
+        c["number_of_maximum_access_per_week"] = max(1, max((len(groups) for (cid, _), groups in contract_groups.items() if cid == c["contract_number"]), default=0))
+        c["number_of_workfronts"] = max(1, max((count for (cid, _, _), count in group_fronts.items() if cid == c["contract_number"]), default=0))
         actual_finish = start+timedelta(days=last*7-1)
         # The common zero-ECLO witness must meet B's fixed completion date;
         # the same CSV input can then be evaluated independently under A/C.
@@ -166,13 +185,11 @@ def generate(source, scenario, index, seed):
         row["supply_capacity"] = capacity
     files["04_LOCATION_SUPPLY.csv"] = encode(EXPECTED_FILES["04_LOCATION_SUPPLY.csv"], supply)
     instance = parse_instance(files)
-    accesses, counts = [], Counter()
+    accesses = []
     for aid, schedule in sorted(placements.items()):
         a = instance.activities[aid]; c = instance.contracts[a.contract_number]
         for seq, (week, eclo) in enumerate(schedule, 1):
-            key = c.contract_number, a.activity_type, week
-            night = counts[key] // c.number_of_workfronts + 1
-            counts[key] += 1
+            night = group_nights[c.contract_number, week, group_of[aid]]
             accesses.append(AccessAssignment(aid, seq, week, eclo, night))
     results = []
     for cid, c in instance.contracts.items():
@@ -187,7 +204,7 @@ def generate(source, scenario, index, seed):
     if independent and not independent.feasible: raise ValueError(f"Independent A check: {independent.hard_violations[:3]}")
     metadata = dict(profile=profile, seed=seed,
                     split="development" if index < 5 else "evaluation",
-                    generator="synthetic-common-witness-v2", feasibility="validated_witness_exists_for_A_B_C",
+                    generator="synthetic-common-witness-v3", feasibility="validated_witness_exists_for_A_B_C",
                     optimality="not_proved", official_validator_available=False,
                     activities=len(activities), contracts=len(contracts), horizon_weeks=horizon,
                     total_workload=sum(a.total_accesses for a in instance.activities.values()),
@@ -261,7 +278,7 @@ def main():
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
     lines = ["# Synthetic common A/B/C dataset suite", "", "30 common datasets. Each input directory contains eight official-schema CSVs and is evaluated under A, B and C.",
              "Each witness is a verified feasible example, not an optimal answer. Do not pass witnesses as hints when measuring a solver.",
-             "Every input has A, B and C feasible witnesses. A witnesses pass both current internal validators; B/C witnesses pass main's validator. Official validator unavailable.",
+             "Every input has A, B and C feasible witnesses under readme-physical-night-v3. A witnesses pass both current internal validators; B/C witnesses pass main's validator. Official validator unavailable.",
              "All datasets are synthetic, built on the bundled network; these are not organizer hidden datasets or a guarantee of hidden-set performance.",
              "", "## Use", "", "Unzip all_30_inputs.zip. Upload the eight CSVs from one case to the frontend, which runs A, B and C on that same input.",
              "For isolated evaluation, use the CLI with --scenario A, B or C and --input pointing at that case's input folder.",

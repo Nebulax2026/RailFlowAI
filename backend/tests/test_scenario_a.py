@@ -226,14 +226,16 @@ def test_api_selection_is_validated_and_a_only(monkeypatch):
     assert cancelled["status"] == cancelled["scenarios"]["A"]["status"] == "cancelled"
 
 
-def test_worker_roundtrip_public_greedy():
+def test_worker_rejects_public_greedy_checkpoint_under_current_safety():
     from app.ps1.scenario_a.worker import run_worker
     from dataclasses import asdict
     files = {n: (ROOT / "PS1/01_data" / n).read_bytes() for n in EXPECTED_FILES}
     instance = parse_instance(files)
     result = run_worker(instance, files, asdict(SearchConfig(strategy="greedy", time_limit_seconds=5)), lambda: False, lambda *_: None)
-    assert result.solution and result.solution.validation.feasible
-    assert result.diagnostics["objective"] == 672
+    assert result.solution is None
+    assert result.diagnostics["status"] == "no_solution_within_budget"
+    assert result.diagnostics["objective"] is None
+    assert "current application CSV validator" in result.diagnostics["validation_note"]
 
 
 def test_job_without_incumbent_retains_search_outcome(monkeypatch):

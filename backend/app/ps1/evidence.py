@@ -7,6 +7,7 @@ from app.ps1.scoring import week_end, delay_coefficient
 def activity_details(instance, solution):
     groups = defaultdict(set)
     for row in solution.occupancy: groups[row.location_id, row.week, row.co_share_group].add(row.activity_id)
+    nights = {(r["activity_id"], r["week"]): r["physical_night"] for r in solution.validation.detail.get("physical_night_assignment", [])}
     output = []
     for aid, activity in instance.activities.items():
         rows = [r for r in solution.accesses if r.activity_id == aid]
@@ -24,7 +25,7 @@ def activity_details(instance, solution):
                        "delay_cost": max(0, (end - contract.planned_completion_date).days) * delay_coefficient(contract, activity) / 10,
                        "predecessor": activity.predecessor_activity_id,
                        "predecessor_finish_week": max((r.week for r in predecessor_rows), default=None),
-                       "accesses": [asdict(r) for r in rows], "co_workers": peers,
+                       "accesses": [{**asdict(r), "physical_night": nights.get((aid, r.week))} for r in rows], "co_workers": peers,
                        "protection": protection_details(instance, activity),
                        "possessions": [asdict(r) for r in solution.occupancy if r.activity_id == aid],
                        "evidence_note": "Observed assignments and constraints; no counterfactual cause of delay is inferred."})

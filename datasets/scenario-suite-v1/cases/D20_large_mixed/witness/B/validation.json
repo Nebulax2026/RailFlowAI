@@ -6,7 +6,7 @@
     "soft_scores": {
       "overrun_days_total": 0,
       "contracts_overrunning": 0,
-      "earliness_days_total": 34,
+      "earliness_days_total": 30,
       "excess_access_nights_total": 0,
       "eclo_nights_total": 0,
       "priority_overrun": {
@@ -22,32 +22,8 @@
     "detail": {
       "capacity_hotspots": [
         {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 34,
-          "used": 5,
-          "capacity": 5,
-          "work_possessions": 1,
-          "protection_possessions": 4
-        },
-        {
           "location_id": "PLAT:ALP:S01:EB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S01:EB",
-          "week": 6,
+          "week": 31,
           "used": 2,
           "capacity": 2,
           "work_possessions": 2,
@@ -55,782 +31,2028 @@
         },
         {
           "location_id": "PLAT:ALP:S01:EB",
-          "week": 7,
+          "week": 32,
           "used": 2,
           "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S01:EB",
-          "week": 17,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S01:EB",
-          "week": 18,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S01:EB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S01:EB",
-          "week": 20,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S01:WB",
-          "week": 7,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 20,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 20,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 6,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 4,
+          "work_possessions": 2,
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 7,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 3,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S05:EB",
-          "week": 17,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S05:EB",
-          "week": 20,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S05:EB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 34,
-          "used": 5,
-          "capacity": 5,
-          "work_possessions": 2,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S06:EB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S06:WB",
-          "week": 34,
-          "used": 5,
-          "capacity": 5,
-          "work_possessions": 2,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S07:WB",
-          "week": 34,
-          "used": 5,
-          "capacity": 5,
-          "work_possessions": 2,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S08:EB",
+          "location_id": "PLAT:ALP:S01:EB",
           "week": 33,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 3,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:ALP:S08:EB",
-          "week": 34,
-          "used": 3,
-          "capacity": 3,
+          "location_id": "PLAT:ALP:S02:EB",
+          "week": 29,
+          "used": 2,
+          "capacity": 2,
           "work_possessions": 2,
-          "protection_possessions": 1
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S02:EB",
+          "week": 31,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S02:EB",
+          "week": 32,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S02:EB",
+          "week": 33,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
         },
         {
           "location_id": "PLAT:ALP:S08:WB",
+          "week": 32,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 3,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "SEC:ALP:S01_S02:EB",
+          "week": 31,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "SEC:ALP:S01_S02:EB",
+          "week": 32,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "SEC:ALP:S01_S02:EB",
           "week": 33,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:ALP:S08:WB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:BET:H01:WB",
-          "week": 15,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 3,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:H02:WB",
-          "week": 15,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 3,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S11:EB",
-          "week": 28,
           "used": 2,
           "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S11:WB",
-          "week": 28,
-          "used": 3,
-          "capacity": 3,
           "work_possessions": 2,
-          "protection_possessions": 1
+          "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:BET:S12:EB",
-          "week": 28,
+          "location_id": "SEC:ALP:S02_S03:EB",
+          "week": 29,
           "used": 2,
           "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S12:WB",
-          "week": 28,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 3,
+          "work_possessions": 2,
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:BET:S13:EB",
-          "week": 28,
+          "location_id": "SEC:ALP:S02_S03:EB",
+          "week": 31,
           "used": 2,
           "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S13:WB",
-          "week": 15,
-          "used": 3,
-          "capacity": 3,
           "work_possessions": 2,
-          "protection_possessions": 1
+          "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:BET:S14:EB",
-          "week": 28,
+          "location_id": "SEC:ALP:S02_S03:EB",
+          "week": 32,
           "used": 2,
           "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S14:WB",
-          "week": 15,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 3,
+          "work_possessions": 2,
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:BET:S15:EB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S15:EB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S15:EB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S15:WB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S15:WB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:BET:S15:WB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S15:WB",
-          "week": 15,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S16:EB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S16:EB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 3,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:S16:EB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S16:WB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S16:WB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:BET:S16:WB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S16:WB",
-          "week": 15,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S17:EB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S17:EB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 3,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:S17:EB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S17:WB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S17:WB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:BET:S17:WB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S18:EB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S18:EB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 3,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:S18:EB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:S18:WB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:BET:S18:WB",
-          "week": 8,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "PLAT:BET:S18:WB",
-          "week": 9,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:H01_H02:WB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:H02_S05:EB",
-          "week": 17,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:H02_S05:EB",
-          "week": 20,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:H02_S05:WB",
+          "location_id": "SEC:ALP:S02_S03:EB",
           "week": 33,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 2,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:H02_S05:WB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 6,
           "used": 2,
           "capacity": 2,
           "work_possessions": 2,
           "protection_possessions": 0
         },
         {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 7,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 17,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 18,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:EB",
-          "week": 20,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S01_S02:WB",
-          "week": 7,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S02_S03:EB",
-          "week": 20,
+          "location_id": "SEC:ALP:S07_S08:WB",
+          "week": 32,
           "used": 3,
           "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S02_S03:EB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:S02_S03:EB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:S02_S03:WB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S02_S03:WB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S03_S04:EB",
-          "week": 7,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S03_S04:EB",
-          "week": 20,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S03_S04:EB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:S03_S04:EB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 0,
-          "protection_possessions": 3
-        },
-        {
-          "location_id": "SEC:ALP:S03_S04:WB",
-          "week": 24,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S03_S04:WB",
-          "week": 25,
-          "used": 3,
-          "capacity": 3,
-          "work_possessions": 1,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "SEC:ALP:S04_H01:EB",
-          "week": 6,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 4,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "SEC:ALP:S04_H01:EB",
-          "week": 7,
-          "used": 4,
-          "capacity": 4,
           "work_possessions": 3,
-          "protection_possessions": 1
+          "protection_possessions": 0
         },
         {
-          "location_id": "SEC:ALP:S04_H01:WB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
+          "location_id": "SEC:BET:H02_S15:WB",
+          "week": 14,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
         },
         {
-          "location_id": "SEC:ALP:S05_S06:EB",
-          "week": 34,
-          "used": 4,
-          "capacity": 4,
-          "work_possessions": 1,
-          "protection_possessions": 3
+          "location_id": "SEC:BET:H02_S15:WB",
+          "week": 15,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "SEC:BET:S14_H01:WB",
+          "week": 4,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
         }
       ],
-      "nights_scheduled": 355,
+      "nights_scheduled": 373,
       "eclo_nights": 0,
       "score_breakdown": {
         "delay": 0,
         "excess_supply": 0,
         "eclo": 0
       },
-      "safety_policy": "local-protection-reservations-v1",
-      "capacity_hotspots_total": 142
+      "safety_policy": "readme-physical-night-v3",
+      "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+      "unresolved_safety_pairs": [],
+      "physical_night_assignment": [
+        {
+          "activity_id": "A049",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A050",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A052",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A050",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A051",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A052",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A064",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A065",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A032",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A033",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A034",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A050",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A051",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A052",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A064",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A065",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 4,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A022",
+          "week": 4,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 4,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A024",
+          "week": 4,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A025",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A026",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A027",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A028",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A032",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A033",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A034",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A050",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A051",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A052",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A100",
+          "week": 4,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A021",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A022",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A024",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A026",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A027",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A028",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A100",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A021",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A022",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A024",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A026",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A027",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A028",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 7,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A022",
+          "week": 7,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 7,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A024",
+          "week": 7,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A025",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A026",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A027",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A078",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A096",
+          "week": 7,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A021",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A022",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A024",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A078",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A096",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A021",
+          "week": 9,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A022",
+          "week": 9,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 9,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A024",
+          "week": 9,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A038",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A078",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A096",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A016",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A018",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A019",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A038",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A053",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A054",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A055",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A016",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A018",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A019",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A016",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A018",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A019",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A002",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A002",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 14,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A058",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A087",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 15,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A002",
+          "week": 15,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A003",
+          "week": 15,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A039",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A041",
+          "week": 15,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A042",
+          "week": 15,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A058",
+          "week": 15,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A059",
+          "week": 15,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A060",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A062",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A063",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A087",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 16,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A002",
+          "week": 16,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A003",
+          "week": 16,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A041",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A042",
+          "week": 16,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A060",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A062",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A063",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A087",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A105",
+          "week": 16,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A106",
+          "week": 16,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A001",
+          "week": 17,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A002",
+          "week": 17,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A003",
+          "week": 17,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A041",
+          "week": 17,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A042",
+          "week": 17,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A060",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A062",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A063",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A087",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 18,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A002",
+          "week": 18,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A003",
+          "week": 18,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A041",
+          "week": 18,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A042",
+          "week": 18,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A060",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A062",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A063",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A087",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A104",
+          "week": 18,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A042",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A047",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A087",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A104",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A042",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A047",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A048",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A104",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A047",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A079",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A104",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A047",
+          "week": 22,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 22,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A079",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 23,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A007",
+          "week": 23,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A008",
+          "week": 23,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A009",
+          "week": 23,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A047",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A048",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A074",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A076",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A079",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A007",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A008",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A009",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A035",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A036",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A037",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A069",
+          "week": 24,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A070",
+          "week": 24,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A071",
+          "week": 24,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A072",
+          "week": 24,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A074",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A075",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A076",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A079",
+          "week": 24,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A006",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 25,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A040",
+          "week": 25,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A069",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A070",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A071",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A072",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A073",
+          "week": 25,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A074",
+          "week": 25,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A075",
+          "week": 25,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A076",
+          "week": 25,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A079",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A020",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A040",
+          "week": 26,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A073",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A074",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A076",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A079",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A073",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A074",
+          "week": 27,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 27,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A076",
+          "week": 27,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A101",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A102",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A103",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 28,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A073",
+          "week": 28,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A074",
+          "week": 28,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 28,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A076",
+          "week": 28,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A101",
+          "week": 28,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A102",
+          "week": 28,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A103",
+          "week": 28,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A073",
+          "week": 29,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A080",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A081",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A082",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A088",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A089",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A090",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A091",
+          "week": 29,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A092",
+          "week": 29,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A093",
+          "week": 29,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A094",
+          "week": 29,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A095",
+          "week": 29,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A101",
+          "week": 29,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A102",
+          "week": 29,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A103",
+          "week": 29,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A107",
+          "week": 29,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A108",
+          "week": 29,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A080",
+          "week": 30,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A081",
+          "week": 30,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A082",
+          "week": 30,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A083",
+          "week": 30,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A084",
+          "week": 30,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A085",
+          "week": 30,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A092",
+          "week": 30,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A093",
+          "week": 30,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A094",
+          "week": 30,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A095",
+          "week": 30,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A101",
+          "week": 30,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A102",
+          "week": 30,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A103",
+          "week": 30,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A107",
+          "week": 30,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A108",
+          "week": 30,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A043",
+          "week": 31,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A044",
+          "week": 31,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A045",
+          "week": 31,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A046",
+          "week": 31,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A080",
+          "week": 31,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A081",
+          "week": 31,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A082",
+          "week": 31,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A083",
+          "week": 31,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A084",
+          "week": 31,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A085",
+          "week": 31,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A092",
+          "week": 31,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A093",
+          "week": 31,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A094",
+          "week": 31,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A095",
+          "week": 31,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A097",
+          "week": 31,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A098",
+          "week": 31,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A099",
+          "week": 31,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A101",
+          "week": 31,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A102",
+          "week": 31,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A103",
+          "week": 31,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A107",
+          "week": 31,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A108",
+          "week": 31,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A004",
+          "week": 32,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A005",
+          "week": 32,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 32,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A015",
+          "week": 32,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A043",
+          "week": 32,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A044",
+          "week": 32,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A045",
+          "week": 32,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A046",
+          "week": 32,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A066",
+          "week": 32,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A067",
+          "week": 32,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A068",
+          "week": 32,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A080",
+          "week": 32,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A081",
+          "week": 32,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A082",
+          "week": 32,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A097",
+          "week": 32,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A098",
+          "week": 32,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A099",
+          "week": 32,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A107",
+          "week": 32,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A108",
+          "week": 32,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A004",
+          "week": 33,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A005",
+          "week": 33,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A043",
+          "week": 33,
+          "physical_night": 6
+        },
+        {
+          "activity_id": "A044",
+          "week": 33,
+          "physical_night": 6
+        },
+        {
+          "activity_id": "A045",
+          "week": 33,
+          "physical_night": 6
+        },
+        {
+          "activity_id": "A046",
+          "week": 33,
+          "physical_night": 6
+        },
+        {
+          "activity_id": "A066",
+          "week": 33,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A067",
+          "week": 33,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A068",
+          "week": 33,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A080",
+          "week": 33,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A081",
+          "week": 33,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A082",
+          "week": 33,
+          "physical_night": 5
+        },
+        {
+          "activity_id": "A086",
+          "week": 33,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A097",
+          "week": 33,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A098",
+          "week": 33,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A099",
+          "week": 33,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A107",
+          "week": 33,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A108",
+          "week": 33,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A004",
+          "week": 34,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A005",
+          "week": 34,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A010",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A011",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A013",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A029",
+          "week": 34,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A030",
+          "week": 34,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A066",
+          "week": 34,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A067",
+          "week": 34,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A068",
+          "week": 34,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A080",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A081",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A082",
+          "week": 34,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A086",
+          "week": 34,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A097",
+          "week": 34,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A098",
+          "week": 34,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A099",
+          "week": 34,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A004",
+          "week": 35,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A005",
+          "week": 35,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A010",
+          "week": 35,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A011",
+          "week": 35,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A012",
+          "week": 35,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A013",
+          "week": 35,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A029",
+          "week": 35,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A030",
+          "week": 35,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A066",
+          "week": 35,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A067",
+          "week": 35,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A068",
+          "week": 35,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A107",
+          "week": 35,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A108",
+          "week": 35,
+          "physical_night": 4
+        },
+        {
+          "activity_id": "A004",
+          "week": 36,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A005",
+          "week": 36,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A010",
+          "week": 36,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A011",
+          "week": 36,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 36,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A013",
+          "week": 36,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A029",
+          "week": 36,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A030",
+          "week": 36,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 37,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A005",
+          "week": 37,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A029",
+          "week": 37,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A030",
+          "week": 37,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A029",
+          "week": 38,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A030",
+          "week": 38,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A056",
+          "week": 38,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 38,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A077",
+          "week": 38,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A056",
+          "week": 39,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 39,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A056",
+          "week": 40,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 40,
+          "physical_night": 1
+        }
+      ],
+      "safety_status": "verified",
+      "capacity_hotspots_total": 19
     }
   }
 }

@@ -7,7 +7,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import datamall, ps1
+from app.api import ps1
 from app.settings import allowed_hosts, cors_origins
 
 
@@ -27,7 +27,6 @@ app.add_middleware(
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
 app.include_router(ps1.router, prefix="/api/ps1", tags=["ps1"])
-app.include_router(datamall.router, prefix="/api/datamall", tags=["datamall"])
 
 
 @app.get("/api/health")

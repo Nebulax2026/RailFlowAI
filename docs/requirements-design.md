@@ -8,7 +8,7 @@ Input validation covers row width, missing fields, enum/boolean/date/integer val
 
 ## Search
 
-Activity/week access and ECLO are decisions. Local contract night variables enforce workfronts. Complete workload, strict-week precedence, scenario deadlines, per-line ECLO continuity, legal possession patterns and work/protection supply are jointly enforced. Explicit group patterns replace approximate weighted packing. See `validator-spec.md` for the conservative safety interpretation and its known organizer-sample differences.
+Activity/week access and ECLO are decisions. Local contract night variables enforce workfronts. Complete workload, strict-week precedence, scenario deadlines, per-line ECLO continuity, location-local possession patterns, work supply and cross-contract physical-night safety are jointly enforced. Explicit group patterns replace approximate weighted packing. See `validator-spec.md` for the physical-night model and the format-only sample classification.
 
 One worker performs A/B/C first searches (30 seconds each), then non-optimal scenarios receive up to 90 seconds each using validated incumbent hints. Model building counts toward the budget; construction checks and an active StopSearch monitor support cancellation. Native solver shutdown and export validation can add a small overhead. No date horizon extension or dropped workload is permitted. A mathematically infeasible instance cannot be promised a solution; time limit, infeasibility, cancellation, validation failure and unexpected error are distinguished.
 
@@ -24,9 +24,9 @@ File downloads accept optional `revision`; stale revisions receive 409 instead o
 
 ## Workspace
 
-The UI compares A/B/C completion, overrun, excess work slots, ECLO, score and search status. Revision-aware polling retrieves improvements and ignores responses from an old job. Filters select contract, activity or line. Activities have a timeline and table, actual dates, workload, predecessor, shared peers, work/buffer/opposite-bound/interchange lists and per-location memberships. A separate location/week table exposes work and protection usage and related activities. Only internal validation is claimed.
+The UI compares A/B/C completion, overrun, excess work slots, ECLO, score and search status. Revision-aware polling retrieves improvements and ignores responses from an old job. Filters select contract, activity or line. Activities have a timeline and table, actual dates, workload, predecessor, shared peers, work/buffer/opposite-bound/interchange lists and per-location memberships. A separate location/week table exposes work usage and informational protection footprints and related activities. Only internal validation is claimed.
 
-DataMall stays contextual. No what-if replanning, natural-language querying, publishing, video production or repository migration is included.
+Scheduling uses only the uploaded CSVs or bundled public instance. No what-if replanning, natural-language querying, publishing, video production or repository migration is included.
 
 ## Acceptance and reproducibility
 

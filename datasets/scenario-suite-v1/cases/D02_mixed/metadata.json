@@ -14,24 +14,24 @@
   },
   "seed": 20260919,
   "split": "development",
-  "generator": "synthetic-common-witness-v2",
+  "generator": "synthetic-common-witness-v3",
   "feasibility": "validated_witness_exists_for_A_B_C",
   "optimality": "not_proved",
   "official_validator_available": false,
   "activities": 36,
   "contracts": 14,
   "horizon_weeks": 30,
-  "total_workload": 124,
-  "predecessor_links": 6,
+  "total_workload": 146,
+  "predecessor_links": 4,
   "live_activities": 9,
   "access_type_counts": {
-    "PM": 5,
-    "C": 21,
-    "PC": 10
+    "PM": 3,
+    "C": 20,
+    "PC": 13
   },
   "supply_range": [
     1,
-    4
+    5
   ],
   "witness_eclo_A": 0,
   "witness_excess_A": 0,
@@ -39,11 +39,11 @@
     "01_LINES.csv": "b6e60b0e7726e4266efd059bf5061b3b3a2c9825ae7dd85a6431f41b81b383e7",
     "02_STATIONS.csv": "4a27d6508defd03e8c833133b523390ac8850a1c1717f309033e40f364720e24",
     "03_SECTORS.csv": "643fdb2bd317126b42572fafcce8f8108008e8e9c7b71c08dfd31cec11c3ee34",
-    "04_LOCATION_SUPPLY.csv": "bfcfde544a1ad5bf937a774502a657aa005cd4d49873da930e7d3ce82e9f3115",
+    "04_LOCATION_SUPPLY.csv": "db56597cadc888d9b5f821fe686606993a68ed5437b471330b77397dad26fa6c",
     "05_BUFFER_LOCATION.csv": "4b9fe7fd6a1f9128bd6e83405496dc64a8028f997bb1fcd28355582a6d554de0",
     "06_PARAMETERS.csv": "846c95198858146871bf9c9805d513255708ec66411f144a3dcfc75cbda447b0",
-    "07_PROJECT_DETAILS.csv": "0f5f22d8f4855565340423965fa01d413d0ebdcdc482ece420080889a4c42382",
-    "08_ACTIVITY_DETAILS.csv": "f22711737c3b756c7e506044a8d15a6992bbdc10dc8e34cbe77d7c6f6fc2b2d4"
+    "07_PROJECT_DETAILS.csv": "70199df715bffb3025c86874e442cd0c8514244649a40ec97cfcae96713215ab",
+    "08_ACTIVITY_DETAILS.csv": "8839a79b54f7382af38bb45ac9a2691cc575c4db7f28c97472e0ba6fdd1c90d2"
   },
   "case_id": "D02_mixed",
   "input_path": "cases/D02_mixed/input",

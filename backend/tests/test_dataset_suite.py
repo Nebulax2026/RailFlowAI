@@ -1,4 +1,5 @@
 import io
+import json
 import zipfile
 from types import SimpleNamespace
 
@@ -16,9 +17,12 @@ from app.ps1.validator import OUTPUT_HEADERS, validate_exported_csvs
 from app.ps1 import benchmark as benchmark_module
 
 
-def test_all_30_csv_inputs_have_valid_witnesses_and_zips():
+def test_all_30_inputs_and_witnesses_and_zips():
     entries = catalog()
+    audit = json.loads((SUITE.parents[1] / "benchmarks/dataset-suite/current-validation.json").read_text())
     assert len(entries) == 30
+    assert audit["dataset_count"] == 30
+    assert audit["scenario_checks"] == audit["feasible_checks"] == 90
     assert len({r["case_id"] for r in entries}) == 30
     assert {r["profile"]["name"] for r in entries} == {
         "small", "mixed", "priority_pressure", "interchange_congestion", "long_spans",
@@ -28,7 +32,10 @@ def test_all_30_csv_inputs_have_valid_witnesses_and_zips():
         instance = parse_instance({n: (folder / n).read_bytes() for n in EXPECTED_FILES})
         for scenario in Scenario:
             files = {n: (folder.parent / "witness" / scenario.value / n).read_bytes() for n in OUTPUT_HEADERS}
-            assert validate_exported_csvs(instance, scenario, files).feasible
+            report = validate_exported_csvs(instance, scenario, files)
+            assert report.feasible
+            assert audit["cases"][row["case_id"]][scenario.value]["feasible"]
+            assert report.soft_scores["objective_score"] == audit["cases"][row["case_id"]][scenario.value]["objective_score"]
             if scenario == Scenario.A: assert validate_csvs(instance, files).feasible
     with zipfile.ZipFile(SUITE / "all_30_inputs.zip") as archive:
         assert len(archive.namelist()) == 30 * 8

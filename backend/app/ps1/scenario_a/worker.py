@@ -19,7 +19,9 @@ from app.ps1.scenario_a.validation import HEADERS, validate_csvs
 def read_solution(instance, directory, scenario=Scenario.A, legacy=False):
     files = {name: (directory / name).read_bytes() for name in HEADERS}
     from app.ps1.validator import validate_exported_csvs
-    report = validate_csvs(instance, files) if scenario == Scenario.A and not legacy else validate_exported_csvs(instance, scenario, files)
+    report = validate_exported_csvs(instance, scenario, files)
+    if scenario == Scenario.A and not legacy and not validate_csvs(instance, files).feasible:
+        raise ValueError("Worker checkpoint failed its strategy-specific validation.")
     if not report.feasible:
         raise ValueError("Worker checkpoint failed independent CSV validation.")
     tables = {name: list(csv.DictReader(io.StringIO(content.decode()))) for name, content in files.items()}
@@ -33,6 +35,7 @@ def read_solution(instance, directory, scenario=Scenario.A, legacy=False):
 
 def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.A, legacy=False):
     best, diagnostics, last_checkpoint = None, {}, None
+    accepted_trajectory = []
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="railflow-scenario-a-") as temporary:
         root = Path(temporary)
@@ -55,10 +58,22 @@ def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.
                         content = manifest.read_text()
                         if content != last_checkpoint:
                             saved = json.loads(content)
-                            candidate = read_solution(instance, output / saved["directory"], scenario, legacy)
-                            best, diagnostics = candidate, saved["diagnostics"]
-                            on_update(best, diagnostics)
                             last_checkpoint = content
+                            try:
+                                candidate = read_solution(instance, output / saved["directory"], scenario, legacy)
+                            except ValueError:
+                                # A strategy's older safety model is not a bypass
+                                # of the application-wide exported-CSV validator.
+                                candidate = None
+                            if candidate is not None:
+                                best, diagnostics = candidate, saved["diagnostics"]
+                                accepted_trajectory.append({"seconds": time.monotonic() - started, "objective": best.validation.soft_scores["objective_score"]})
+                                diagnostics = {**diagnostics, "objective": best.validation.soft_scores["objective_score"], "trajectory": list(accepted_trajectory), "time_to_first_feasible": accepted_trajectory[0]["seconds"]}
+                                if scenario == Scenario.A and not legacy:
+                                    diagnostics["global_lower_bound"] = None
+                                    diagnostics["absolute_gap"] = None
+                                    if diagnostics.get("status") == "optimal_for_policy": diagnostics["status"] = "feasible"
+                                on_update(best, diagnostics)
                     if not alive:
                         break
                     expired = time.monotonic() - started > config["time_limit_seconds"] + 3
@@ -75,6 +90,17 @@ def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.
                 else:
                     diagnostics = {**diagnostics, "status": "feasible" if best else "no_solution_within_budget",
                                    "worker_interrupted": True}
+                if best is None and diagnostics.get("status") in {"optimal_for_policy", "feasible", "cancelled_with_feasible"}:
+                    diagnostics["status"] = "no_solution_within_budget"
+                    diagnostics["validation_note"] = "No checkpoint passed the current application CSV validator."
+                diagnostics["objective"] = best.validation.soft_scores["objective_score"] if best else None
+                diagnostics["trajectory"] = accepted_trajectory
+                diagnostics["time_to_first_feasible"] = accepted_trajectory[0]["seconds"] if accepted_trajectory else None
+                if scenario == Scenario.A and not legacy:
+                    diagnostics["strategy_policy_lower_bound"] = diagnostics.get("global_lower_bound")
+                    diagnostics["global_lower_bound"] = None
+                    diagnostics["absolute_gap"] = None
+                    if diagnostics.get("status") == "optimal_for_policy": diagnostics["status"] = "feasible"
                 diagnostics["worker_elapsed_seconds"] = time.monotonic() - started
                 return SearchResult(best, diagnostics)
             finally:

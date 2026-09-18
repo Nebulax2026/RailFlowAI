@@ -89,6 +89,8 @@ def test_api_evidence_and_revision_download(manager,tiny,monkeypatch):
     client=TestClient(app)
     detail=client.get(f'/api/ps1/jobs/{job.job_id}/scenarios/A').json()
     assert detail['solution_revision']==3 and detail['activity_details'][0]['delivered_workload']==1
+    witness = s.validation.detail['physical_night_assignment']
+    assert detail['activity_details'][0]['accesses'][0]['physical_night'] == witness[0]['physical_night']
     assert detail['score_breakdown']=={'delay':0,'excess_supply':0,'eclo':0}
     path=f'/api/ps1/jobs/{job.job_id}/scenarios/A/files/RESULTS.csv'
     assert client.get(path+'?revision=2').status_code==409

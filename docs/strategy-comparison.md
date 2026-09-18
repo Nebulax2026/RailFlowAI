@@ -111,10 +111,10 @@ At five seconds per run this can take more than 37 minutes, and at 15 seconds
 per run up to about 113 minutes plus setup. The all-method run has not been used to select a winner;
 the UI displays observed results when the user starts it.
 
-On the shared suite, the five-second Greedy run produced validated results for
-28/30 A cases and 30/30 B and C cases; the mean valid scores were A 52.4,
-B 5.367 and C 5.367. D14 and D30 had no solution within five seconds under A.
-The [raw batch result](../benchmarks/dataset-suite/RESULTS.md) records every
-run. The saved scores predate the eight-worker default; Greedy itself does not
-use CP-SAT workers. The earlier scenario-specific run is preserved there as historical data.
+On the current physical-night-v3 shared suite, the five-second Greedy run
+produced validated results for 4/30 A cases and 7/30 B and C cases. The
+mean valid scores were A 0, B 136.429 and C 15.0. Greedy uses no CP-SAT
+workers, and its failures are search failures rather than invalid published
+outputs. The [raw batch result](../benchmarks/dataset-suite/RESULTS.md) records
+every run and distinguishes older dataset revisions.
 The full 450-run comparison remains an on-demand operation.

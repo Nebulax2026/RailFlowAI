@@ -1,27 +1,33 @@
-# Shared 30-dataset batch: Greedy, five seconds per scenario
+# Shared 30-dataset batch under physical-night safety v3
 
 Each of the 30 common inputs was run under A, B and C (90 serial runs), with
-seed 42 under the earlier one-worker configuration. Greedy does not use
-CP-SAT workers, so the worker setting had no effect on these scores. The CSV
-validator accepted 28/30 A results and all
-30 B/C results. The two A misses (D14 and D30) ended with
-`no_solution_within_budget`; each input has a separately validated witness.
-These are search failures, not invalid output schedules.
+seed 42 and a five-second limit. Greedy does not use CP-SAT workers. Each
+input has a separately validated A/B/C witness under the current policy.
+Missing Greedy scores mean no valid schedule was found within the budget;
+they are not invalid published CSVs or infeasibility proofs.
 
 | Scenario | Valid / total | Average valid score | Worst valid score |
 |---|---:|---:|---:|
-| A | 28/30 | 52.4 | 1200.0 |
-| B | 30/30 | 5.367 | 28 |
-| C | 30/30 | 5.367 | 28.0 |
+| A | 4/30 | 0.0 | 0.0 |
+| B | 7/30 | 136.429 | 560 |
+| C | 7/30 | 15.0 | 75.0 |
 
-The [raw result](shared-30-greedy-5s-seed42.json) includes every dataset and
-scenario row. Reproduce it with:
+The [raw current result](v3-shared-greedy-5s-seed42.json) includes every
+dataset and scenario row. The [witness audit](current-validation.json) records
+all 90 current-policy checks. Reproduce the benchmark with:
 
 ```sh
-backend/.venv/bin/python scripts/benchmark_dataset_suite.py --method greedy --seconds 5 --seed 42 --output benchmarks/dataset-suite/shared-reproduction.json
+backend/.venv/bin/python scripts/benchmark_dataset_suite.py --method greedy --seconds 5 --seed 42 --output benchmarks/dataset-suite/new-greedy-run.json
 ```
 
-## Previous scenario-specific suite
+## Historical results
+
+The [earlier shared-suite run](shared-30-greedy-5s-seed42.json) used a prior
+dataset revision and safety policy. It recorded 28/30 valid A results and
+30/30 for B/C, with means 52.4, 5.367, and 5.367. It cannot be reproduced
+with the current inputs and validator.
+
+### Previous scenario-specific suite
 
 This result used the previous 10-input-per-scenario suite. Its input IDs no longer
 exist in the current 30 shared dataset suite; do not compare these averages with
@@ -37,8 +43,5 @@ Seed 42; one worker; 30 serial runs; all scores below are from validated CSVs. T
 
 The raw JSON contains every case score, elapsed time, status, runtime and method configuration. Datasets and witness schedules are in `datasets/scenario-suite-v1/`; witnesses were never solver hints.
 
-Reproduce:
-
-```sh
-backend/.venv/bin/python scripts/benchmark_dataset_suite.py --method greedy --seconds 5 --seed 42 --output benchmarks/dataset-suite/reproduction.json
-```
+Its raw JSON is retained as a historical record; the old inputs are no longer
+in the current suite.

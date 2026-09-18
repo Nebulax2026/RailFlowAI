@@ -1,838 +1,4 @@
 {
-  "A": {
-    "scenario": "A",
-    "feasible": true,
-    "hard_violations": [],
-    "soft_scores": {
-      "overrun_days_total": 35,
-      "contracts_overrunning": 4,
-      "earliness_days_total": 42,
-      "excess_access_nights_total": 0,
-      "eclo_nights_total": 0,
-      "priority_overrun": {
-        "1": 0,
-        "2": 0,
-        "3": 35
-      },
-      "priority_weighted_score": 40.6,
-      "completion_percent": 100.0,
-      "objective_score": 40.6,
-      "formula_version": "ps1-2026-v2"
-    },
-    "detail": {
-      "capacity_hotspots": [
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 10,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 14,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 18,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 19,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 20,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 29,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 3,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 4,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 5,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 7,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 11,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 14,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 15,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 18,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 20,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 21,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 25,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 26,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 27,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 28,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 29,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 3,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 5,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 6,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 10,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 13,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 14,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 18,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 19,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 20,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 21,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 29,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 3,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 4,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 5,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 7,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 10,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 11,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 12,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 13,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 14,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 15,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 16,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 18,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 19,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 20,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 21,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 24,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 25,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 26,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 27,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 29,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S06:WB",
-          "week": 18,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S06:WB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S06:WB",
-          "week": 20,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 13,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 21,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 22,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:WB",
-          "week": 18,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S07:WB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 1,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 4,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 5,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 6,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 7,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 8,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 11,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        }
-      ],
-      "nights_scheduled": 192,
-      "eclo_nights": 0,
-      "score_breakdown": {
-        "delay": 40.6,
-        "excess_supply": 0,
-        "eclo": 0
-      },
-      "safety_policy": "local-protection-reservations-v1",
-      "capacity_hotspots_total": 251
-    }
-  },
   "B": {
     "scenario": "B",
     "feasible": true,
@@ -840,7 +6,7 @@
     "soft_scores": {
       "overrun_days_total": 0,
       "contracts_overrunning": 0,
-      "earliness_days_total": 182,
+      "earliness_days_total": 147,
       "excess_access_nights_total": 0,
       "eclo_nights_total": 6,
       "priority_overrun": {
@@ -873,22 +39,6 @@
         },
         {
           "location_id": "PLAT:ALP:H01:EB",
-          "week": 13,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 14,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
           "week": 16,
           "used": 1,
           "capacity": 1,
@@ -926,14 +76,6 @@
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 24,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H01:WB",
@@ -1065,138 +207,10 @@
         },
         {
           "location_id": "PLAT:ALP:H01:WB",
-          "week": 19,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 21,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 24,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
           "week": 25,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 26,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 27,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 3,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 4,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 5,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 6,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 7,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 8,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 10,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
           "protection_possessions": 1
         },
         {
@@ -1217,19 +231,11 @@
         },
         {
           "location_id": "PLAT:ALP:H02:EB",
-          "week": 16,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
           "week": 17,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
-          "protection_possessions": 0
+          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:EB",
@@ -1245,7 +251,7 @@
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
-          "protection_possessions": 0
+          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:EB",
@@ -1254,14 +260,6 @@
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 24,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
@@ -1322,7 +320,7 @@
         {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 9,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
@@ -1330,34 +328,18 @@
         {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 10,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 11,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 12,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 13,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
-          "protection_possessions": 1
+          "protection_possessions": 2
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
@@ -1365,28 +347,12 @@
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 15,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
           "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 18,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
@@ -1394,170 +360,42 @@
         {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 19,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
         },
         {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 21,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 24,
+          "location_id": "PLAT:ALP:S03:EB",
+          "week": 9,
           "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:ALP:H02:WB",
+          "location_id": "PLAT:ALP:S03:EB",
+          "week": 10,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S03:WB",
           "week": 25,
           "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 2,
-          "used": 2,
           "capacity": 2,
           "work_possessions": 2,
           "protection_possessions": 0
         },
         {
           "location_id": "PLAT:ALP:S04:WB",
-          "week": 3,
+          "week": 25,
           "used": 2,
           "capacity": 2,
           "work_possessions": 2,
           "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:S05:WB",
@@ -1566,14 +404,6 @@
           "capacity": 2,
           "work_possessions": 2,
           "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:S06:WB",
@@ -1588,23 +418,7 @@
           "week": 19,
           "used": 2,
           "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 13,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 14,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
+          "work_possessions": 2,
           "protection_possessions": 1
         },
         {
@@ -1616,28 +430,12 @@
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 1,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:BET:H01:EB",
-          "week": 3,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
+          "location_id": "PLAT:ALP:S07:WB",
+          "week": 19,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
         },
         {
           "location_id": "PLAT:BET:H01:EB",
@@ -1650,6 +448,374 @@
         {
           "location_id": "PLAT:BET:H01:EB",
           "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 12,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 16,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 20,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 22,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 23,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 25,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 26,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 2,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 3,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 12,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 16,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 20,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
@@ -1663,18 +829,968 @@
         "excess_supply": 0,
         "eclo": 30
       },
-      "safety_policy": "local-protection-reservations-v1",
-      "capacity_hotspots_total": 278
+      "safety_policy": "readme-physical-night-v3",
+      "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+      "unresolved_safety_pairs": [],
+      "physical_night_assignment": [
+        {
+          "activity_id": "A002",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A035",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A048",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A009",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A035",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A006",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A035",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A048",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A063",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A012",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A037",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A037",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A069",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A038",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A069",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 11,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A019",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A038",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A038",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A019",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 13,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A025",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A041",
+          "week": 13,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A043",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A047",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A060",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 13,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A003",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A047",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A060",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A070",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A043",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A071",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A007",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A008",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A011",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A057",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A059",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A064",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 17,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A011",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A041",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A050",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A054",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A060",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A008",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A040",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A050",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A054",
+          "week": 18,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A056",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A004",
+          "week": 19,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A007",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A056",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A065",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A074",
+          "week": 19,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A007",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A008",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A001",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A055",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A073",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A042",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A072",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A036",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A040",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A042",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A036",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A042",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A066",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 27,
+          "physical_night": 1
+        }
+      ],
+      "safety_status": "verified",
+      "capacity_hotspots_total": 183
     }
   },
-  "C": {
-    "scenario": "C",
+  "A": {
+    "scenario": "A",
     "feasible": true,
     "hard_violations": [],
     "soft_scores": {
       "overrun_days_total": 21,
       "contracts_overrunning": 2,
-      "earliness_days_total": 182,
+      "earliness_days_total": 112,
       "excess_access_nights_total": 0,
       "eclo_nights_total": 0,
       "priority_overrun": {
@@ -1707,22 +1823,6 @@
         },
         {
           "location_id": "PLAT:ALP:H01:EB",
-          "week": 13,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
-          "week": 14,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:EB",
           "week": 16,
           "used": 1,
           "capacity": 1,
@@ -1755,7 +1855,7 @@
         },
         {
           "location_id": "PLAT:ALP:H01:EB",
-          "week": 23,
+          "week": 21,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
@@ -1763,11 +1863,11 @@
         },
         {
           "location_id": "PLAT:ALP:H01:EB",
-          "week": 24,
+          "week": 23,
           "used": 1,
           "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
+          "work_possessions": 1,
+          "protection_possessions": 0
         },
         {
           "location_id": "PLAT:ALP:H01:WB",
@@ -1812,14 +1912,6 @@
         {
           "location_id": "PLAT:ALP:H01:WB",
           "week": 7,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 8,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
@@ -1883,15 +1975,7 @@
         },
         {
           "location_id": "PLAT:ALP:H01:WB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 18,
+          "week": 16,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
@@ -1902,45 +1986,13 @@
           "week": 19,
           "used": 1,
           "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 21,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 24,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
+          "work_possessions": 1,
+          "protection_possessions": 0
         },
         {
           "location_id": "PLAT:ALP:H01:WB",
           "week": 25,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
@@ -1950,87 +2002,7 @@
           "week": 26,
           "used": 1,
           "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H01:WB",
-          "week": 27,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 2,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 3,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 4,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 5,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 6,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 7,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 8,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 9,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 10,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
+          "work_possessions": 1,
           "protection_possessions": 1
         },
         {
@@ -2051,14 +2023,6 @@
         },
         {
           "location_id": "PLAT:ALP:H02:EB",
-          "week": 16,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:EB",
           "week": 17,
           "used": 1,
           "capacity": 1,
@@ -2075,11 +2039,11 @@
         },
         {
           "location_id": "PLAT:ALP:H02:EB",
-          "week": 19,
+          "week": 21,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
-          "protection_possessions": 0
+          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:EB",
@@ -2090,14 +2054,6 @@
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:ALP:H02:EB",
-          "week": 24,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 2,
           "used": 1,
@@ -2147,16 +2103,8 @@
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
-          "week": 8,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
           "week": 9,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
@@ -2164,38 +2112,22 @@
         {
           "location_id": "PLAT:ALP:H02:WB",
           "week": 10,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
-          "week": 11,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 12,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 13,
-          "used": 2,
+          "week": 15,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
-          "week": 14,
+          "week": 16,
           "used": 1,
           "capacity": 1,
           "work_possessions": 1,
@@ -2203,32 +2135,8 @@
         },
         {
           "location_id": "PLAT:ALP:H02:WB",
-          "week": 15,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 17,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 18,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
           "week": 19,
-          "used": 2,
+          "used": 1,
           "capacity": 1,
           "work_possessions": 1,
           "protection_possessions": 1
@@ -2238,80 +2146,8 @@
           "week": 21,
           "used": 1,
           "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 22,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 23,
-          "used": 1,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 24,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
+          "work_possessions": 1,
           "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:H02:WB",
-          "week": 25,
-          "used": 2,
-          "capacity": 1,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S02:WB",
-          "week": 25,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
         },
         {
           "location_id": "PLAT:ALP:S03:EB",
@@ -2330,144 +2166,8 @@
           "protection_possessions": 0
         },
         {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S03:WB",
-          "week": 25,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:EB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 3,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S04:WB",
-          "week": 25,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 2,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 0,
-          "protection_possessions": 2
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 9,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 10,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 13,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
-          "location_id": "PLAT:ALP:S05:WB",
-          "week": 19,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S06:WB",
-          "week": 18,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 0
-        },
-        {
           "location_id": "PLAT:ALP:S06:WB",
           "week": 19,
-          "used": 3,
-          "capacity": 2,
-          "work_possessions": 2,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 13,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:EB",
-          "week": 14,
-          "used": 2,
-          "capacity": 2,
-          "work_possessions": 1,
-          "protection_possessions": 1
-        },
-        {
-          "location_id": "PLAT:ALP:S07:WB",
-          "week": 18,
           "used": 2,
           "capacity": 2,
           "work_possessions": 2,
@@ -2483,10 +2183,426 @@
         },
         {
           "location_id": "PLAT:BET:H01:EB",
-          "week": 1,
+          "week": 4,
           "used": 1,
           "capacity": 1,
-          "work_possessions": 0,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 12,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 16,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 20,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 22,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 23,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 25,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 26,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 27,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 28,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 2,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 3,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 12,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 16,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 20,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 22,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 23,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
           "protection_possessions": 1
         }
       ],
@@ -2497,8 +2613,2772 @@
         "excess_supply": 0,
         "eclo": 0
       },
-      "safety_policy": "local-protection-reservations-v1",
-      "capacity_hotspots_total": 282
+      "safety_policy": "readme-physical-night-v3",
+      "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+      "unresolved_safety_pairs": [],
+      "physical_night_assignment": [
+        {
+          "activity_id": "A002",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A035",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A048",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A009",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A035",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A009",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A035",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A048",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A063",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A012",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A037",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A037",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A069",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A038",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A069",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 11,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A019",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A038",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A041",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A041",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A043",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A047",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A060",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A070",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A019",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A047",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A060",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A070",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A011",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A020",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A011",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A020",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A060",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A064",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 17,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A014",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A054",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A071",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A054",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A050",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A056",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A065",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A008",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A040",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A055",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 21,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A004",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 21,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A043",
+          "week": 21,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A056",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 21,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A074",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 22,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A013",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A040",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A042",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A072",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A036",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A042",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A066",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A073",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A038",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A042",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A050",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 28,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 28,
+          "physical_night": 1
+        }
+      ],
+      "safety_status": "verified",
+      "capacity_hotspots_total": 175
+    }
+  },
+  "C": {
+    "scenario": "C",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 21,
+      "contracts_overrunning": 2,
+      "earliness_days_total": 119,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 21
+      },
+      "priority_weighted_score": 25.2,
+      "completion_percent": 100.0,
+      "objective_score": 25.2,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "capacity_hotspots": [
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 22,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 23,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 2,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 3,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 12,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 23,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 25,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 2,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 3,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 10,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 12,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:S03:EB",
+          "week": 9,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S03:EB",
+          "week": 10,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S03:WB",
+          "week": 2,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S03:WB",
+          "week": 3,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S03:WB",
+          "week": 25,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S04:WB",
+          "week": 2,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S04:WB",
+          "week": 3,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S04:WB",
+          "week": 25,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S06:WB",
+          "week": 18,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:ALP:S07:WB",
+          "week": 18,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 2,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 16,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 19,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 20,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 21,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 22,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 23,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 25,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 26,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 27,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 28,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 2,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 3,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 24,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 4,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 5,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 7,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 9,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 13,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 14,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 15,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 16,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 17,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 18,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 1,
+          "protection_possessions": 0
+        }
+      ],
+      "nights_scheduled": 192,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 25.2,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "readme-physical-night-v3",
+      "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+      "unresolved_safety_pairs": [],
+      "physical_night_assignment": [
+        {
+          "activity_id": "A031",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A035",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A048",
+          "week": 1,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A031",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A035",
+          "week": 2,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 2,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A002",
+          "week": 3,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A009",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A035",
+          "week": 3,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A048",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 3,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A009",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A021",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 4,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 4,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 5,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 6,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A061",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 7,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 7,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A012",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A037",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A039",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 8,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A058",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A021",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 9,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A061",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A069",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A028",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A069",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A019",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A046",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A049",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A025",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A041",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A049",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A058",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A070",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A019",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A046",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A047",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A060",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A070",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A003",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A025",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A047",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A060",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A043",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A070",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A011",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 16,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A060",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A064",
+          "week": 16,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 17,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A039",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A050",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A054",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A050",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A054",
+          "week": 18,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A056",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A059",
+          "week": 18,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A061",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A063",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 19,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A007",
+          "week": 19,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A008",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 19,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A043",
+          "week": 19,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A056",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A065",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A071",
+          "week": 19,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A074",
+          "week": 19,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A011",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A055",
+          "week": 20,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A059",
+          "week": 20,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A004",
+          "week": 21,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A013",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A020",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A037",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A040",
+          "week": 21,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 22,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A004",
+          "week": 22,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A017",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A038",
+          "week": 22,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 22,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A007",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A013",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A038",
+          "week": 23,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A042",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 23,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A070",
+          "week": 23,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A013",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A023",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A036",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A038",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A042",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A057",
+          "week": 24,
+          "physical_night": 3
+        },
+        {
+          "activity_id": "A072",
+          "week": 24,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A075",
+          "week": 24,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A036",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A040",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A041",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A057",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A066",
+          "week": 25,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A073",
+          "week": 25,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A023",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A040",
+          "week": 26,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A042",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 26,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A023",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A051",
+          "week": 27,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A036",
+          "week": 28,
+          "physical_night": 1
+        }
+      ],
+      "safety_status": "verified",
+      "capacity_hotspots_total": 193
     }
   }
 }

@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 from datetime import date
 from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ValidationReport
 from app.ps1.topology import activity_locations, affected_lines
-from app.ps1.safety import legal_mix, possession_usage
+from app.ps1.safety import legal_mix, possession_usage, safety_assignment
 from app.ps1.scoring import FORMULA_VERSION, delay_coefficient, week_end
 
 OUTPUT_HEADERS = {
@@ -84,14 +84,13 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
         if not legal_mix(instance, members): fail("legal_mix", f"{key}: illegal group {sorted(members)}.")
     usage = possession_usage(instance, accesses, occupancy); excess = 0
     for item in usage:
-        over = max(0, item['used'] - item['capacity'])
         work_over = max(0, item['work_possessions'] - item['capacity'])
         excess += work_over
         allowance = 1 if scenario == Scenario.C else 0
         if scenario != Scenario.B and work_over > allowance:
             fail("capacity", f"{item['location_id']} week {item['week']}: {item['work_possessions']} work possessions exceed supply {item['capacity']} and allowance {allowance}.")
-        if scenario != Scenario.B and over > allowance and item['protection_possessions']:
-            fail("closure", f"{item['location_id']} week {item['week']}: {item['used']} possessions including {item['protection_possessions']} protection reservations exceed supply {item['capacity']}; activities {item['activities']}.")
+    safety_errors, night_witness = safety_assignment(instance, accesses, occupancy)
+    for item in safety_errors: fail(item['rule'], item['detail'])
     eclo_weeks = defaultdict(list)
     for aid, rows in by_activity.items():
         if aid not in instance.activities: continue
@@ -124,4 +123,7 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
     if not violations: scores.update(objective_score=sum(breakdown.values()), formula_version=FORMULA_VERSION)
     return ValidationReport(scenario.value, not violations, violations, scores,
                             {"capacity_hotspots": [u for u in usage if u['used'] >= u['capacity']], "location_usage": usage,
-                             "nights_scheduled": len(accesses), "eclo_nights": eclo, "score_breakdown": breakdown, "safety_policy": "local-protection-reservations-v1"})
+                             "nights_scheduled": len(accesses), "eclo_nights": eclo, "score_breakdown": breakdown, "safety_policy": "readme-physical-night-v3",
+                             "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+                             "unresolved_safety_pairs": [], "physical_night_assignment": night_witness,
+                             "safety_status": "unknown" if any(e["rule"] == "safety_unknown" for e in safety_errors) else "failed" if safety_errors else "verified"})
