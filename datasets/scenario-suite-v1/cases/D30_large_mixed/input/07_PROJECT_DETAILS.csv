@@ -1,0 +1,23 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic large_mixed programme C001,2027-06-10,Construction,Non-live (Others),3,2028-07-17,2028-04-23,1,C,2
+C002,Synthetic large_mixed programme C002,2027-06-04,Renewal,Live,3,2028-07-17,2028-05-23,2,C,4
+C003,Synthetic large_mixed programme C003,2027-07-01,Renewal,Non-live (Consist),2,2028-07-17,2028-04-23,2,C,1
+C004,Synthetic large_mixed programme C004,2027-02-07,Renewal,Non-live (Consist),3,2028-07-17,2028-04-16,2,C,2
+C005,Synthetic large_mixed programme C005,2027-02-16,Renewal,Live,2,2028-07-17,2028-04-16,1,PC,3
+C006,Synthetic large_mixed programme C006,2027-05-24,Renewal,Live,1,2028-07-17,2028-04-04,2,C,2
+C007,Synthetic large_mixed programme C007,2027-03-27,Renewal,Live,2,2028-07-17,2028-04-02,1,C,1
+C008,Synthetic large_mixed programme C008,2027-07-01,Construction,Non-live (Others),2,2028-07-17,2028-04-16,2,C,2
+C009,Synthetic large_mixed programme C009,2027-05-21,Renewal,Non-live (Consist),3,2028-07-17,2028-01-23,1,PC,2
+C010,Synthetic large_mixed programme C010,2027-07-07,Renewal,Non-live (Consist),1,2028-07-17,2028-05-28,1,C,1
+C011,Synthetic large_mixed programme C011,2027-07-05,Renewal,Non-live (Consist),1,2028-07-17,2028-02-06,1,PC,1
+C012,Synthetic large_mixed programme C012,2027-01-22,Renewal,Non-live (Consist),3,2028-07-17,2028-06-11,1,C,1
+C013,Synthetic large_mixed programme C013,2027-04-29,Construction,Non-live (Others),2,2028-07-17,2028-04-04,1,C,2
+C014,Synthetic large_mixed programme C014,2027-06-21,Renewal,Non-live (Consist),3,2028-07-17,2028-05-21,2,C,2
+C015,Synthetic large_mixed programme C015,2027-01-22,Renewal,Live,3,2028-07-17,2028-03-12,1,PM,1
+C016,Synthetic large_mixed programme C016,2027-06-20,Renewal,Non-live (Consist),1,2028-07-17,2028-05-14,1,C,2
+C017,Synthetic large_mixed programme C017,2027-05-30,Construction,Non-live (Others),1,2028-07-17,2028-02-13,1,PC,3
+C018,Synthetic large_mixed programme C018,2027-06-04,Construction,Non-live (Others),2,2028-07-17,2028-02-08,1,C,2
+C019,Synthetic large_mixed programme C019,2027-04-04,Construction,Non-live (Others),1,2028-07-17,2028-04-30,1,C,1
+C020,Synthetic large_mixed programme C020,2027-05-21,Renewal,Live,3,2028-07-17,2028-04-09,1,PC,1
+C021,Synthetic large_mixed programme C021,2027-03-15,Construction,Non-live (Others),2,2028-07-17,2028-05-21,1,C,3
+C022,Synthetic large_mixed programme C022,2027-02-22,Construction,Non-live (Others),2,2028-07-17,2027-12-12,1,C,1

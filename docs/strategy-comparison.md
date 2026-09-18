@@ -55,7 +55,7 @@ curl -X POST 'http://127.0.0.1:8000/api/ps1/jobs?public=true&algorithm=strategie
 # CLI: one scenario, one new output directory per invocation.
 cd backend
 .venv/bin/python -m app.ps1.scenario_a.cli --scenario B --strategy random_lns \
-  --seconds 15 --workers 1 --seed 42 --output ../submission/my-b-run
+  --seconds 15 --workers auto --seed 42 --output ../submission/my-b-run
 ```
 
 `algorithm=legacy` (also the default) keeps main's two-pass A/B/C planner.
@@ -83,11 +83,11 @@ download, mobile layout and switching back to the existing planner.
 
 ## Thirty dataset average
 
-The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 10 witnessed
-feasible inputs for each scenario. The UI offers **Run selected method · 30
-cases** and **Compare all 5 methods · 150 cases**. Both run serially with the
-same configured time and eight CP-SAT workers per case. Historical benchmark
-results below were recorded with one worker; new runs use eight. The old Existing planner
+The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 30 shared inputs,
+each with a feasible witness for A, B and C. The UI offers **Run selected method · 90
+runs** and **Compare all 5 methods · 450 runs**. Both run serially with the
+same configured time and eight CP-SAT workers per run. Greedy uses no CP-SAT
+workers. The old Existing planner
 uses one bounded pass per dataset, matching the time budget used for the other
 methods. A single-input Existing planner run retains its original 30+90 second
 search workflow. The average uses validated finished runs only and displays
@@ -108,13 +108,15 @@ backend/.venv/bin/python scripts/benchmark_dataset_suite.py \
   --output benchmarks/dataset-suite/new-greedy-run.json
 ```
 
-`--method all` runs all five methods on all 30 cases. At five seconds per case
-this can take more than 12 minutes, and at 15 seconds per case up to about
-38 minutes plus setup. The all-method run has not been used to select a winner;
+`--method all` runs all five methods on all 30 inputs under each scenario.
+At five seconds per run this can take more than 37 minutes, and at 15 seconds
+per run up to about 113 minutes plus setup. The all-method run has not been used to select a winner;
 the UI displays observed results when the user starts it.
 
-The completed five-second Greedy run reached 10/10 validated cases in each
-scenario. Its measured means were A 1147.13, B 625.8 and C 1357.56; raw
-cases and runtime are in the [batch result](../benchmarks/dataset-suite/RESULTS.md).
-All five methods were also exercised on the three small cases as a 15-run
-integration check. The full 150-run comparison remains an on-demand operation.
+On the current physical-night-v3 shared suite, the five-second Greedy run
+produced validated results for 4/30 A cases and 7/30 B and C cases. The
+mean valid scores were A 0, B 136.429 and C 15.0. Greedy uses no CP-SAT
+workers, and its failures are search failures rather than invalid published
+outputs. The [raw batch result](../benchmarks/dataset-suite/RESULTS.md) records
+every run and distinguishes older dataset revisions.
+The full 450-run comparison remains an on-demand operation.

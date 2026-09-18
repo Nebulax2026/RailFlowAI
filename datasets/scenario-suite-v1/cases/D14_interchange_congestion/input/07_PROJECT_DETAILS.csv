@@ -1,0 +1,19 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic interchange_congestion programme C001,2026-08-31,Renewal,Non-live (Consist),3,2027-11-22,2027-09-26,1,PC,2
+C002,Synthetic interchange_congestion programme C002,2026-12-17,Construction,Non-live (Others),1,2027-11-22,2027-10-17,1,C,2
+C003,Synthetic interchange_congestion programme C003,2026-12-13,Construction,Non-live (Others),1,2027-11-22,2027-08-29,1,C,1
+C004,Synthetic interchange_congestion programme C004,2026-11-08,Renewal,Non-live (Consist),3,2027-11-22,2027-08-29,2,C,2
+C005,Synthetic interchange_congestion programme C005,2026-10-10,Renewal,Live,1,2027-11-22,2027-10-17,2,C,2
+C006,Synthetic interchange_congestion programme C006,2026-10-29,Renewal,Live,3,2027-11-22,2027-09-05,2,C,1
+C007,Synthetic interchange_congestion programme C007,2026-12-25,Construction,Non-live (Others),1,2027-11-22,2027-09-07,1,C,2
+C008,Synthetic interchange_congestion programme C008,2026-08-03,Construction,Non-live (Others),1,2027-11-22,2027-06-20,1,C,2
+C009,Synthetic interchange_congestion programme C009,2026-08-11,Renewal,Non-live (Consist),2,2027-11-22,2027-08-29,1,C,1
+C010,Synthetic interchange_congestion programme C010,2026-08-26,Construction,Non-live (Others),3,2027-11-22,2027-09-12,1,C,1
+C011,Synthetic interchange_congestion programme C011,2026-11-03,Renewal,Non-live (Consist),1,2027-11-22,2027-09-12,1,C,1
+C012,Synthetic interchange_congestion programme C012,2026-11-17,Renewal,Non-live (Consist),3,2027-11-22,2027-10-17,1,C,2
+C013,Synthetic interchange_congestion programme C013,2026-11-10,Construction,Non-live (Others),3,2027-11-22,2027-09-12,1,C,1
+C014,Synthetic interchange_congestion programme C014,2026-09-03,Construction,Non-live (Others),2,2027-11-22,2027-10-24,1,PC,1
+C015,Synthetic interchange_congestion programme C015,2026-12-06,Renewal,Non-live (Consist),2,2027-11-22,2027-09-12,1,PC,2
+C016,Synthetic interchange_congestion programme C016,2026-12-04,Renewal,Non-live (Consist),2,2027-11-22,2027-06-20,1,C,2
+C017,Synthetic interchange_congestion programme C017,2026-12-23,Renewal,Live,1,2027-11-22,2027-06-22,1,PC,1
+C018,Synthetic interchange_congestion programme C018,2026-09-16,Renewal,Live,2,2027-11-22,2027-09-28,1,PM,1

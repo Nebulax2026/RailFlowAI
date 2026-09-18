@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 import ortools
-from app.ps1.benchmark import METHODS, benchmark_manager
+from app.ps1.benchmark import BENCHMARK_WORKERS, METHODS, benchmark_manager
 
 
 def main():
@@ -28,7 +28,8 @@ def main():
             break
         time.sleep(.2)
     payload = dict(platform=platform.platform(), python=platform.python_version(),
-                   ortools=ortools.__version__, workers_per_case=result["workers_per_case"], run=result)
+                   ortools=ortools.__version__, cp_sat_workers_per_run=BENCHMARK_WORKERS,
+                   greedy_cp_sat_workers=0, run=result)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2)+"\n")
     print(json.dumps(dict(status=result["status"], summary=result["summary"]), indent=2))

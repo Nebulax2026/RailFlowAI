@@ -14,12 +14,12 @@ Python 3.11+ (tested with 3.12.14), OR-Tools 9.15.6755 and the pinned `backend/r
 cd backend
 .venv/bin/python -m app.ps1.scenario_a.cli \
   --input ../PS1/01_data --output ../submission/my-scenario-a-run \
-  --config ../config/scenario-a.json --seconds 30 --workers 1 --seed 42
+  --config ../config/scenario-a.json --seconds 30 --workers auto --seed 42
 
 # Explicit ALNS experiment using the same integrated hard constraints.
 .venv/bin/python -m app.ps1.scenario_a.cli \
   --input ../PS1/01_data --output ../submission/my-alns-run \
-  --strategy alns --seconds 30 --workers 1 --seed 42
+  --strategy alns --seconds 30 --workers auto --seed 42
 ```
 
 Each output directory includes the three official-schema CSVs, `validation.json`, `diagnostics.json`, and atomic incumbent checkpoints. No debugging columns are added to CSVs. On interruption, `checkpoint.json` points to the last complete validated generation. The API runs new searches in a separate process and validates these files again before exposing them.

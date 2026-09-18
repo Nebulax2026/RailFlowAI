@@ -1,0 +1,295 @@
+{
+  "main": {
+    "scenario": "C",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 0,
+      "contracts_overrunning": 0,
+      "earliness_days_total": 15,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "priority_weighted_score": 0.0,
+      "completion_percent": 100.0,
+      "objective_score": 0.0,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "capacity_hotspots": [],
+      "nights_scheduled": 51,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 0.0,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "readme-physical-night-v3",
+      "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+      "unresolved_safety_pairs": [],
+      "physical_night_assignment": [
+        {
+          "activity_id": "A005",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 5,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A005",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A006",
+          "week": 6,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A003",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A004",
+          "week": 8,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A018",
+          "week": 9,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A010",
+          "week": 10,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A017",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A018",
+          "week": 10,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A007",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A010",
+          "week": 11,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A018",
+          "week": 11,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A001",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A002",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A007",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A010",
+          "week": 12,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A011",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A018",
+          "week": 12,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A001",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A002",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A010",
+          "week": 13,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A011",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A012",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A018",
+          "week": 13,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A001",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A002",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A008",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A011",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A012",
+          "week": 14,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A018",
+          "week": 14,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A001",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A002",
+          "week": 15,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A008",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A011",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A012",
+          "week": 15,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 16,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A014",
+          "week": 17,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A008",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A009",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A013",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A014",
+          "week": 18,
+          "physical_night": 2
+        },
+        {
+          "activity_id": "A015",
+          "week": 18,
+          "physical_night": 1
+        },
+        {
+          "activity_id": "A016",
+          "week": 18,
+          "physical_night": 1
+        }
+      ],
+      "safety_status": "verified",
+      "capacity_hotspots_total": 0
+    }
+  }
+}

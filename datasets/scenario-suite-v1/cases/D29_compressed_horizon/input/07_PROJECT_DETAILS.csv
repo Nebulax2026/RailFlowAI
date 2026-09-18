@@ -1,0 +1,16 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic compressed_horizon programme C001,2027-01-12,Renewal,Live,1,2028-01-03,2027-10-26,1,PC,1
+C002,Synthetic compressed_horizon programme C002,2027-06-07,Renewal,Live,2,2028-01-03,2027-11-14,1,C,2
+C003,Synthetic compressed_horizon programme C003,2027-05-30,Construction,Non-live (Others),2,2028-01-03,2027-10-31,2,C,3
+C004,Synthetic compressed_horizon programme C004,2027-01-08,Construction,Non-live (Others),1,2028-01-03,2027-11-30,2,C,4
+C005,Synthetic compressed_horizon programme C005,2027-01-06,Construction,Non-live (Others),3,2028-01-03,2027-11-16,1,PC,3
+C006,Synthetic compressed_horizon programme C006,2027-02-25,Renewal,Non-live (Consist),1,2028-01-03,2027-11-14,2,C,4
+C007,Synthetic compressed_horizon programme C007,2027-03-18,Renewal,Live,1,2028-01-03,2027-11-30,1,C,1
+C008,Synthetic compressed_horizon programme C008,2027-05-13,Renewal,Non-live (Consist),3,2028-01-03,2027-10-31,1,PC,1
+C009,Synthetic compressed_horizon programme C009,2027-03-27,Renewal,Live,2,2028-01-03,2027-11-28,1,C,2
+C010,Synthetic compressed_horizon programme C010,2027-04-14,Renewal,Non-live (Consist),3,2028-01-03,2027-11-30,1,PC,2
+C011,Synthetic compressed_horizon programme C011,2027-02-04,Renewal,Non-live (Consist),2,2028-01-03,2027-12-12,1,PC,2
+C012,Synthetic compressed_horizon programme C012,2027-05-10,Construction,Non-live (Others),2,2028-01-03,2027-10-17,1,PC,2
+C013,Synthetic compressed_horizon programme C013,2027-01-28,Renewal,Live,1,2028-01-03,2027-10-10,1,C,1
+C014,Synthetic compressed_horizon programme C014,2026-12-21,Renewal,Non-live (Consist),2,2028-01-03,2027-11-28,1,C,2
+C015,Synthetic compressed_horizon programme C015,2026-12-26,Renewal,Live,2,2028-01-03,2027-12-12,1,PM,3

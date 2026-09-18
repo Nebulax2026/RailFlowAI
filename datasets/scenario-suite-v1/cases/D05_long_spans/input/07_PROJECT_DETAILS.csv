@@ -1,0 +1,16 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic long_spans programme C001,2026-09-07,Construction,Non-live (Others),2,2027-12-20,2027-11-16,1,PC,2
+C002,Synthetic long_spans programme C002,2026-10-10,Renewal,Non-live (Consist),3,2027-12-20,2027-11-14,2,C,2
+C003,Synthetic long_spans programme C003,2027-01-31,Construction,Non-live (Others),2,2027-12-20,2027-11-14,1,C,3
+C004,Synthetic long_spans programme C004,2026-09-15,Renewal,Live,3,2027-12-20,2027-09-12,1,PM,1
+C005,Synthetic long_spans programme C005,2026-10-08,Construction,Non-live (Others),2,2027-12-20,2027-11-07,1,PC,1
+C006,Synthetic long_spans programme C006,2026-09-05,Renewal,Non-live (Consist),3,2027-12-20,2027-09-19,1,PC,1
+C007,Synthetic long_spans programme C007,2027-01-18,Renewal,Live,2,2027-12-20,2027-11-14,1,C,3
+C008,Synthetic long_spans programme C008,2026-11-05,Renewal,Non-live (Consist),2,2027-12-20,2027-11-14,1,PC,1
+C009,Synthetic long_spans programme C009,2026-10-17,Construction,Non-live (Others),2,2027-12-20,2027-11-14,1,C,1
+C010,Synthetic long_spans programme C010,2026-12-26,Construction,Non-live (Others),3,2027-12-20,2027-11-16,1,C,1
+C011,Synthetic long_spans programme C011,2027-02-20,Renewal,Non-live (Consist),2,2027-12-20,2027-10-31,1,PC,1
+C012,Synthetic long_spans programme C012,2026-12-10,Construction,Non-live (Others),2,2027-12-20,2027-11-14,1,C,2
+C013,Synthetic long_spans programme C013,2026-09-04,Renewal,Non-live (Consist),2,2027-12-20,2027-10-03,1,C,3
+C014,Synthetic long_spans programme C014,2026-10-29,Construction,Non-live (Others),3,2027-12-20,2027-06-15,1,C,1
+C015,Synthetic long_spans programme C015,2026-12-15,Renewal,Live,1,2027-12-20,2027-10-03,1,PC,1

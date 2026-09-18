@@ -199,7 +199,7 @@ export default function Workspace() {
               <label>Time per scenario<select value={seconds} onChange={(event) => setSeconds(Number(event.target.value))}>{[15, 30, 60, 120].map((value) => <option key={value} value={value}>{value} seconds</option>)}</select></label>
               <label>Seed<input type="number" min={0} max={2147483647} step={1} value={seed} onChange={(event) => setSeed(Math.max(0, Math.min(2147483647, Math.trunc(Number(event.target.value)))))} /></label>
             </div>
-            <p className="solver-note">Each method runs A, B and C. Existing planner uses its 30-second first pass and 90-second improvement pass for a single input. Dataset comparisons use the selected time per case and one worker for every method. Internal safety policies differ for A; official validator parity is unconfirmed.</p>
+            <p className="solver-note">Each method runs A, B and C. Existing planner uses its 30-second first pass and 90-second improvement pass for a single input. CP-SAT methods use eight workers per run; Greedy does not use CP-SAT. Dataset runs use the selected time limit. Internal safety policies differ for A; official validator parity is unconfirmed.</p>
           </fieldset>
           <div className="panel-heading"><h1>Demand book</h1><span>{REQUIRED_FILES.filter(name => files.has(name)).length}/8 files</span></div>
           <p className="muted">Select the eight CSV files to run all three policies, or use the public dataset.</p>
@@ -214,17 +214,17 @@ export default function Workspace() {
       </section>
 
       <section className="data-panel comparison-panel dataset-panel">
-        <div className="subheading"><h2>30 test datasets · average scores</h2><span>10 per scenario</span></div>
-        <p>Synthetic datasets with historical-policy examples; some fail the current safety rules. Average scores use completed, valid runs only; the success count is shown beside each average. Scores from different scenarios have different objectives. The two Scenario A safety policies also differ.</p>
-        <div className="button-row"><button className="secondary-button" disabled={active} onClick={() => void startBatch(false)}><Play size={15} /> Run selected method · 30 cases</button><button className="secondary-button" disabled={active} onClick={() => void startBatch(true)}><Play size={15} /> Compare all 5 methods · 150 cases</button></div>
-        <p className="muted">At {seconds}s per case, maximum search time is about {Math.ceil((batch?.method === "all" ? 150 : 30) * seconds / 60)} minutes for this run, plus setup. Runs use one worker at a time.</p>
-        <div className="csv-links dataset-downloads">{(["A", "B", "C"] as Scenario[]).map(s => <a key={s} href={`${API_BASE}/api/ps1/benchmark/datasets/download/${s}`}><Download size={14} /> {s} · 10 CSV datasets</a>)}</div>
+        <div className="subheading"><h2>30 shared test datasets · average scores</h2><span>Every dataset runs A, B and C</span></div>
+        <p>Synthetic datasets with a validated feasible example for each scenario. Average scores use completed, valid runs only; the success count is shown beside each average. Scores from different scenarios have different objectives. The two Scenario A safety policies also differ.</p>
+        <div className="button-row"><button className="secondary-button" disabled={active} onClick={() => void startBatch(false)}><Play size={15} /> Run selected method · 90 runs</button><button className="secondary-button" disabled={active} onClick={() => void startBatch(true)}><Play size={15} /> Compare all 5 methods · 450 runs</button></div>
+        <p className="muted">At {seconds}s per run, maximum search time is about {Math.ceil((batch?.method === "all" ? 450 : 90) * seconds / 60)} minutes for this run, plus setup. Runs are serial; each CP-SAT run may use eight workers.</p>
+        <div className="csv-links dataset-downloads"><a href={`${API_BASE}/api/ps1/benchmark/datasets/download`}><Download size={14} /> Download all 30 shared datasets</a></div>
         {batch && <>
           <div className="subheading"><h3>Dataset results · {batch.status}</h3><span>{batch.rows.filter(r => ["completed", "failed", "cancelled"].includes(r.status)).length}/{batch.rows.length} finished</span></div>
           {["queued", "running"].includes(batch.status) && <button className="secondary-button" onClick={() => void cancelBatch()}><CircleStop size={15} /> Stop comparison</button>}
           {batch.error && <p className="alert error">{batch.error}</p>}
           <div className="table-wrap"><table><thead><tr><th>Method</th><th>Scenario</th><th>Average score</th><th>Valid / finished / total</th><th>Worst valid score</th></tr></thead><tbody>{batch.summary.map(row => <tr key={`${row.method}-${row.scenario}`}><td>{METHOD_LABELS[row.method]}</td><td>{row.scenario}</td><td>{row.mean_score ?? "—"}</td><td>{row.valid} / {row.finished} / {row.total}</td><td>{row.worst_score ?? "—"}</td></tr>)}</tbody></table></div>
-          <details><summary>See all {batch.rows.length} dataset runs</summary><div className="table-wrap"><table><thead><tr><th>Method</th><th>Dataset</th><th>State</th><th>Score</th><th>Seconds</th></tr></thead><tbody>{batch.rows.map(row => <tr key={`${row.method}-${row.case_id}`}><td>{METHOD_LABELS[row.method]}</td><td>{row.case_id}</td><td>{row.status}</td><td>{row.score ?? "—"}</td><td>{row.elapsed_seconds ?? "—"}</td></tr>)}</tbody></table></div></details>
+          <details><summary>See all {batch.rows.length} dataset runs</summary><div className="table-wrap"><table><thead><tr><th>Method</th><th>Dataset</th><th>Scenario</th><th>State</th><th>Score</th><th>Seconds</th></tr></thead><tbody>{batch.rows.map(row => <tr key={`${row.method}-${row.case_id}-${row.scenario}`}><td>{METHOD_LABELS[row.method]}</td><td>{row.case_id}</td><td>{row.scenario}</td><td>{row.status}</td><td>{row.score ?? "—"}</td><td>{row.elapsed_seconds ?? "—"}</td></tr>)}</tbody></table></div></details>
           <a className="secondary-button" href={`${API_BASE}/api/ps1/benchmark/runs/${batch.id}/report`}><Download size={15} /> Download raw results</a>
         </>}
       </section>
