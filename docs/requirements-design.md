@@ -26,7 +26,7 @@ File downloads accept optional `revision`; stale revisions receive 409 instead o
 
 The UI compares A/B/C completion, overrun, excess work slots, ECLO, score and search status. Revision-aware polling retrieves improvements and ignores responses from an old job. Filters select contract, activity or line. Activities have a timeline and table, actual dates, workload, predecessor, shared peers, work/buffer/opposite-bound/interchange lists and per-location memberships. A separate location/week table exposes work usage and informational protection footprints and related activities. Only internal validation is claimed.
 
-Scheduling uses only the uploaded CSVs or bundled public instance. No what-if replanning, natural-language querying, publishing, video production or repository migration is included.
+AI Agent Mode places policy comparison beside Copilot. Gemini generates conversational replies, calling read-only schedule tools for Bonus queries and a draft tool for proposed disruptions. Tool evidence and recent conversation are sent to Vertex AI; provider failures are visible instead of silently returning template answers. Drafts lead to short-lived previews bound to the job, scenario and baseline revision. Only the explicit Run validated re-plan control starts the solver. Validation and the disruption audit gate successful revised output. See ps1-schedule-copilot.md for available tools and limitations.
 
 ## Acceptance and reproducibility
 

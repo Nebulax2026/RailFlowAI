@@ -14,6 +14,18 @@ export type Job = {
   instance: { lines: number; stations: number; sectors: number; locations: number; contracts: number; activities: number; total_accesses: number; horizon_start: string; horizon_weeks: number };
   scenarios: Partial<Record<Scenario, RunState>>;
 };
+export type ContractResult = { contract_number: string; simulated_completion_date: string; overrun_days: number };
+export type ReplanState = {
+  replan_id: string; scenario: Scenario; status: Status; message: string; error?: string | null;
+  phase: string; progress: number; elapsed_seconds?: number | null; budget_seconds?: number | null;
+  disruption: { location_id: string; start_week: number; end_week: number; capacity: number; reason: string };
+  disruption_audit?: { feasible?: boolean };
+  diff: { summary?: { moved_activities: number; preserved_percent: number; score_delta: number } };
+  solution?: {
+    validation: { feasible: boolean; detail: { safety_status?: string }; soft_scores: { objective_score?: number; completion_percent?: number; overrun_days_total?: number; excess_access_nights_total?: number; eclo_nights_total?: number } };
+    results: ContractResult[];
+  };
+};
 export type ScenarioDetail = {
   scenario: Scenario; status: string;
   solution_revision: number; phase: string; termination_reason?: string;

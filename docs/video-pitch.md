@@ -34,7 +34,7 @@ Select a capacity hotspot, reduce its available slots, and click **Re-plan**.
 
 ?When urgent maintenance cuts access, RailFlowAI treats the reduced capacity as a physical limit, preserves completed work, and finds the best policy result with minimum disruption to the remaining plan. Controllers see exactly which activities and contracts moved.?
 
-Ask **Why was A001 moved?** in Schedule Assistant and show the grounded evidence IDs.
+Ask **Why was A001 moved?** in **PS1 Schedule Copilot** and show the grounded evidence IDs. Then type a disruption request, review the preview card, and explicitly click **Run validated re-plan**—the Copilot interprets and explains, while the solver and validator remain the decision authority.
 
 ## 2:25-2:45 - Proof and Export
 

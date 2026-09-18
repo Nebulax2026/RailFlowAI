@@ -169,6 +169,14 @@ class ReplanRun:
     disruption_audit: dict[str, Any] = field(default_factory=dict)
     diff: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
+    # Reached stage of the re-plan pipeline, so the UI can report real work
+    # instead of an indefinite spinner. Progress is the floor of the stage;
+    # the search stage is interpolated from elapsed time when it is read.
+    phase: str = "queued"
+    progress: int = 0
+    # Monotonic clock, so it is only ever used for elapsed-time arithmetic.
+    started_at: float | None = None
+    budget_seconds: float | None = None
 
 
 @dataclass

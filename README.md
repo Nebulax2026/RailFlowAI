@@ -14,6 +14,7 @@ Closure compatibility was tightened after an official rejection of run `98b06b7e
 - Applies strict-supply, strict-schedule, and balanced scenario policies.
 - Re-parses and independently validates exported CSV bytes before enabling downloads.
 - Shows activity timelines/tables, shared possessions, protection footprints, score breakdowns, and location/week evidence.
+- Includes a PS1 Schedule Copilot: evidence-grounded schedule Q&A, cross-scenario comparison, and an explicit preview → re-plan → validation workflow for access disruptions. See [Copilot design](docs/ps1-schedule-copilot.md).
 
 ## Required Input
 
@@ -102,7 +103,7 @@ GOOGLE_CLOUD_LOCATION=asia-southeast1
 RAILFLOW_GEMINI_MODEL=
 ```
 
-Scheduling uses the uploaded PS1 CSVs or the bundled public dataset. No external API key is required. When Agent Platform ADC and all three optional Google variables are available, Gemini classifies free-form Schedule Assistant questions; deterministic schedule evidence still produces every answer.
+Scheduling uses the uploaded PS1 CSVs or bundled public dataset without an external API key. Copilot chat requires Google ADC and the three Google variables above: Gemini writes conversational replies and calls read-only schedule/Bonus tools for evidence. Selected schedule evidence and recent conversation are sent to Vertex AI. Connection errors are shown explicitly. For timing-reasoning questions, Copilot can run one bounded, read-only counterfactual solve and independent CSV validation, then compare its score and effects with the saved schedule; unknown/time-limited checks are never presented as infeasible. Agent Mode opens with an automatic evidence-backed briefing. A displayed replan preview can be approved in a subsequent chat message or using its button; execution still checks the expiring, single-use preview token and requires independent validation.
 
 ## API
 

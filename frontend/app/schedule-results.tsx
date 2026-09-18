@@ -4,17 +4,26 @@ import { Download, Gauge, LoaderCircle, ShieldCheck, X } from "lucide-react";
 import { Inspection } from "./inspection";
 import { BonusTools } from "./bonus-tools";
 import { API_BASE } from "./api-client";
-import { POLICIES, TABS, type Scenario, type Job, type ScenarioDetail, type RunState, type Diagnostics, type DetailTab, type SolverConfig } from "./schedule-types";
+import { POLICIES, TABS, type Scenario, type Job, type ScenarioDetail, type ReplanState, type RunState, type Diagnostics, type DetailTab, type SolverConfig } from "./schedule-types";
 
 export function ScheduleResults({ job, details }: { job: Job; details: Partial<Record<Scenario, ScenarioDetail>> }) {
   const [choice, setSelectedScenario] = useState<Scenario>("A");
+  const [agentMode, setAgentMode] = useState(false);
+  const [replan, setReplan] = useState<ReplanState | null>(null);
   const selectedScenario = job.scenarios[choice] ? choice : (Object.keys(job.scenarios)[0] as Scenario ?? "A");
   const [tab, setTab] = useState<DetailTab>("overview");
   const selected = details[selectedScenario];
   if (!job.scenarios[selectedScenario]) return <div className="empty-result">No policies available for this job.</div>;
-  return (      <section className="dashboard" aria-label="Results dashboard">
+  const activeSummary = selected ? {
+    objectiveScore: typeof selected.validation.soft_scores.objective_score === "number" ? selected.validation.soft_scores.objective_score : undefined,
+    overrunDays: typeof selected.validation.soft_scores.overrun_days_total === "number" ? selected.validation.soft_scores.overrun_days_total : undefined,
+    excessAccess: typeof selected.validation.soft_scores.excess_access_nights_total === "number" ? selected.validation.soft_scores.excess_access_nights_total : undefined,
+    ecloNights: typeof selected.validation.soft_scores.eclo_nights_total === "number" ? selected.validation.soft_scores.eclo_nights_total : undefined,
+    contracts: selected.results,
+  } : { contracts: [] };
+  return (      <section className={`dashboard ${agentMode ? "agent-page" : ""}`} aria-label="Results dashboard">
         <section className="comparison-panel data-panel" aria-label="Policy comparison">
-          <div className="subheading"><h2>Policy comparison</h2><span>Select a policy to inspect its results</span></div>
+          <div className="subheading"><div><h2>Policy comparison</h2><span>Select a policy to inspect its results</span></div><button className={agentMode ? "secondary-button" : "primary-button"} onClick={() => setAgentMode(value => !value)}>{agentMode ? "Exit Agent Mode" : "AI Agent Mode"}</button></div>
           <div className="table-wrap"><table><thead><tr><th>Policy</th><th>Work complete</th><th>Overrun days</th><th>Excess slots</th><th>ECLO nights</th><th>Score</th><th>Search state</th></tr></thead>
             <tbody>{(Object.keys(job.scenarios) as Scenario[]).map(scenario => {
               const run = job.scenarios[scenario]!;
@@ -23,12 +32,14 @@ export function ScheduleResults({ job, details }: { job: Job; details: Partial<R
                 <td>{run.scores ? `${run.scores.completion_percent}%` : "Pending"}</td><td>{run.scores?.overrun_days_total ?? "—"}</td><td>{run.scores?.excess_access_nights_total ?? "—"}</td><td>{run.scores?.eclo_nights_total ?? "—"}</td><td>{run.objective_score ?? "—"}</td>
                 <td className="search-state"><span title={run.error || run.message}>{runLabel(run)}</span><progress aria-label={`Policy ${scenario} progress`} value={run.progress} max={100} /></td>
               </tr>;
-            })}</tbody>
+            })}
+            {replan && <ReplanRow replan={replan} />}</tbody>
           </table></div>
+          {replan && <ReplanCaption replan={replan} />}
         </section>
-        <div className="scenario-detail" key={job.job_id}>
-          <ScenarioView detail={selected} run={job.scenarios[selectedScenario]!} scenario={selectedScenario} jobId={job.job_id} job={job} details={details} tab={tab} onTabChange={setTab} />
-        </div>
+        {agentMode ? <BonusTools key={job.job_id} jobId={job.job_id} scenario={selectedScenario} runStatus={job.scenarios[selectedScenario]?.status ?? "queued"} usage={selected?.validation.detail.location_usage ?? []} hotspots={selected?.validation.detail.capacity_hotspots ?? []} summary={activeSummary} initialAgentMode onReplanChange={setReplan} /> : <div className="scenario-detail" key={job.job_id}>
+          <ScenarioView detail={selected} run={job.scenarios[selectedScenario]!} scenario={selectedScenario} jobId={job.job_id} job={job} tab={tab} onTabChange={setTab} onOpenAgent={() => setAgentMode(true)} />
+        </div>}
       </section>);
 }
 function runLabel(run: RunState) {
@@ -40,6 +51,39 @@ function runLabel(run: RunState) {
   if (run.termination_reason === "infeasible") return "Infeasible under documented policy";
   if (["time_limit", "no_solution_within_budget"].includes(run.termination_reason ?? "")) return "No solution within time limit";
   return run.status;
+}
+
+function replanLabel(replan: ReplanState) {
+  if (replan.status === "queued") return "Queued behind the solver";
+  if (replan.phase === "searching") return "Re-solving around the disruption";
+  if (replan.phase === "validating") return "Re-reading exported CSVs";
+  if (replan.phase === "auditing") return "Auditing the disruption";
+  if (replan.status === "failed") return "No revised schedule found";
+  if (replan.status === "completed") return "Validated revised schedule";
+  return replan.status;
+}
+
+// The re-plan is a fourth live run, so it reports in the same table as A/B/C
+// rather than as a spinner detached from the policy it revises.
+function ReplanRow({ replan }: { replan: ReplanState }) {
+  const running = ["queued", "running"].includes(replan.status);
+  const scores = replan.solution?.validation.soft_scores;
+  const completion = scores?.completion_percent;
+  return <tr className={`replan-row ${replan.status}`}>
+    <th scope="row"><span className="replan-policy"><span className="scenario-code">{replan.scenario}</span>Re-plan · {replan.disruption.location_id}</span></th>
+    <td>{running ? <LoaderCircle size={13} className="spin" /> : typeof completion === "number" ? `${completion}%` : "—"}</td>
+    <td>{scores?.overrun_days_total ?? "—"}</td><td>{scores?.excess_access_nights_total ?? "—"}</td><td>{scores?.eclo_nights_total ?? "—"}</td><td>{scores?.objective_score ?? "—"}</td>
+    <td className="search-state"><span title={replan.error || replan.message}>{replanLabel(replan)} · {replan.progress}%</span><progress aria-label={`Scenario ${replan.scenario} re-plan progress: ${replan.progress}%`} value={replan.progress} max={100} /></td>
+  </tr>;
+}
+
+function ReplanCaption({ replan }: { replan: ReplanState }) {
+  const summary = replan.status === "completed" ? replan.diff.summary : undefined;
+  return <p className="replan-caption" role="status">
+    <strong>Scenario {replan.scenario} re-plan</strong> · {replan.disruption.location_id} to capacity {replan.disruption.capacity} in weeks {replan.disruption.start_week}–{replan.disruption.end_week} · {replan.error || replan.message}
+    {typeof replan.elapsed_seconds === "number" && ` · ${replan.elapsed_seconds.toFixed(0)}s elapsed`}
+    {summary && ` · ${summary.moved_activities} activities moved, ${summary.preserved_percent}% preserved, score delta ${summary.score_delta >= 0 ? "+" : ""}${summary.score_delta}`}
+  </p>;
 }
 
 function SearchProgress({ scenario, diagnostics: d, requested }: { scenario: Scenario; diagnostics?: Diagnostics; requested?: SolverConfig }) {
@@ -65,7 +109,7 @@ function EmptyResult({ run, scenario }: { run: RunState; scenario: string }) {
   return <div className="empty-result">{run.status === "running" ? <LoaderCircle size={34} className="spin" /> : <Gauge size={34} />}<h2>Policy {scenario}</h2><p>{run.error || run.message || runLabel(run)}</p></div>;
 }
 
-function ScenarioView({ detail, run, scenario, jobId, job, details, tab, onTabChange }: { job: Job; details: Partial<Record<Scenario, ScenarioDetail>>; detail?: ScenarioDetail; run: RunState; scenario: Scenario; jobId: string; tab: DetailTab; onTabChange: (tab: DetailTab) => void }) {
+function ScenarioView({ detail, run, scenario, jobId, job, tab, onTabChange, onOpenAgent }: { job: Job; detail?: ScenarioDetail; run: RunState; scenario: Scenario; jobId: string; tab: DetailTab; onTabChange: (tab: DetailTab) => void; onOpenAgent: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const detailButton = useRef<HTMLButtonElement>(null);
   const scores = detail?.validation.soft_scores;
@@ -104,10 +148,7 @@ function ScenarioView({ detail, run, scenario, jobId, job, details, tab, onTabCh
 
       </div>
       <div className="tab-panel" role="tabpanel" id={detail ? "panel-operations" : undefined} aria-labelledby="tab-operations" hidden={tab !== "operations" || !detail} tabIndex={0}>
-        {(Object.keys(details) as Scenario[]).map(policy => {
-          const saved = details[policy]!;
-          return <div className="operations-policy" hidden={policy !== scenario} key={policy}><BonusTools jobId={jobId} scenario={policy} runStatus={job.scenarios[policy]?.status ?? "queued"} usage={saved.validation.detail.location_usage ?? []} hotspots={saved.validation.detail.capacity_hotspots} locations={saved.locations ?? []} /></div>;
-        })}
+        <section className="agent-mode-entry data-panel"><div><span className="eyebrow">Operations workspace</span><h3>One Copilot across all scenarios</h3><p>Use one persistent conversation to compare A/B/C, inspect evidence, and prepare a scenario-specific disruption re-plan.</p></div><button className="primary-button" onClick={onOpenAgent}>AI Agent Mode</button></section>
       </div>
       <Inspection activities={detail?.activity_details ?? []} usage={detail?.validation.detail.location_usage ?? []} view={detail ? tab : null} />
       <div className="tab-panel" role="tabpanel" id={detail ? "panel-contracts" : undefined} aria-labelledby="tab-contracts" tabIndex={0} hidden={tab !== "contracts" || !detail}>

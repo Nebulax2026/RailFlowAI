@@ -20,7 +20,7 @@ The original RailFlowAI prototype scheduled ad-hoc maintenance requests against 
 - Location-local legal co-sharing patterns and separate work-capacity and cross-contract physical-night safety checks.
 - Ephemeral hidden-instance handling with no database retention.
 - Emergency location-capacity re-planning with a hard operational cap, frozen past work, and score-first minimum-churn recovery.
-- Baseline-to-revised impact evidence plus a grounded Schedule Assistant with an optional Gemini intent classifier.
+- Baseline-to-revised impact evidence and a Gemini Copilot that calls schedule tools and writes evidence-based conversational replies.
 
 ## Technology
 
