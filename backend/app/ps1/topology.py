@@ -1,31 +1,38 @@
 from __future__ import annotations
 
-from app.ps1.models import Activity, Instance
+from app.ps1.models import Activity, Instance, Sector
 
 
-def activity_locations(instance: Instance, activity: Activity) -> list[str]:
+def _activity_span(instance: Instance, activity: Activity) -> tuple[list[Sector], list[str], int, int]:
+    """Map SEC intervals and PLAT points to inclusive station boundaries."""
     start = instance.supply[activity.start_location_id]
     end = instance.supply[activity.end_location_id]
     if start.line_code != end.line_code or start.bound != end.bound:
         raise ValueError(f"{activity.activity_id}: activity endpoints must share a line and bound.")
-    if not activity.start_location_id.startswith("SEC:") or not activity.end_location_id.startswith("SEC:"):
-        raise ValueError(f"{activity.activity_id}: this PS1 implementation expects SEC endpoints.")
-
     sectors = sorted(
         (sector for sector in instance.sectors.values() if sector.line_code == start.line_code),
         key=lambda item: item.seq,
     )
-    by_base = {sector.sector_id: sector for sector in sectors}
-    start_base = activity.start_location_id.rsplit(":", 1)[0]
-    end_base = activity.end_location_id.rsplit(":", 1)[0]
-    if start_base not in by_base or end_base not in by_base:
-        raise ValueError(f"{activity.activity_id}: sector endpoint is not present in 03_SECTORS.csv.")
-    low, high = sorted((by_base[start_base].seq, by_base[end_base].seq))
-    span = [sector for sector in sectors if low <= sector.seq <= high]
-    station_ids = [span[0].from_station_id, *[sector.to_station_id for sector in span]]
+    station_ids = [station.station_id for station in sorted(
+        (station for station in instance.stations.values() if station.line_code == start.line_code),
+        key=lambda station: station.seq,
+    )]
+    positions = {f"PLAT:{start.line_code}:{station}:{start.bound}": (i, i)
+                 for i, station in enumerate(station_ids)}
+    positions.update({f"{sector.sector_id}:{start.bound}": (i, i + 1)
+                      for i, sector in enumerate(sectors)})
+    if activity.start_location_id not in positions or activity.end_location_id not in positions:
+        raise ValueError(f"{activity.activity_id}: endpoint is not present in topology.")
+    left, right = positions[activity.start_location_id], positions[activity.end_location_id]
+    return sectors, station_ids, min(left[0], right[0]), max(left[1], right[1])
+
+
+def activity_locations(instance: Instance, activity: Activity) -> list[str]:
+    sectors, station_ids, low, high = _activity_span(instance, activity)
+    start = instance.supply[activity.start_location_id]
     bound = start.bound
-    locations = [f"PLAT:{start.line_code}:{station_id}:{bound}" for station_id in station_ids]
-    locations.extend(f"{sector.sector_id}:{bound}" for sector in span)
+    locations = [f"PLAT:{start.line_code}:{station_id}:{bound}" for station_id in station_ids[low:high + 1]]
+    locations.extend(f"{sector.sector_id}:{bound}" for sector in sectors[low:high])
     missing = [location for location in locations if location not in instance.supply]
     if missing:
         raise ValueError(f"{activity.activity_id}: expanded locations missing from supply: {', '.join(missing)}")
@@ -48,21 +55,15 @@ def closure_locations(instance: Instance, activity: Activity) -> set[str]:
     start_supply = instance.supply[activity.start_location_id]
     line = start_supply.line_code
     bound = start_supply.bound
-    sectors = sorted((item for item in instance.sectors.values() if item.line_code == line), key=lambda item: item.seq)
-    by_id = {item.sector_id: item for item in sectors}
-    start_sector = by_id[activity.start_location_id.rsplit(":", 1)[0]]
-    end_sector = by_id[activity.end_location_id.rsplit(":", 1)[0]]
-    low, high = sorted((start_sector.seq, end_sector.seq))
-    buffer_sectors = [sector for sector in sectors
-                      if low - rule.up_to_buffer_sectors <= sector.seq <= high + rule.up_to_buffer_sectors]
+    sectors, station_ids, low, high = _activity_span(instance, activity)
+    left = max(0, low - rule.up_to_buffer_sectors)
+    right = min(len(sectors), high + rule.up_to_buffer_sectors)
     buffered = {
         f"{sector.sector_id}:{bound}"
-        for sector in sectors
-        if low - rule.up_to_buffer_sectors <= sector.seq <= high + rule.up_to_buffer_sectors
+        for sector in sectors[left:right]
     }
     if rule.up_to_buffer_sectors:
-        buffered.update(f"PLAT:{line}:{station}:{bound}" for sector in buffer_sectors
-                        for station in (sector.from_station_id, sector.to_station_id))
+        buffered.update(f"PLAT:{line}:{station}:{bound}" for station in station_ids[left:right + 1])
     reserved = actual | buffered
     if rule.opposite_bound_required:
         other_bound = "WB" if bound == "EB" else "EB"
