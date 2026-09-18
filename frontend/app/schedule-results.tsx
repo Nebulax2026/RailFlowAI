@@ -174,6 +174,7 @@ function ScenarioWorkspace({
   const [hoveredWeek, setHoveredWeek] = useState<{ week: number; count: number; eclo: number } | null>(null);
   const [hoveredFormulaTerm, setHoveredFormulaTerm] = useState<string | null>(null);
   const [hoveredSCurveWeek, setHoveredSCurveWeek] = useState<number | null>(null);
+  const [milestoneChartMode, setMilestoneChartMode] = useState<"delay" | "completion">("delay");
 
   // Group scheduled accesses by week for the active policy
   const weekStats = useMemo(() => {
@@ -281,13 +282,15 @@ function ScenarioWorkspace({
   const ecloNights = detail?.validation.detail.eclo_nights ?? 0;
   const totalScoreVal = totalDelayScore + totalEcloScore;
 
-  // Cumulative Milestone Completion S-Curve (PS1 Target vs Simulated)
+  // Cumulative Milestone Completion & Delay Slip Curves (PS1 Target vs Simulated)
   const sCurveData = useMemo(() => {
     if (!detail) {
       return {
         weeks: [] as number[],
         targetPoints: [] as { week: number; count: number; pct: number }[],
         policyPoints: { A: [], B: [], C: [] } as Record<Scenario, { week: number; count: number; pct: number }[]>,
+        policyDelayPoints: { A: [], B: [], C: [] } as Record<Scenario, { week: number; delay: number }[]>,
+        delayYMax: 60,
         totalContracts: 0,
         contractRows: [] as {
           contract: string;
@@ -300,6 +303,7 @@ function ScenarioWorkspace({
           targetWk: number;
           scenarioWeeks: Record<Scenario, number>;
           scenarioDates: Record<Scenario, string | null>;
+          scenarioOverrun: Record<Scenario, number>;
         }[],
       };
     }
@@ -315,6 +319,7 @@ function ScenarioWorkspace({
 
       const scenarioWeeks: Record<Scenario, number> = { A: 30, B: 30, C: 30 };
       const scenarioDates: Record<Scenario, string | null> = { A: null, B: null, C: null };
+      const scenarioOverrun: Record<Scenario, number> = { A: 0, B: 0, C: 0 };
 
       (["A", "B", "C"] as Scenario[]).forEach((sc) => {
         const scDetail = details[sc];
@@ -333,6 +338,7 @@ function ScenarioWorkspace({
           }
           const res = scDetail.results.find((x) => x.contract_number === r.contract_number);
           scenarioDates[sc] = res?.simulated_completion_date ?? null;
+          scenarioOverrun[sc] = res?.overrun_days ?? 0;
         }
       });
 
@@ -350,6 +356,7 @@ function ScenarioWorkspace({
         targetWk,
         scenarioWeeks,
         scenarioDates,
+        scenarioOverrun,
       };
     });
 
@@ -367,15 +374,142 @@ function ScenarioWorkspace({
       C: [],
     };
 
+    const policyDelayPoints: Record<Scenario, { week: number; delay: number }[]> = {
+      A: [],
+      B: [],
+      C: [],
+    };
+
     (["A", "B", "C"] as Scenario[]).forEach((sc) => {
       policyPoints[sc] = allWeeks.map((w) => {
         const count = contractRows.filter((c) => c.scenarioWeeks[sc] <= w).length;
         return { week: w, count, pct: Math.round((count / totalContracts) * 100) };
       });
+      policyDelayPoints[sc] = allWeeks.map((w) => {
+        const delay = contractRows
+          .filter((c) => c.scenarioWeeks[sc] <= w)
+          .reduce((sum, c) => sum + (c.scenarioOverrun[sc] || 0), 0);
+        return { week: w, delay };
+      });
     });
 
-    return { weeks: allWeeks, targetPoints, policyPoints, totalContracts, contractRows };
+    const maxObservedDelay = Math.max(
+      20,
+      ...(["A", "B", "C"] as Scenario[]).flatMap((sc) => policyDelayPoints[sc].map((p) => p.delay))
+    );
+    const delayYMax = Math.ceil(maxObservedDelay / 20) * 20;
+
+    return {
+      weeks: allWeeks,
+      targetPoints,
+      policyPoints,
+      policyDelayPoints,
+      delayYMax,
+      totalContracts,
+      contractRows,
+    };
   }, [detail, details]);
+
+  const activeAuditStats = useMemo(() => {
+    const rows = sCurveData.contractRows;
+    const total = rows.length;
+    let onTime = 0;
+    let delayed = 0;
+    let totalOverrun = 0;
+    rows.forEach((r) => {
+      const overrun = r.scenarioOverrun[scenario] ?? r.overrunDays;
+      if (overrun > 0) {
+        delayed += 1;
+        totalOverrun += overrun;
+      } else {
+        onTime += 1;
+      }
+    });
+    const onTimePct = total > 0 ? Math.round((onTime / total) * 100) : 100;
+    return { total, onTime, delayed, totalOverrun, onTimePct };
+  }, [sCurveData.contractRows, scenario]);
+
+  const activeColor = scenario === "A" ? "#10b981" : scenario === "B" ? "#ec4899" : "#8b5cf6";
+
+  const chartCoordinates = useMemo(() => {
+    const isDelay = milestoneChartMode === "delay";
+    const yMax = isDelay ? sCurveData.delayYMax : 100;
+
+    const getY = (val: number) => {
+      const clamped = Math.max(0, Math.min(yMax, val));
+      return 190 - (clamped / yMax) * 180;
+    };
+
+    const getX = (w: number) => ((w - 1) / 29) * 500;
+
+    const targetPointsSvg = isDelay
+      ? ""
+      : sCurveData.targetPoints.map((p) => `${getX(p.week)},${getY(p.pct)}`).join(" ");
+
+    const policyAPointsSvg = sCurveData.weeks
+      .map((w) => {
+        const val = isDelay
+          ? sCurveData.policyDelayPoints.A[w - 1]?.delay ?? 0
+          : sCurveData.policyPoints.A[w - 1]?.pct ?? 0;
+        return `${getX(w)},${getY(val)}`;
+      })
+      .join(" ");
+
+    const policyBPointsSvg = sCurveData.weeks
+      .map((w) => {
+        const val = isDelay
+          ? sCurveData.policyDelayPoints.B[w - 1]?.delay ?? 0
+          : sCurveData.policyPoints.B[w - 1]?.pct ?? 0;
+        return `${getX(w)},${getY(val)}`;
+      })
+      .join(" ");
+
+    const policyCPointsSvg = sCurveData.weeks
+      .map((w) => {
+        const val = isDelay
+          ? sCurveData.policyDelayPoints.C[w - 1]?.delay ?? 0
+          : sCurveData.policyPoints.C[w - 1]?.pct ?? 0;
+        return `${getX(w)},${getY(val)}`;
+      })
+      .join(" ");
+
+    const activeVertices = sCurveData.weeks.map((w) => {
+      const val = isDelay
+        ? sCurveData.policyDelayPoints[scenario][w - 1]?.delay ?? 0
+        : sCurveData.policyPoints[scenario][w - 1]?.pct ?? 0;
+      return {
+        week: w,
+        x: getX(w),
+        y: getY(val),
+        val,
+      };
+    });
+
+    const activeAreaPoints = `${activeVertices.map((v) => `${v.x},${v.y}`).join(" ")} 500,190 0,190`;
+
+    const yAxisLabels = isDelay
+      ? [
+          `${yMax}d`,
+          `${Math.round(yMax * 0.75)}d`,
+          `${Math.round(yMax * 0.5)}d`,
+          `${Math.round(yMax * 0.25)}d`,
+          "0d",
+        ]
+      : ["100%", "75%", "50%", "25%", "0%"];
+
+    return {
+      targetPointsSvg,
+      policyAPointsSvg,
+      policyBPointsSvg,
+      policyCPointsSvg,
+      activeVertices,
+      activeAreaPoints,
+      yAxisLabels,
+      yMax,
+      getX,
+      getY,
+    };
+  }, [milestoneChartMode, sCurveData, scenario]);
 
   return (
     <>
@@ -746,218 +880,406 @@ function ScenarioWorkspace({
               />
             )}
 
-            {/* TAB 4: MILESTONE & RISK (Cumulative Completion S-Curve + Audit Table) */}
+            {/* TAB 4: MILESTONE & RISK (Delay Slip Trajectory / Completion S-Curve + Single-Policy Audit Table) */}
             {tab === "contracts" && (
               <div className="milestone-workspace tab-full-panel" role="tabpanel" id="panel-contracts" aria-labelledby="tab-contracts">
-                {/* S-Curve Chart Panel */}
+                {/* Chart Panel */}
                 <section className="scurve-chart-panel">
-                  <div className="subheading" style={{ marginBottom: "6px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <h3>Cumulative Milestone Completion S-Curve</h3>
-                      <span className="chip" style={{ background: "var(--bg-shell)", color: "var(--text-dim)", fontSize: "10.5px" }}>
-                        Horizon: 30 Weeks (Jan – Jul 2027)
-                      </span>
-                    </div>
-                    <span className="muted" style={{ fontSize: "11px" }}>
-                      {hoveredSCurveWeek !== null ? (
-                        <span style={{ color: "var(--cyan)", fontWeight: 600 }}>
-                          Week {hoveredSCurveWeek}: Target {sCurveData.targetPoints[hoveredSCurveWeek - 1]?.pct ?? 0}% ({sCurveData.targetPoints[hoveredSCurveWeek - 1]?.count ?? 0}/{sCurveData.totalContracts} contracts)
-                          {" · "}Active ({scenario}): {sCurveData.policyPoints[scenario][hoveredSCurveWeek - 1]?.pct ?? 0}%
+                  <div className="subheading" style={{ marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <h3 style={{ margin: 0 }}>
+                          {milestoneChartMode === "delay" ? "Cumulative Schedule Delay Slip Trajectory" : "Cumulative Milestone Completion S-Curve"}
+                        </h3>
+                        <span className="chip" style={{ background: "var(--bg-shell)", color: "var(--text-dim)", fontSize: "10.5px" }}>
+                          Horizon: 30 Weeks (Jan – Jul 2027)
                         </span>
-                      ) : (
-                        "Hover week coordinate on chart to inspect cross-policy trajectory"
-                      )}
-                    </span>
+                      </div>
+                      <div className="muted" style={{ fontSize: "11px", marginTop: "3px" }}>
+                        {hoveredSCurveWeek !== null ? (
+                          milestoneChartMode === "delay" ? (
+                            <span style={{ color: "var(--cyan)", fontWeight: 600 }}>
+                              Week {hoveredSCurveWeek}: Pol A: +{sCurveData.policyDelayPoints.A[hoveredSCurveWeek - 1]?.delay ?? 0}d · Pol B: {sCurveData.policyDelayPoints.B[hoveredSCurveWeek - 1]?.delay ?? 0}d · Pol C: +{sCurveData.policyDelayPoints.C[hoveredSCurveWeek - 1]?.delay ?? 0}d (Active: {scenario})
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--cyan)", fontWeight: 600 }}>
+                              Week {hoveredSCurveWeek}: Target {sCurveData.targetPoints[hoveredSCurveWeek - 1]?.pct ?? 0}% · Pol A: {sCurveData.policyPoints.A[hoveredSCurveWeek - 1]?.pct ?? 0}% · Pol B: {sCurveData.policyPoints.B[hoveredSCurveWeek - 1]?.pct ?? 0}% · Pol C: {sCurveData.policyPoints.C[hoveredSCurveWeek - 1]?.pct ?? 0}%
+                            </span>
+                          )
+                        ) : (
+                          milestoneChartMode === "delay"
+                            ? "Policy B enforces 0d slip · Policy C moderate · Policy A high · Hover week to inspect"
+                            : "Hover week coordinate on chart to inspect cross-policy trajectory"
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mode Toggle Switcher */}
+                    <div className="chart-mode-pill-group">
+                      <button
+                        type="button"
+                        className={`chart-mode-pill ${milestoneChartMode === "delay" ? "active" : ""}`}
+                        onClick={() => setMilestoneChartMode("delay")}
+                      >
+                        Delay Slip (Days)
+                      </button>
+                      <button
+                        type="button"
+                        className={`chart-mode-pill ${milestoneChartMode === "completion" ? "active" : ""}`}
+                        onClick={() => setMilestoneChartMode("completion")}
+                      >
+                        Completion (%)
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="scurve-stage-wrap">
-                    <svg viewBox="0 0 600 320" className="scurve-svg" preserveAspectRatio="none">
-                      {/* Grid Lines: Y-axis (0%, 25%, 50%, 75%, 100%) */}
-                      {[0, 25, 50, 75, 100].map((pct) => {
-                        const y = 20 + 260 - (pct / 100) * 260;
-                        return (
-                          <g key={pct}>
-                            <line x1="45" y1={y} x2="585" y2={y} stroke="rgba(255,255,255,0.06)" strokeDasharray="3,3" />
-                            <text x="38" y={y + 3} textAnchor="end" fill="#64748b" fontSize="10" fontWeight="600">
-                              {pct}%
-                            </text>
-                          </g>
-                        );
-                      })}
+                  {/* Chart Stage: HTML labels prevent any text stretching or distortion */}
+                  <div className="chart-plot-stage">
+                    {/* Y-axis HTML Labels */}
+                    <div className="chart-y-axis">
+                      {chartCoordinates.yAxisLabels.map((lbl, idx) => (
+                        <span key={idx}>{lbl}</span>
+                      ))}
+                    </div>
 
-                      {/* Grid Lines: X-axis (Weeks 1, 5, 10, 15, 20, 25, 30) */}
-                      {[1, 5, 10, 15, 20, 25, 30].map((w) => {
-                        const x = 45 + ((w - 1) / 29) * 535;
-                        return (
-                          <g key={w}>
-                            <line x1={x} y1="20" x2={x} y2="280" stroke="rgba(255,255,255,0.04)" />
-                            <text x={x} y="302" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="600">
-                              W{String(w).padStart(2, "0")}
-                            </text>
-                          </g>
-                        );
-                      })}
+                    {/* Chart Plot Body */}
+                    <div className="chart-plot-body">
+                      <div className="chart-svg-wrap">
+                        <svg viewBox="0 0 500 200" preserveAspectRatio="none" className="chart-svg">
+                          <defs>
+                            <linearGradient id="activeMilestoneAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={activeColor} stopOpacity="0.25" />
+                              <stop offset="100%" stopColor={activeColor} stopOpacity="0.01" />
+                            </linearGradient>
+                          </defs>
 
-                      {/* Target Baseline Curve (Dashed Slate) */}
-                      <polyline
-                        points={sCurveData.targetPoints.map((p) => `${45 + ((p.week - 1) / 29) * 535},${20 + 260 - (p.pct / 100) * 260}`).join(" ")}
-                        fill="none"
-                        stroke="#94a3b8"
-                        strokeWidth="2"
-                        strokeDasharray="5,4"
-                        vectorEffect="non-scaling-stroke"
-                      />
+                          {/* 5 Horizontal Grid Lines */}
+                          {[0, 25, 50, 75, 100].map((pct) => {
+                            const y = 10 + (1 - pct / 100) * 180;
+                            return (
+                              <line
+                                key={pct}
+                                x1="0"
+                                y1={y}
+                                x2="500"
+                                y2={y}
+                                stroke="rgba(255,255,255,0.06)"
+                                strokeDasharray={pct === 0 ? "none" : "3,3"}
+                                strokeWidth={pct === 0 ? "1.5" : "1"}
+                                vectorEffect="non-scaling-stroke"
+                              />
+                            );
+                          })}
 
-                      {/* Policy A Curve (Emerald) */}
-                      <polyline
-                        points={sCurveData.policyPoints.A.map((p) => `${45 + ((p.week - 1) / 29) * 535},${20 + 260 - (p.pct / 100) * 260}`).join(" ")}
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth={scenario === "A" ? "3" : "1.6"}
-                        opacity={scenario === "A" ? 1 : 0.45}
-                        vectorEffect="non-scaling-stroke"
-                      />
+                          {/* 7 Vertical Grid Lines (W01, W05, W10, W15, W20, W25, W30) */}
+                          {[1, 5, 10, 15, 20, 25, 30].map((w) => {
+                            const x = ((w - 1) / 29) * 500;
+                            return (
+                              <line
+                                key={w}
+                                x1={x}
+                                y1="10"
+                                x2={x}
+                                y2="190"
+                                stroke="rgba(255,255,255,0.04)"
+                                strokeDasharray="2,2"
+                                vectorEffect="non-scaling-stroke"
+                              />
+                            );
+                          })}
 
-                      {/* Policy B Curve (Pink) */}
-                      <polyline
-                        points={sCurveData.policyPoints.B.map((p) => `${45 + ((p.week - 1) / 29) * 535},${20 + 260 - (p.pct / 100) * 260}`).join(" ")}
-                        fill="none"
-                        stroke="#ec4899"
-                        strokeWidth={scenario === "B" ? "3" : "1.6"}
-                        opacity={scenario === "B" ? 1 : 0.45}
-                        vectorEffect="non-scaling-stroke"
-                      />
-
-                      {/* Policy C Curve (Violet) */}
-                      <polyline
-                        points={sCurveData.policyPoints.C.map((p) => `${45 + ((p.week - 1) / 29) * 535},${20 + 260 - (p.pct / 100) * 260}`).join(" ")}
-                        fill="none"
-                        stroke="#8b5cf6"
-                        strokeWidth={scenario === "C" ? "3" : "1.6"}
-                        opacity={scenario === "C" ? 1 : 0.45}
-                        vectorEffect="non-scaling-stroke"
-                      />
-
-                      {/* Active Policy Data Points (Dots on vertices) */}
-                      {sCurveData.policyPoints[scenario].map((p) => {
-                        const x = 45 + ((p.week - 1) / 29) * 535;
-                        const y = 20 + 260 - (p.pct / 100) * 260;
-                        const isHovered = hoveredSCurveWeek === p.week;
-                        const activeColor = scenario === "A" ? "#10b981" : scenario === "B" ? "#ec4899" : "#8b5cf6";
-
-                        return (
-                          <circle
-                            key={p.week}
-                            cx={x}
-                            cy={y}
-                            r={isHovered ? 5 : 2.5}
-                            fill={activeColor}
-                            stroke="#0f172a"
-                            strokeWidth="1.5"
+                          {/* Area Fill under Active Curve */}
+                          <polygon
+                            points={chartCoordinates.activeAreaPoints}
+                            fill="url(#activeMilestoneAreaGrad)"
                           />
-                        );
-                      })}
 
-                      {/* Vertical Hover Guide Line */}
-                      {hoveredSCurveWeek !== null && (
-                        <line
-                          x1={45 + ((hoveredSCurveWeek - 1) / 29) * 535}
-                          y1="20"
-                          x2={45 + ((hoveredSCurveWeek - 1) / 29) * 535}
-                          y2="280"
-                          stroke="var(--cyan)"
-                          strokeWidth="1.5"
-                          strokeDasharray="3,3"
-                        />
-                      )}
+                          {/* Target Baseline Curve (Completion Mode only) */}
+                          {milestoneChartMode === "completion" && chartCoordinates.targetPointsSvg && (
+                            <polyline
+                              points={chartCoordinates.targetPointsSvg}
+                              fill="none"
+                              stroke="#94a3b8"
+                              strokeWidth="2"
+                              strokeDasharray="5,4"
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          )}
 
-                      {/* Transparent Hover Hitboxes per Week */}
-                      {sCurveData.weeks.map((w) => {
-                        const x = 45 + ((w - 1) / 29) * 535 - 9;
-                        return (
-                          <rect
-                            key={w}
-                            x={x}
-                            y="15"
-                            width="18"
-                            height="275"
-                            fill="transparent"
-                            style={{ cursor: "pointer" }}
-                            onMouseEnter={() => setHoveredSCurveWeek(w)}
-                            onMouseLeave={() => setHoveredSCurveWeek(null)}
+                          {/* Zero-Delay Baseline (Delay Mode only) */}
+                          {milestoneChartMode === "delay" && (
+                            <line
+                              x1="0"
+                              y1="190"
+                              x2="500"
+                              y2="190"
+                              stroke="#ec4899"
+                              strokeWidth="1.5"
+                              strokeDasharray="4,3"
+                              opacity="0.6"
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          )}
+
+                          {/* Policy A Curve (Emerald) */}
+                          <polyline
+                            points={chartCoordinates.policyAPointsSvg}
+                            fill="none"
+                            stroke="#10b981"
+                            strokeWidth={scenario === "A" ? "3" : "1.6"}
+                            opacity={scenario === "A" ? 1 : 0.45}
+                            vectorEffect="non-scaling-stroke"
                           />
-                        );
-                      })}
-                    </svg>
+
+                          {/* Policy B Curve (Pink) */}
+                          <polyline
+                            points={chartCoordinates.policyBPointsSvg}
+                            fill="none"
+                            stroke="#ec4899"
+                            strokeWidth={scenario === "B" ? "3" : "1.6"}
+                            opacity={scenario === "B" ? 1 : 0.45}
+                            vectorEffect="non-scaling-stroke"
+                          />
+
+                          {/* Policy C Curve (Violet) */}
+                          <polyline
+                            points={chartCoordinates.policyCPointsSvg}
+                            fill="none"
+                            stroke="#8b5cf6"
+                            strokeWidth={scenario === "C" ? "3" : "1.6"}
+                            opacity={scenario === "C" ? 1 : 0.45}
+                            vectorEffect="non-scaling-stroke"
+                          />
+
+                          {/* Active Policy Data Points: use vectorEffect="non-scaling-stroke" + round stroke-linecap so dots stay mathematically 1:1 circular and NEVER stretch horizontally into ovals */}
+                          {chartCoordinates.activeVertices.map((p) => {
+                            const isHovered = hoveredSCurveWeek === p.week;
+                            return (
+                              <g key={p.week} pointerEvents="none">
+                                {isHovered && (
+                                  <path
+                                    d={`M ${p.x} ${p.y} l 0.001 0`}
+                                    stroke={activeColor}
+                                    strokeWidth="16"
+                                    strokeLinecap="round"
+                                    opacity="0.35"
+                                    vectorEffect="non-scaling-stroke"
+                                  />
+                                )}
+                                <path
+                                  d={`M ${p.x} ${p.y} l 0.001 0`}
+                                  stroke="#0f172a"
+                                  strokeWidth={isHovered ? "10" : "6.5"}
+                                  strokeLinecap="round"
+                                  vectorEffect="non-scaling-stroke"
+                                />
+                                <path
+                                  d={`M ${p.x} ${p.y} l 0.001 0`}
+                                  stroke={activeColor}
+                                  strokeWidth={isHovered ? "6" : "3.5"}
+                                  strokeLinecap="round"
+                                  vectorEffect="non-scaling-stroke"
+                                />
+                              </g>
+                            );
+                          })}
+
+                          {/* Hover Cross-Policy Comparison Dots */}
+                          {hoveredSCurveWeek !== null && (
+                            <g pointerEvents="none">
+                              {(["A", "B", "C"] as Scenario[])
+                                .filter((s) => s !== scenario)
+                                .map((sc) => {
+                                  const val =
+                                    milestoneChartMode === "delay"
+                                      ? sCurveData.policyDelayPoints[sc][hoveredSCurveWeek - 1]?.delay ?? 0
+                                      : sCurveData.policyPoints[sc][hoveredSCurveWeek - 1]?.pct ?? 0;
+                                  const color = sc === "A" ? "#10b981" : sc === "B" ? "#ec4899" : "#8b5cf6";
+                                  const x = chartCoordinates.getX(hoveredSCurveWeek);
+                                  const y = chartCoordinates.getY(val);
+                                  return (
+                                    <g key={sc}>
+                                      <path
+                                        d={`M ${x} ${y} l 0.001 0`}
+                                        stroke="#0f172a"
+                                        strokeWidth="7"
+                                        strokeLinecap="round"
+                                        vectorEffect="non-scaling-stroke"
+                                      />
+                                      <path
+                                        d={`M ${x} ${y} l 0.001 0`}
+                                        stroke={color}
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                        vectorEffect="non-scaling-stroke"
+                                      />
+                                    </g>
+                                  );
+                                })}
+                            </g>
+                          )}
+
+                          {/* Vertical Hover Guide Line */}
+                          {hoveredSCurveWeek !== null && (
+                            <line
+                              x1={((hoveredSCurveWeek - 1) / 29) * 500}
+                              y1="10"
+                              x2={((hoveredSCurveWeek - 1) / 29) * 500}
+                              y2="190"
+                              stroke="var(--cyan)"
+                              strokeWidth="1.5"
+                              strokeDasharray="3,3"
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          )}
+
+                          {/* Transparent Hover Hitboxes per Week */}
+                          {sCurveData.weeks.map((w) => {
+                            const x = ((w - 1) / 29) * 500 - 8;
+                            return (
+                              <rect
+                                key={w}
+                                x={x}
+                                y="10"
+                                width="16"
+                                height="180"
+                                fill="transparent"
+                                style={{ cursor: "pointer" }}
+                                onMouseEnter={() => setHoveredSCurveWeek(w)}
+                                onMouseLeave={() => setHoveredSCurveWeek(null)}
+                              />
+                            );
+                          })}
+                        </svg>
+                      </div>
+
+                      {/* X-axis HTML Labels (Never stretched) */}
+                      <div className="chart-x-axis">
+                        <span>W01</span>
+                        <span>W05</span>
+                        <span>W10</span>
+                        <span>W15</span>
+                        <span>W20</span>
+                        <span>W25</span>
+                        <span>W30</span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Chart Legend */}
-                  <div className="chart-legend" style={{ marginTop: "8px", flexWrap: "wrap", gap: "6px 12px" }}>
-                    <div className="chart-legend-item">
-                      <span className="legend-swatch" style={{ background: "#94a3b8", height: "2px", borderRadius: "0" }} />
-                      <span>Target Baseline</span>
+                  <div className="chart-legend" style={{ marginTop: "6px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px 12px" }}>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                      {milestoneChartMode === "completion" && (
+                        <div className="chart-legend-item">
+                          <span className="legend-swatch" style={{ background: "#94a3b8", height: "2px", borderRadius: "0" }} />
+                          <span>Target Baseline</span>
+                        </div>
+                      )}
+                      <div className="chart-legend-item">
+                        <span className="legend-swatch" style={{ background: "#10b981" }} />
+                        <span style={{ fontWeight: scenario === "A" ? 700 : 400 }}>
+                          Policy A {milestoneChartMode === "delay" && `(+${sCurveData.policyDelayPoints.A[29]?.delay ?? 0}d)`}
+                        </span>
+                      </div>
+                      <div className="chart-legend-item">
+                        <span className="legend-swatch" style={{ background: "#ec4899" }} />
+                        <span style={{ fontWeight: scenario === "B" ? 700 : 400 }}>
+                          Policy B {milestoneChartMode === "delay" && `(0d · Strict)`}
+                        </span>
+                      </div>
+                      <div className="chart-legend-item">
+                        <span className="legend-swatch" style={{ background: "#8b5cf6" }} />
+                        <span style={{ fontWeight: scenario === "C" ? 700 : 400 }}>
+                          Policy C {milestoneChartMode === "delay" && `(+${sCurveData.policyDelayPoints.C[29]?.delay ?? 0}d)`}
+                        </span>
+                      </div>
                     </div>
-                    <div className="chart-legend-item">
-                      <span className="legend-swatch" style={{ background: "#10b981" }} />
-                      <span style={{ fontWeight: scenario === "A" ? 700 : 400 }}>Policy A</span>
-                    </div>
-                    <div className="chart-legend-item">
-                      <span className="legend-swatch" style={{ background: "#ec4899" }} />
-                      <span style={{ fontWeight: scenario === "B" ? 700 : 400 }}>Policy B</span>
-                    </div>
-                    <div className="chart-legend-item">
-                      <span className="legend-swatch" style={{ background: "#8b5cf6" }} />
-                      <span style={{ fontWeight: scenario === "C" ? 700 : 400 }}>Policy C</span>
-                    </div>
+
+                    {milestoneChartMode === "delay" && (
+                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                        Policy B guarantees 0d delay slip
+                      </span>
+                    )}
                   </div>
                 </section>
 
-                {/* Milestone Delivery Audit Table */}
+                {/* Milestone Delivery Audit Table (Single Active Policy Only) */}
                 <section className="milestone-table-panel">
-                  <div className="subheading" style={{ marginBottom: "8px" }}>
-                    <h3>Contract Milestone Delivery Audit</h3>
-                    <span className="muted">{sCurveData.contractRows.length} contracts</span>
+                  <div className="subheading" style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <h3 style={{ display: "inline-flex", alignItems: "center", gap: "8px", margin: 0 }}>
+                        Contract Delivery Audit
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            padding: "2px 7px",
+                            borderRadius: "12px",
+                            background: scenario === "A" ? "rgba(16,185,129,0.15)" : scenario === "B" ? "rgba(236,72,153,0.15)" : "rgba(139,92,246,0.15)",
+                            color: scenario === "A" ? "#10b981" : scenario === "B" ? "#ec4899" : "#8b5cf6",
+                            border: `1px solid ${scenario === "A" ? "rgba(16,185,129,0.3)" : scenario === "B" ? "rgba(236,72,153,0.3)" : "rgba(139,92,246,0.3)"}`,
+                            fontWeight: 700,
+                          }}
+                        >
+                          Policy {scenario}
+                        </span>
+                      </h3>
+                      <div className="muted" style={{ fontSize: "11px", marginTop: "2px" }}>
+                        {activeAuditStats.total} contracts · {activeAuditStats.onTime} on-time ({activeAuditStats.onTimePct}%) · {activeAuditStats.delayed} delayed (+{activeAuditStats.totalOverrun}d)
+                      </div>
+                    </div>
                   </div>
 
                   <div className="milestone-table-scroll">
                     <table>
                       <thead>
                         <tr>
-                          <th>Contract</th>
-                          <th>Tier</th>
-                          <th>Target</th>
-                          <th>Simulated</th>
-                          <th>Overrun</th>
-                          <th>Pol A</th>
-                          <th>Pol B</th>
-                          <th>Pol C</th>
+                          <th style={{ width: "20%", whiteSpace: "nowrap" }}>Contract</th>
+                          <th style={{ width: "16%", whiteSpace: "nowrap" }}>Tier</th>
+                          <th style={{ width: "22%", whiteSpace: "nowrap" }}>Target Deadline</th>
+                          <th style={{ width: "22%", whiteSpace: "nowrap" }}>Actual Finish</th>
+                          <th style={{ width: "12%", whiteSpace: "nowrap" }}>Overrun</th>
+                          <th style={{ width: "8%", whiteSpace: "nowrap" }}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {sCurveData.contractRows.map((row) => (
-                          <tr key={row.contract}>
-                            <td><strong>{row.contract}</strong></td>
-                            <td><span className={`tier-badge ${row.tierClass}`}>{row.tier}</span></td>
-                            <td>{row.plannedTarget}</td>
-                            <td style={{ color: row.isLate ? "var(--rose)" : "var(--emerald)", fontWeight: 600 }}>
-                              {row.actualFinish}
-                            </td>
-                            <td>
-                              <span
-                                className={`tier-badge ${row.isLate ? "tier-1" : ""}`}
-                                style={{
-                                  background: row.isLate ? "var(--rose-soft)" : "var(--emerald-soft)",
-                                  color: row.isLate ? "var(--rose)" : "var(--emerald)",
-                                }}
-                              >
-                                {row.isLate ? `+${row.overrunDays}d` : "On-Time"}
-                              </span>
-                            </td>
-                            <td>{row.scenarioDates.A ?? "—"}</td>
-                            <td>{row.scenarioDates.B ?? "—"}</td>
-                            <td>{row.scenarioDates.C ?? "—"}</td>
-                          </tr>
-                        ))}
+                        {sCurveData.contractRows.map((row) => {
+                          const finishDate = row.scenarioDates[scenario] ?? row.actualFinish;
+                          const overrun = row.scenarioOverrun[scenario] ?? row.overrunDays;
+                          const isLate = overrun > 0;
+                          return (
+                            <tr key={row.contract}>
+                              <td style={{ whiteSpace: "nowrap" }}><strong>{row.contract}</strong></td>
+                              <td style={{ whiteSpace: "nowrap" }}><span className={`tier-badge ${row.tierClass}`}>{row.tier}</span></td>
+                              <td style={{ whiteSpace: "nowrap", color: "var(--text-secondary)" }}>{row.plannedTarget}</td>
+                              <td style={{ whiteSpace: "nowrap", color: isLate ? "var(--rose)" : "var(--emerald)", fontWeight: 600 }}>
+                                {finishDate ?? "—"}
+                              </td>
+                              <td style={{ whiteSpace: "nowrap" }}>
+                                <span
+                                  className={`tier-badge ${isLate ? "tier-1" : ""}`}
+                                  style={{
+                                    background: isLate ? "var(--rose-soft)" : "var(--emerald-soft)",
+                                    color: isLate ? "var(--rose)" : "var(--emerald)",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {isLate ? `+${overrun}d` : "0d"}
+                                </span>
+                              </td>
+                              <td style={{ whiteSpace: "nowrap" }}>
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    color: isLate ? "var(--rose)" : "var(--emerald)",
+                                  }}
+                                >
+                                  {isLate ? "Delayed" : "On-Time"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

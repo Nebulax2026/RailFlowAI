@@ -70,7 +70,8 @@ def test_move_reason_is_grounded_in_replan_diff(tiny):
     assert aid in response["evidence"]
 
 
-def test_copilot_new_intents_are_deterministic_and_grounded(tiny):
+def test_assistant_new_intents_are_deterministic_and_grounded(tiny, monkeypatch):
+    monkeypatch.setattr("app.ps1.assistant._parse_with_gemini", lambda q: (None, "deterministic"))
     baseline = solve_scenario(tiny, Scenario.A, 3)
     aid = next(iter(tiny.activities)); location = activity_locations(tiny, tiny.activities[aid])[0]
     revised = solve_scenario(tiny, Scenario.A, 3, incumbent=baseline,
@@ -98,7 +99,7 @@ def test_replan_preview_is_non_mutating_single_use_and_bound_to_baseline(tiny, m
     instance = replace(tiny, activities={aid: replace(tiny.activities[aid], total_accesses=1)})
     baseline = solve_scenario(instance, Scenario.A, 3); baseline.solution_revision = 1
     run = ScenarioRun(status=JobStatus.COMPLETED, progress=100, solution=baseline, phase="finished")
-    now = datetime.now(UTC); job_id = "copilot-preview-test"
+    now = datetime.now(UTC); job_id = "assistant-preview-test"
     job = SolveJob(job_id, JobStatus.COMPLETED, now, now + timedelta(minutes=5), "test", instance,
                    {Scenario.A: run, Scenario.B: ScenarioRun(), Scenario.C: ScenarioRun()})
     location = activity_locations(instance, instance.activities[aid])[0]
@@ -117,21 +118,21 @@ def test_replan_preview_is_non_mutating_single_use_and_bound_to_baseline(tiny, m
         observed = {}
         def fake_chat(*args, **kwargs):
             observed.update(kwargs)
-            return {"answer": "승인 확인", "approved_preview_id": kwargs["pending_preview"]["preview_id"]}
-        monkeypatch.setattr("app.ps1.copilot.chat", fake_chat)
+            return {"answer": "Approval confirmed", "approved_preview_id": kwargs["pending_preview"]["preview_id"]}
+        monkeypatch.setattr("app.ps1.assistant.chat", fake_chat)
         approval = client.post(f"/api/ps1/jobs/{job_id}/assistant/query", json={
-            "scenario": "A", "question": "승인", "pending_preview_id": preview_id})
+            "scenario": "A", "question": "approve", "pending_preview_id": preview_id})
         assert approval.status_code == 200
         assert observed["pending_preview"]["disruption"] == body
         assert job.replans == {}
         baseline.solution_revision += 1
         stale = client.post(f"/api/ps1/jobs/{job_id}/assistant/query", json={
-            "scenario": "A", "question": "승인", "pending_preview_id": preview_id})
+            "scenario": "A", "question": "approve", "pending_preview_id": preview_id})
         assert stale.status_code == 409
         baseline.solution_revision -= 1
         ps1._replan_previews[preview_id]["expires_at"] = 0
         expired = client.post(f"/api/ps1/jobs/{job_id}/assistant/query", json={
-            "scenario": "A", "question": "승인", "pending_preview_id": preview_id})
+            "scenario": "A", "question": "approve", "pending_preview_id": preview_id})
         assert expired.status_code == 409
         wrong = client.post(f"/api/ps1/jobs/{job_id}/scenarios/B/replans/execute", json={"preview_id": preview_id})
         assert wrong.status_code == 409
@@ -151,7 +152,7 @@ def test_replan_api_download_and_assistant(tiny, monkeypatch):
     def fake_chat(job, scenario, solution, question, history, diff):
         assert scenario is None and solution is None
         return {"answer": "Model answer over all scenarios", "intent": "conversation", "mode": "gemini", "evidence": []}
-    monkeypatch.setattr("app.ps1.copilot.chat", fake_chat)
+    monkeypatch.setattr("app.ps1.assistant.chat", fake_chat)
     aid = next(iter(tiny.activities))
     instance = replace(tiny, activities={aid: replace(tiny.activities[aid], total_accesses=1)})
     baseline = solve_scenario(instance, Scenario.A, 3); baseline.solution_revision = 1

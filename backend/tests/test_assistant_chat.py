@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 import pytest
 from google.genai import types
-from app.ps1.copilot import chat
+from app.ps1.assistant import chat
 from .test_regressions import tiny
 from .test_ps1 import instance
 from app.ps1.models import Scenario
@@ -29,22 +29,22 @@ def tool(name, args):
 
 def test_general_answer_is_model_text_with_history(model):
     model.return_value = response("10 + 10 is 20.")
-    result = chat(SimpleNamespace(), "A", None, "그럼 10 + 10?", [{"role": "user", "content": "안녕"}])
+    result = chat(SimpleNamespace(), "A", None, "What is 10 + 10?", [{"role": "user", "content": "Hello"}])
     assert result["answer"] == "10 + 10 is 20."
     assert result["mode"] == "gemini"
     assert result["evidence"] == []
     assert len(model.call_args.kwargs["contents"]) == 2
     instructions = model.call_args.kwargs["config"].system_instruction
-    assert "Always reply in English" in instructions
-    assert "regardless of the user's language" in instructions
+    assert "You are RailFlowAI Assistant." in instructions
+    assert "Reply in English" in instructions
 
 
 def test_model_reads_schedule_then_writes_answer(model, tiny):
     solution = solve_scenario(tiny, Scenario.A, 3)
     job = SimpleNamespace(instance=tiny, scenarios={Scenario.A: SimpleNamespace(solution=solution)})
-    model.side_effect = [tool("get_schedule_results", {}), response("실제 결과를 조회했습니다.")]
-    result = chat(job, Scenario.A, solution, "점수 원인은?", [])
-    assert result["answer"] == "실제 결과를 조회했습니다."
+    model.side_effect = [tool("get_schedule_results", {}), response("Schedule results retrieved.")]
+    result = chat(job, Scenario.A, solution, "What are the score drivers?", [])
+    assert result["answer"] == "Schedule results retrieved."
     assert any(ref.startswith("scenario:A") for ref in result["evidence"])
     output = model.call_args.kwargs["contents"][-1].parts[0].function_response.response
     assert output["scenarios"]["A"]["scores"]["objective_score"] == solution.validation.soft_scores["objective_score"]
@@ -115,18 +115,18 @@ def test_model_can_request_one_counterfactual_timing_check(model, tiny):
 
 
 def test_unknown_write_tool_is_rejected(model):
-    model.side_effect = [tool("execute_replan", {}), response("승인 버튼을 사용하세요.")]
-    result = chat(SimpleNamespace(), "A", None, "실행해", [])
+    model.side_effect = [tool("execute_replan", {}), response("Use the approval button.")]
+    result = chat(SimpleNamespace(), "A", None, "Execute", [])
     assert result["mode"] == "gemini"
     assert "error" in model.call_args.kwargs["contents"][-1].parts[0].function_response.response
 
 
 def test_preview_only_returns_validated_draft(model, tiny):
     location = next(key for key, row in tiny.supply.items() if row.supply_capacity > 0)
-    model.side_effect = [tool("prepare_disruption", {"location_id": location, "start_week": 1, "end_week": 1, "capacity": 0}), response("초안을 확인하세요.")]
+    model.side_effect = [tool("prepare_disruption", {"location_id": location, "start_week": 1, "end_week": 1, "capacity": 0}), response("Review the draft.")]
     solution = solve_scenario(tiny, Scenario.A, 3)
     job = SimpleNamespace(instance=tiny, replans={}, scenarios={Scenario.A: SimpleNamespace(solution=solution)})
-    result = chat(job, "A", solution, "용량을 줄여줘", [])
+    result = chat(job, "A", solution, "Reduce capacity", [])
     assert result["intent"] == "disruption_preview"
     assert result["data"]["capacity"] == 0
     assert job.replans == {}
@@ -134,16 +134,16 @@ def test_preview_only_returns_validated_draft(model, tiny):
 
 def test_chat_approval_is_bound_to_displayed_preview_and_does_not_execute(model):
     pending = {"preview_id": "server-issued-preview", "disruption": {"capacity": 0}}
-    model.side_effect = [tool("approve_pending_replan", {}), response("승인을 확인했습니다.")]
+    model.side_effect = [tool("approve_pending_replan", {}), response("Approval confirmed.")]
     job = SimpleNamespace(replans={})
-    result = chat(job, "A", None, "승인", [], pending_preview=pending)
+    result = chat(job, "A", None, "Approve", [], pending_preview=pending)
     assert result["approved_preview_id"] == pending["preview_id"]
     assert job.replans == {}
 
 
 def test_no_approval_tool_without_existing_preview(model):
-    model.side_effect = [tool("approve_pending_replan", {}), response("먼저 초안을 확인하세요.")]
-    result = chat(SimpleNamespace(), "A", None, "실행해", [])
+    model.side_effect = [tool("approve_pending_replan", {}), response("Review the draft first.")]
+    result = chat(SimpleNamespace(), "A", None, "Execute", [])
     assert "approved_preview_id" not in result
     assert "error" in model.call_args.kwargs["contents"][-1].parts[0].function_response.response
 
@@ -152,17 +152,17 @@ def test_changed_draft_requires_fresh_approval(model, tiny):
     location = next(key for key, row in tiny.supply.items() if row.supply_capacity > 0)
     model.side_effect = [
         tool("prepare_disruption", {"location_id": location, "start_week": 1, "end_week": 1, "capacity": 0}),
-        tool("approve_pending_replan", {}), response("새 초안을 검토하세요.")]
+        tool("approve_pending_replan", {}), response("Review the new draft.")]
     solution = solve_scenario(tiny, Scenario.A, 3)
-    result = chat(SimpleNamespace(instance=tiny, scenarios={Scenario.A: SimpleNamespace(solution=solution)}), "A", solution, "1주차로 바꿔", [],
+    result = chat(SimpleNamespace(instance=tiny, scenarios={Scenario.A: SimpleNamespace(solution=solution)}), "A", solution, "Change to week 1", [],
                   pending_preview={"preview_id": "old-preview"})
     assert result["intent"] == "disruption_preview"
     assert "approved_preview_id" not in result
 
 
 def test_question_about_preview_does_not_authorize_execution(model):
-    model.return_value = response("승인하면 solver와 독립 검증을 실행합니다.")
-    result = chat(SimpleNamespace(), "A", None, "승인하면 어떻게 돼?", [],
+    model.return_value = response("Approving runs the solver and independent validator.")
+    result = chat(SimpleNamespace(), "A", None, "What happens if I approve?", [],
                   pending_preview={"preview_id": "current-preview"})
     assert "approved_preview_id" not in result
 
@@ -171,6 +171,6 @@ def test_question_about_preview_does_not_authorize_execution(model):
 def test_bonus_checks_are_callable(model, tiny, check):
     solution = solve_scenario(tiny, Scenario.A, 3)
     args = {"check": check, "activity_ids": [next(iter(tiny.activities))], "contract_ids": [next(iter(tiny.contracts))], "location_id": next(iter(tiny.supply)), "weeks": [1]}
-    model.side_effect = [tool("inspect_schedule", args), response("근거를 조회했습니다.")]
-    chat(SimpleNamespace(instance=tiny), "A", solution, "조회해줘", [])
+    model.side_effect = [tool("inspect_schedule", args), response("Evidence queried.")]
+    chat(SimpleNamespace(instance=tiny), "A", solution, "Query evidence", [])
     assert "error" not in model.call_args.kwargs["contents"][-1].parts[0].function_response.response

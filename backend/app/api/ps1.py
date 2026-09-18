@@ -251,7 +251,7 @@ def schedule_query(job_id: str, request: AssistantRequest) -> dict:
         run = job.scenarios.get(scenario)
         solution = run.solution if run else None
         if not solution: raise HTTPException(status_code=409, detail="The requested baseline schedule is not available.")
-    from app.ps1.copilot import chat
+    from app.ps1.assistant import chat
     if solution and (not solution.validation.feasible or solution.validation.detail.get("safety_status") != "verified"):
         raise HTTPException(409, "A validated schedule is required.")
     context = {}

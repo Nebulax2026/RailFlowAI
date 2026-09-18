@@ -1,10 +1,8 @@
 "use client";
 
-import { Download, LoaderCircle, Send, Sparkles, Wrench } from "lucide-react";
+import { Download, LoaderCircle, MapPin, Send, Sparkles, Wrench } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { LocationUsage } from "./inspection";
 import {
   formatLocationName,
@@ -101,13 +99,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 function AnswerBody({ text }: { text: string }) {
   return (
-    <div className="agent-markdown">
-      <Markdown
-        remarkPlugins={[remarkGfm]}
-        components={{ a: (props: any) => <a {...props} target="_blank" rel="noreferrer noopener" /> }}
-      >
-        {text}
-      </Markdown>
+    <div className="agent-markdown" style={{ whiteSpace: "pre-wrap", lineHeight: 1.5, fontSize: "12px", color: "var(--text-primary)" }}>
+      {text}
     </div>
   );
 }
@@ -139,7 +132,7 @@ function EvidenceCard({ answer }: { answer: Answer }) {
 }
 
 /**
- * Full AI Copilot & Scenario Briefing component
+ * Full AI Assistant & Scenario Briefing component
  */
 export function BonusTools({
   jobId,
@@ -264,7 +257,7 @@ export function BonusTools({
         setPreview(null);
         const target = next.data.scenario;
         if (target !== "A" && target !== "B" && target !== "C") {
-          throw new Error("The Copilot must specify A, B, or C for a replan draft.");
+          throw new Error("The Assistant must specify A, B, or C for a replan draft.");
         }
         setPreview(
           await request<Preview>(`/api/ps1/jobs/${jobId}/scenarios/${target}/replans/preview`, {
@@ -281,7 +274,7 @@ export function BonusTools({
         await executePreview();
       }
     } catch (err) {
-      amend(id, { error: err instanceof Error ? err.message : "Copilot could not answer." });
+      amend(id, { error: err instanceof Error ? err.message : "Assistant could not answer." });
     } finally {
       askingRef.current = false;
       setAsking(false);
@@ -375,7 +368,7 @@ export function BonusTools({
       <header className="agent-mode-toolbar">
         <div>
           <span className="eyebrow">AI Agent Mode · All scenarios</span>
-          <h3>Decision briefing and Copilot</h3>
+          <h3>Decision briefing and Assistant</h3>
         </div>
         <button className="secondary-button" onClick={() => setAgentMode(false)}>
           Exit Agent Mode
@@ -428,14 +421,14 @@ export function BonusTools({
             </section>
           )}
           <p className="muted">
-            Ask the Copilot to explain score drivers, milestone risk, co-sharing, capacity, or prepare a validated disruption re-plan.
+            Ask the Assistant to explain score drivers, milestone risk, co-sharing, capacity, or prepare a validated disruption re-plan.
           </p>
         </section>
-        <section className="agent-chat" aria-label="PS1 Schedule Copilot">
+        <section className="agent-chat" aria-label="PS1 Schedule Assistant">
           <header className="agent-chat-header">
             <div>
               <span className="eyebrow">RailFlowAI · A/B/C</span>
-              <h2>PS1 Schedule Copilot</h2>
+              <h2>PS1 Schedule Assistant</h2>
             </div>
             <span className="agent-live">{answer?.mode ?? "Gemini ready"}</span>
           </header>
@@ -457,7 +450,7 @@ export function BonusTools({
                 )}
                 {entry.answer && (
                   <div className="agent-message assistant">
-                    <span className="agent-message-role">Copilot</span>
+                    <span className="agent-message-role">Assistant</span>
                     <AnswerBody text={entry.answer.answer} />
                     <EvidenceCard answer={entry.answer} />
                     {entry.answer.evidence.length > 0 && (
@@ -467,14 +460,14 @@ export function BonusTools({
                 )}
                 {entry.error && (
                   <div className="agent-message assistant failed">
-                    <span className="agent-message-role">Copilot</span>
+                    <span className="agent-message-role">Assistant</span>
                     <p>{entry.error}</p>
                   </div>
                 )}
               </div>
             ))}
             {preview && (
-              <section className="copilot-preview">
+              <section className="copilot-preview assistant-preview">
                 <strong>Scenario {preview.scenario} draft re-plan preview</strong>
                 <p>{preview.note}</p>
                 <p>After reviewing the preview, you can also approve it in chat by saying “Approve” or “Run it”.</p>
@@ -514,7 +507,7 @@ export function BonusTools({
                 </div>
               </section>
             )}
-            {asking && <p className="agent-thinking">Copilot is checking validated evidence…</p>}
+            {asking && <p className="agent-thinking">Assistant is checking validated evidence…</p>}
           </div>
           {error && <p className="inline-error">{error}</p>}
           <form
@@ -590,6 +583,7 @@ export function AIAssistantPanel({
   const askingRef = useRef(false);
   const startingRef = useRef(false);
   const [mode, setMode] = useState<"chat" | "replan">("chat");
+  const [showLocationGuide, setShowLocationGuide] = useState(false);
 
   useEffect(() => {
     if (!location && suggested) {
@@ -680,20 +674,39 @@ export function AIAssistantPanel({
   }
 
   const summary = replan?.diff.summary;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mode === "chat") {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [conversation, asking, mode]);
 
   return (
     <aside className="permanent-ai-sidebar" aria-label="AI Schedule Assistant">
       <div className="ai-sidebar-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Sparkles size={16} color="var(--cyan)" />
-          <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 700 }}>RailFlow AI</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="bot-status-dot" />
+          <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "#ffffff" }}>
+            RailFlow Assistant
+          </h3>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <button
+            type="button"
+            className={`secondary-button ${showLocationGuide ? "primary-button" : ""}`}
+            style={{ fontSize: "10px", padding: "2px 7px" }}
+            onClick={() => setShowLocationGuide((v) => !v)}
+            title="Toggle Location Codes Reference Guide"
+          >
+            <MapPin size={10} style={{ marginRight: 3, verticalAlign: "middle" }} />
+            Codes
+          </button>
           {onOpenAgentMode && (
             <button
               type="button"
               className="secondary-button"
-              style={{ fontSize: "10px", padding: "2px 6px" }}
+              style={{ fontSize: "10px", padding: "2px 7px" }}
               onClick={onOpenAgentMode}
               title="Full Agent Mode"
             >
@@ -721,65 +734,233 @@ export function AIAssistantPanel({
         </div>
       </div>
 
-      <div className="ai-sidebar-body">
-        {mode === "chat" ? (
-          <>
-            <div className="query-suggestions">
+      {mode === "chat" ? (
+        <div className="messenger-container">
+          {/* Quick Location Reference Drawer when toggled */}
+          {showLocationGuide && conversation.length > 0 && (
+            <div style={{ padding: "0 12px", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div className="location-reference-card" style={{ margin: "10px 0" }}>
+                <div className="location-reference-title">
+                  <MapPin size={13} color="var(--cyan)" />
+                  <span>Location Code Reference</span>
+                </div>
+                <div className="location-code-format">
+                  <code>&lt;TYPE&gt;:&lt;LINE&gt;:&lt;SECTION&gt;[:BOUND]</code>
+                </div>
+                <div className="location-ref-grid">
+                  <div className="location-ref-col">
+                    <span className="ref-tag">Type</span>
+                    <div className="ref-item"><code>SEC</code> Tunnel Sector</div>
+                    <div className="ref-item"><code>STN</code> Station Platform</div>
+                    <div className="ref-item"><code>BUF</code> Buffer Track</div>
+                  </div>
+                  <div className="location-ref-col">
+                    <span className="ref-tag">Line</span>
+                    <div className="ref-item"><code>ALP</code> Alpha Line</div>
+                    <div className="ref-item"><code>BET</code> Beta Line</div>
+                  </div>
+                  <div className="location-ref-col">
+                    <span className="ref-tag">Section</span>
+                    <div className="ref-item"><code>S01_S02</code> Station 1 ↔ 2</div>
+                    <div className="ref-item"><code>H01</code> Hub 1</div>
+                  </div>
+                  <div className="location-ref-col">
+                    <span className="ref-tag">Direction</span>
+                    <div className="ref-item"><code>EB</code> Eastbound</div>
+                    <div className="ref-item"><code>WB</code> Westbound</div>
+                  </div>
+                </div>
+                <div className="location-ref-example">
+                  <span className="example-label">Example:</span>
+                  <code>SEC:ALP:S01_S02:EB</code>
+                  <span className="example-text">→ Alpha Line eastbound tunnel between S01 & S02</span>
+                </div>
+                <div className="location-ref-tip">
+                  💡 <em>Natural names supported:</em> Type natural descriptions like &quot;Alpha Line eastbound between S01 and S02&quot; and the Assistant automatically resolves the code.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable Chat Stream (Grows upwards from bottom) */}
+          <div className="messenger-stream" role="log">
+            {!conversation.length ? (
+              <div className="messenger-empty-state">
+                <div className="empty-avatar">
+                  <Sparkles size={22} color="var(--cyan)" />
+                </div>
+                <h4>AI Schedule Assistant</h4>
+                <p>
+                  Ask evidence-grounded questions about schedules, capacity, delay risks, or request validated disruption re-plans.
+                </p>
+
+                {/* Location Code Reference Cheat Sheet Card */}
+                <div className="location-reference-card">
+                  <div className="location-reference-title">
+                    <MapPin size={13} color="var(--cyan)" />
+                    <span>Location Code Reference</span>
+                  </div>
+                  <div className="location-code-format">
+                    <code>&lt;TYPE&gt;:&lt;LINE&gt;:&lt;SECTION&gt;[:BOUND]</code>
+                  </div>
+                  <div className="location-ref-grid">
+                    <div className="location-ref-col">
+                      <span className="ref-tag">Type</span>
+                      <div className="ref-item"><code>SEC</code> Tunnel Sector</div>
+                      <div className="ref-item"><code>STN</code> Station Platform</div>
+                      <div className="ref-item"><code>BUF</code> Buffer Track</div>
+                    </div>
+                    <div className="location-ref-col">
+                      <span className="ref-tag">Line</span>
+                      <div className="ref-item"><code>ALP</code> Alpha Line</div>
+                      <div className="ref-item"><code>BET</code> Beta Line</div>
+                    </div>
+                    <div className="location-ref-col">
+                      <span className="ref-tag">Section</span>
+                      <div className="ref-item"><code>S01_S02</code> Station 1 ↔ 2</div>
+                      <div className="ref-item"><code>H01</code> Hub 1</div>
+                    </div>
+                    <div className="location-ref-col">
+                      <span className="ref-tag">Direction</span>
+                      <div className="ref-item"><code>EB</code> Eastbound</div>
+                      <div className="ref-item"><code>WB</code> Westbound</div>
+                    </div>
+                  </div>
+                  <div className="location-ref-example">
+                    <span className="example-label">Example:</span>
+                    <code>SEC:ALP:S01_S02:EB</code>
+                    <span className="example-text">→ Alpha Line eastbound tunnel between S01 & S02</span>
+                  </div>
+                  <div className="location-ref-tip">
+                    💡 <em>Natural names supported:</em> Type natural descriptions like &quot;Alpha Line eastbound between S01 and S02&quot; and the Assistant automatically resolves the code.
+                  </div>
+                </div>
+
+                <div className="query-suggestions-title">Recommended Prompts</div>
+                <div className="query-suggestions-grid">
+                  {[
+                    "Compare scenarios A, B and C",
+                    "Why was Scenario A scheduled this way?",
+                    "What are the largest delay drivers?",
+                    "Check capacity at Alpha Line eastbound between S01 and S02",
+                    "Reduce capacity at SEC:ALP:S01_S02:EB to 1 in week 12 for Scenario A",
+                  ].map((item) => (
+                    <button type="button" key={item} onClick={() => void ask(item)}>
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              conversation.map((entry, idx) => (
+                <div key={idx} className="message-exchange">
+                  {/* User Bubble (Right) */}
+                  <div className="chat-bubble-row user">
+                    <div className="chat-bubble user">
+                      <p>{entry.question}</p>
+                      <span className="bubble-meta">You</span>
+                    </div>
+                  </div>
+
+                  {/* Assistant Bubble (Left) */}
+                  <div className="chat-bubble-row bot">
+                    <div className="bot-avatar-icon">
+                      <Sparkles size={13} color="var(--cyan)" />
+                    </div>
+                    <div className="chat-bubble bot">
+                      <span className="bot-sender-title">RailFlow Assistant</span>
+                      <AnswerBody text={entry.answer.answer} />
+                      {entry.answer.evidence && entry.answer.evidence.length > 0 && (
+                        <div className="bubble-evidence-wrap">
+                          {entry.answer.evidence.slice(0, 4).map((ev) => (
+                            <span key={ev} className="evidence-chip">
+                              {ev}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+
+            {asking && (
+              <div className="chat-bubble-row bot">
+                <div className="bot-avatar-icon">
+                  <Sparkles size={13} color="var(--cyan)" />
+                </div>
+                <div className="chat-bubble bot thinking">
+                  <span className="bot-sender-title">RailFlow Assistant</span>
+                  <div className="typing-indicator">
+                    <LoaderCircle size={13} className="spin" />
+                    <span>Analyzing schedule data…</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {assistantError && (
+              <div className="chat-bubble-row bot">
+                <div className="chat-bubble bot error">
+                  <p>{assistantError}</p>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Quick Suggestions Chips above composer if in conversation */}
+          {conversation.length > 0 && (
+            <div className="messenger-quick-bar">
               {[
-                "Why was A001 moved?",
-                "What is the downstream delay risk?",
-                `Capacity at ${location || "SEC:ALP:S01_S02:EB"} week ${startWeek}`,
-                `Handover brief for week ${startWeek}`,
+                "Compare A/B/C",
+                "Scenario A design",
+                "Delay drivers",
+                "Alpha Line capacity",
               ].map((item) => (
                 <button type="button" key={item} onClick={() => void ask(item)}>
                   {item}
                 </button>
               ))}
             </div>
+          )}
 
-            <form
-              className="assistant-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void ask();
+          {/* Fixed Bottom Composer Dock */}
+          <form
+            className="messenger-composer-dock"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ask();
+            }}
+          >
+            <input
+              className="messenger-input"
+              value={question}
+              maxLength={500}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask Assistant or request disruption re-plan…"
+              disabled={asking}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
               }}
+            />
+            <button
+              type="submit"
+              className="messenger-send-btn"
+              disabled={asking || !question.trim()}
+              aria-label="Send message"
             >
-              <input
-                value={question}
-                maxLength={500}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask schedule assistant..."
-              />
-              <button
-                className="primary-button"
-                disabled={asking || !question.trim()}
-                aria-label="Send query"
-                style={{ padding: "6px 10px" }}
-              >
-                {asking ? <LoaderCircle size={14} className="spin" /> : <Send size={14} />}
-              </button>
-            </form>
-
-            {assistantError && <p className="alert error">{assistantError}</p>}
-
-            <div className="assistant-conversation" role="log">
-              {conversation.map((entry, idx) => (
-                <div className="assistant-answer" key={idx}>
-                  <strong>Q: {entry.question}</strong>
-                  <AnswerBody text={entry.answer.answer} />
-                  <small>
-                    {entry.answer.intent} · Evidence: {entry.answer.evidence?.join(", ") || "Summary"}
-                  </small>
-                </div>
-              ))}
-              {!conversation.length && (
-                <div style={{ textAlign: "center", padding: "24px 8px", color: "var(--text-dim)", fontSize: "11px" }}>
-                  Operational Q&A ready. Select a suggested prompt or type an inquiry.
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
+              {asking ? <LoaderCircle size={15} className="spin" /> : <Send size={15} />}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="ai-sidebar-body">
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <span className="muted" style={{ fontSize: "11px" }}>
               Simulate mid-horizon disruption & emergency quota drops.
@@ -892,8 +1073,8 @@ export function AIAssistantPanel({
               </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </aside>
   );
 }
