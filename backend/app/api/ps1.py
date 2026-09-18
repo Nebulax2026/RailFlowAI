@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import Literal
+import json
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 
 from app.ps1.exporter import scenario_csvs, solutions_zip
@@ -17,10 +19,18 @@ MAX_TOTAL_BYTES = 16_000_000
 
 
 @router.post("/jobs", status_code=202)
-async def create_job(files: list[UploadFile] | None = File(default=None), public: bool = False) -> dict:
+async def create_job(files: list[UploadFile] | None = File(default=None), public: bool = False,
+                     algorithm: Literal["legacy", "scenario_a", "strategies"] = "legacy",
+                     strategy: Literal["integrated", "alns", "random_lns", "greedy"] = "alns",
+                     time_limit_seconds: float = Query(default=15, ge=5, le=120),
+                     seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
+    config = None
+    if algorithm != "legacy":
+        from app.ps1.scenario_a.search import SearchConfig
+        config = asdict(SearchConfig(strategy=strategy, time_limit_seconds=time_limit_seconds, seed=seed))
     try:
         if public:
-            job = job_manager.create_public()
+            job = job_manager.create_public(algorithm, config)
         else:
             if not files:
                 raise HTTPException(status_code=422, detail="Upload all eight PS1 CSV files or set public=true.")
@@ -37,7 +47,7 @@ async def create_job(files: list[UploadFile] | None = File(default=None), public
                 if total > MAX_TOTAL_BYTES:
                     raise HTTPException(status_code=413, detail="Combined upload exceeds 16 MB.")
                 payload[filename] = content
-            job = job_manager.create(payload, "upload")
+            job = job_manager.create(payload, "upload", algorithm, config)
     except InstanceValidationError as error:
         raise HTTPException(status_code=422, detail=error.errors) from error
     return _job_payload(job)
@@ -59,6 +69,8 @@ def cancel_job(job_id: str) -> dict:
 @router.get("/jobs/{job_id}/scenarios/{scenario}")
 def get_scenario(job_id: str, scenario: Scenario) -> dict:
     job = _require_job(job_id)
+    if scenario not in job.scenarios:
+        raise HTTPException(status_code=404, detail="This run only includes Scenario A.")
     run = job.scenarios[scenario]
     if not run.solution:
         raise HTTPException(status_code=409, detail=run.error or f"Scenario {scenario.value} is not complete.")
@@ -77,9 +89,20 @@ def get_scenario(job_id: str, scenario: Scenario) -> dict:
         "termination_reason": run.termination_reason,
         "solution_revision": solution.solution_revision,
         "solver_stats": run.solver_stats,
-        "score_breakdown": solution.validation.detail["score_breakdown"],
-        "activity_details": activity_details(job.instance, solution),
+        "score_breakdown": solution.validation.detail.get("score_breakdown", {
+            "delay": solution.validation.soft_scores.get("priority_weighted_score", 0),
+            "excess_supply": 0, "eclo": 0,
+        }),
+        "activity_details": activity_details(job.instance, solution) if "location_usage" in solution.validation.detail else [],
+        "diagnostics": run.diagnostics,
     }
+
+
+@router.get("/jobs/{job_id}/diagnostics")
+def download_diagnostics(job_id: str) -> Response:
+    job = _require_job(job_id)
+    return Response(json.dumps({s.value: run.diagnostics for s, run in job.scenarios.items()}, indent=2),
+                    media_type="application/json", headers={"Content-Disposition": 'attachment; filename="solver-diagnostics.json"'})
 
 
 @router.get("/jobs/{job_id}/download")
@@ -98,6 +121,8 @@ def download_job(job_id: str) -> Response:
 @router.get("/jobs/{job_id}/scenarios/{scenario}/files/{filename}")
 def download_scenario_file(job_id: str, scenario: Scenario, filename: str, revision: int | None = None) -> Response:
     job = _require_job(job_id)
+    if scenario not in job.scenarios:
+        raise HTTPException(status_code=404, detail="This run only includes Scenario A.")
     solution = job.scenarios[scenario].solution
     if not solution or not solution.validation.feasible:
         raise HTTPException(status_code=409, detail="A validated scenario output is not available.")
@@ -121,6 +146,8 @@ def _job_payload(job: SolveJob) -> dict:
         "job_id": job.job_id,
         "status": job.status.value,
         "source": job.source,
+        "algorithm": job.algorithm,
+        "solver_config": job.solver_config,
         "created_at": job.created_at,
         "expires_at": job.expires_at,
         "error": job.error,
@@ -148,6 +175,7 @@ def _job_payload(job: SolveJob) -> dict:
                 "solution_revision": run.solution.solution_revision if run.solution else 0,
                 "solver_stats": run.solver_stats,
                 "scores": run.solution.validation.soft_scores if run.solution else None,
+                "diagnostics": run.diagnostics,
             }
             for scenario, run in job.scenarios.items()
         },

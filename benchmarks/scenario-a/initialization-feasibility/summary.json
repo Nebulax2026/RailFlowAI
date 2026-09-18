@@ -1,0 +1,21 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.14",
+  "workers": 1,
+  "concurrent_runs": 1,
+  "rows": [
+    {
+      "case": "public",
+      "budget": 15.0,
+      "strategy": "integrated",
+      "feasible": 2,
+      "runs": 2,
+      "median_cost": 3889.55,
+      "worst_cost": 3994.9,
+      "median_first_feasible": 10.667334853991633,
+      "median_wall_seconds": 14.236525833519408,
+      "peak_rss_mb": 381.65625,
+      "median_gap": 3855.6
+    }
+  ]
+}

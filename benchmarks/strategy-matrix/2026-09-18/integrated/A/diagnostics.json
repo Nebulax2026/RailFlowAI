@@ -1,0 +1,137 @@
+{
+  "status": "feasible",
+  "strategy": "integrated",
+  "config": {
+    "strategy": "integrated",
+    "initialization": "greedy_hint",
+    "time_limit_seconds": 15.0,
+    "workers": 1,
+    "seed": 42,
+    "memory_limit_mb": 2048,
+    "initial_fraction": 0.4,
+    "repair_seconds": 2,
+    "neighborhood_min": 0.15,
+    "neighborhood_max": 0.7,
+    "restart_every": 6
+  },
+  "objective": 110.6,
+  "global_lower_bound": 36.4,
+  "absolute_gap": 74.2,
+  "bound_scope": "full model under local-witnessed-sharing-v1; not an official-validator bound",
+  "optimality_scope": "configured specification policy only",
+  "time_to_first_feasible": 0.03293591603869572,
+  "elapsed_seconds": 14.01079083303921,
+  "model_build_seconds": 0.222373416996561,
+  "search_seconds": 13.733239333028905,
+  "validation_seconds": 0.04397295997478068,
+  "trajectory": [
+    {
+      "seconds": 0.03293591603869572,
+      "objective": 672.0
+    },
+    {
+      "seconds": 7.418378208007198,
+      "objective": 341.6
+    },
+    {
+      "seconds": 10.879481666022912,
+      "objective": 159.6
+    },
+    {
+      "seconds": 11.397514875046909,
+      "objective": 126.0
+    },
+    {
+      "seconds": 11.938927583047189,
+      "objective": 117.6
+    },
+    {
+      "seconds": 12.477577458019368,
+      "objective": 110.6
+    }
+  ],
+  "phases": [
+    {
+      "phase": "global",
+      "seconds": 13.733239333028905,
+      "solver_status": "FEASIBLE",
+      "relaxed_activities": 54,
+      "bound_scope": "full_model"
+    }
+  ],
+  "operators": {
+    "delay": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "bottleneck": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "sharing": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "precedence": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "contract": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "diversify": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    }
+  },
+  "policy": "local-witnessed-sharing-v1",
+  "source_revision": "966c976005db2e3e40a691cff268fdb8f396a5df",
+  "official_validator_available": false,
+  "ortools_version": "9.15.6755",
+  "preprocessing_seconds": 0.0010702090221457183,
+  "peak_rss_mb": 329.203125,
+  "deadline_exceeded": false,
+  "python_version": "3.12.14",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "cpu_count": 10,
+  "memory_enforcement": "CP-SAT advisory limit; no portable OS address-space cap",
+  "total_elapsed_seconds": 14.02828645898262,
+  "worker_elapsed_seconds": 14.254326834052335
+}

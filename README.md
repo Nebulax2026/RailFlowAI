@@ -61,6 +61,13 @@ Solve jobs run one at a time and expire after 60 minutes. A/B/C each receive a f
 
 ## Local Development
 
+The workspace now offers **Existing planner** (the original A/B/C algorithm) and
+**Strategy comparison** (Greedy, integrated CP-SAT, random LNS or adaptive LNS, each running A/B/C).
+Select the new option before loading public data or running an upload.
+See [strategy selection and scenario scores](docs/strategy-comparison.md),
+[Scenario A usage and benchmarks](docs/scenario-a-usage.md) and
+[rule evidence / validation limitations](docs/scenario-a-rules.md).
+
 Requirements: Python 3.11+, Node.js 22+, and npm.
 
 ```powershell

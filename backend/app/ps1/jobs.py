@@ -20,16 +20,29 @@ class JobManager:
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ps1-solver")
         self.first_seconds = first_seconds; self.improve_seconds = improve_seconds
 
-    def create(self, files, source):
-        self.cleanup(); instance = parse_instance(files); now = datetime.now(UTC)
-        job = SolveJob(uuid4().hex, JobStatus.QUEUED, now, now + timedelta(minutes=JOB_TTL_MINUTES), source, instance, {s: ScenarioRun() for s in Scenario})
+    def create(self, files: dict[str, bytes], source: str, algorithm: str = "legacy", solver_config: dict | None = None) -> SolveJob:
+        self.cleanup()
+        instance = parse_instance(files)
+        now = datetime.now(UTC)
+        job = SolveJob(
+            job_id=uuid4().hex,
+            status=JobStatus.QUEUED,
+            created_at=now,
+            expires_at=now + timedelta(minutes=JOB_TTL_MINUTES),
+            source=source,
+            instance=instance,
+            scenarios={scenario: ScenarioRun() for scenario in ([Scenario.A] if algorithm == "scenario_a" else Scenario)},
+            algorithm=algorithm, solver_config=solver_config or {},
+            input_files=files if algorithm != "legacy" else {},
+        )
         with self._lock:
             self._jobs[job.job_id] = job; self._events[job.job_id] = threading.Event()
         self._executor.submit(self._run, job.job_id)
         return job
 
-    def create_public(self):
-        return self.create({n: (PUBLIC_DATA_DIR / n).read_bytes() for n in EXPECTED_FILES}, "public")
+    def create_public(self, algorithm: str = "legacy", solver_config: dict | None = None) -> SolveJob:
+        files = {name: (PUBLIC_DATA_DIR / name).read_bytes() for name in EXPECTED_FILES}
+        return self.create(files, "public", algorithm, solver_config)
 
     def get(self, job_id):
         self.cleanup()
@@ -73,6 +86,9 @@ class JobManager:
             job = self._jobs.get(job_id)
             if not job or job.cancel_requested: return
             event = self._events[job_id]; job.status = JobStatus.RUNNING
+        if job.algorithm != "legacy":
+            self._run_scenario_a(job)
+            return
         for phase, budget in (("first_search", self.first_seconds), ("improving", self.improve_seconds)):
             for scenario in Scenario:
                 with self._lock:
@@ -108,6 +124,75 @@ class JobManager:
         with self._lock:
             job.status = JobStatus.COMPLETED if all(r.solution for r in job.scenarios.values()) else JobStatus.FAILED
             if job.status == JobStatus.FAILED: job.error = "Some scenarios have no validated output; available scenarios remain downloadable."
+
+    def _run_scenario_a(self, job: SolveJob) -> None:
+        # The old scenario_a API remains A-only; strategies runs A/B/C.
+        from app.ps1.scenario_a.worker import run_worker
+        event = self._events[job.job_id]
+        try:
+            for scenario, run in job.scenarios.items():
+                if event.is_set():
+                    with self._lock: self._finish_cancel(job)
+                    return
+                with self._lock:
+                    run.status = JobStatus.RUNNING
+                    run.phase = "first_search"
+                    run.progress = 5
+                    run.message = f"Searching for a complete Scenario {scenario.value} schedule."
+
+                def update(solution, diagnostics):
+                    with self._lock:
+                        if job.job_id not in self._jobs: return
+                        if solution and (not run.solution or solution.validation.soft_scores["objective_score"] < run.solution.validation.soft_scores["objective_score"]):
+                            solution.solution_revision = (run.solution.solution_revision if run.solution else 0) + 1
+                            run.solution = solution
+                        run.diagnostics = diagnostics
+                        run.phase = "improving" if run.solution else "first_search"
+                        run.solver_stats = {
+                            "elapsed_seconds": diagnostics.get("elapsed_seconds"),
+                            "first_feasible_seconds": diagnostics.get("time_to_first_feasible"),
+                            "optimal": diagnostics.get("status") == "optimal_for_policy",
+                        }
+                        if run.solution:
+                            run.solution.solver_stats = dict(run.solver_stats)
+                            score = run.solution.validation.soft_scores["objective_score"]
+                            run.message = f"Validated incumbent: {score:g}. Improving within the time budget."
+                        run.progress = min(95, max(10, int(100 * diagnostics.get("elapsed_seconds", 0) / job.solver_config["time_limit_seconds"])))
+                try:
+                    result = run_worker(job.instance, job.input_files, job.solver_config, event.is_set, update, scenario)
+                    update(result.solution, result.diagnostics)
+                    with self._lock:
+                        if event.is_set():
+                            self._finish_cancel(job)
+                            return
+                        run.phase = "finished"
+                        run.termination_reason = result.diagnostics.get("status")
+                        run.progress = 100
+                        if run.termination_reason == "input_or_model_error":
+                            run.status = JobStatus.FAILED
+                            run.error = result.diagnostics.get("error", "Input or model error.")
+                            run.message = run.error
+                        elif run.solution:
+                            run.status = JobStatus.COMPLETED
+                            run.message = "Optimal under the configured policy." if run.termination_reason == "optimal_for_policy" else "Validated schedule found; optimality not proven."
+                        else:
+                            run.status = JobStatus.FAILED
+                            run.error = ("Infeasible under the configured safety policy; official feasibility is unconfirmed."
+                                         if run.termination_reason == "infeasible_for_policy" else "No complete valid schedule found within the time budget. Try a longer run.")
+                            run.message = run.error
+                except Exception as error:
+                    with self._lock:
+                        run.status = JobStatus.FAILED
+                        run.phase = "finished"
+                        run.termination_reason = "error"
+                        run.error = str(error)
+                        run.message = f"Scenario {scenario.value} worker failed."
+            with self._lock:
+                job.status = JobStatus.COMPLETED if all(r.status == JobStatus.COMPLETED for r in job.scenarios.values()) else JobStatus.FAILED
+                if job.status == JobStatus.FAILED:
+                    job.error = "Some scenarios have no validated output; available results remain downloadable."
+        finally:
+            job.input_files = {}
 
 
 job_manager = JobManager()

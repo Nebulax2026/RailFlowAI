@@ -8,11 +8,14 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const REQUIRED_FILES = ["01_LINES.csv", "02_STATIONS.csv", "03_SECTORS.csv", "04_LOCATION_SUPPLY.csv", "05_BUFFER_LOCATION.csv", "06_PARAMETERS.csv", "07_PROJECT_DETAILS.csv", "08_ACTIVITY_DETAILS.csv"];
 type Scenario = "A" | "B" | "C";
 type Status = "queued" | "running" | "completed" | "failed" | "cancelled";
-type RunState = { status: Status; progress: number; message: string; error?: string | null; feasible?: boolean | null; objective_score?: number | null; phase: string; termination_reason?: string; solution_revision: number; solver_stats: { elapsed_seconds?: number; optimal?: boolean; relative_gap?: number }; scores?: Record<string, number> };
+type Diagnostics = { status?: string; strategy?: string; objective?: number; global_lower_bound?: number; absolute_gap?: number; time_to_first_feasible?: number; elapsed_seconds?: number; trajectory?: { seconds: number; objective: number }[] };
+type RunState = { status: Status; progress: number; message: string; error?: string | null; feasible?: boolean | null; objective_score?: number | null; diagnostics?: Diagnostics; phase: string; termination_reason?: string; solution_revision: number; solver_stats: { elapsed_seconds?: number; optimal?: boolean; relative_gap?: number }; scores?: Record<string, number> };
 type Job = {
   job_id: string; status: Status; source: string; expires_at: string; error?: string | null;
+  algorithm: "legacy" | "scenario_a" | "strategies";
+  solver_config: { strategy?: string; time_limit_seconds?: number };
   instance: { lines: number; stations: number; sectors: number; locations: number; contracts: number; activities: number; total_accesses: number; horizon_start: string; horizon_weeks: number };
-  scenarios: Record<Scenario, RunState>;
+  scenarios: Partial<Record<Scenario, RunState>>;
 };
 type ScenarioDetail = {
   scenario: Scenario; status: string;
@@ -23,11 +26,12 @@ type ScenarioDetail = {
   validation: {
     feasible: boolean; hard_violations: { rule: string; severity: string; detail: string }[];
     soft_scores: Record<string, number | string | Record<string, number>>;
-    detail: { capacity_hotspots: LocationUsage[]; location_usage: LocationUsage[]; nights_scheduled: number; eclo_nights: number };
+    detail: { capacity_hotspots: LocationUsage[]; location_usage?: LocationUsage[]; nights_scheduled: number; eclo_nights: number };
   };
   explanations: string[];
   results: { scenario: string; contract_number: string; simulated_completion_date: string; overrun_days: number }[];
   accesses: { activity_id: string; week: number; eclo: number; access_night: number }[];
+  diagnostics?: Diagnostics;
 };
 type DataMall = { configured: boolean; available: boolean; cached?: boolean; fetched_at?: string; message?: string; alerts: { status?: number; line?: string; direction?: string; stations?: string; message?: string }[] };
 
@@ -49,6 +53,12 @@ export default function Workspace() {
   const [dataMall, setDataMall] = useState<DataMall | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [algorithm, setAlgorithm] = useState<"legacy" | "scenario_a" | "strategies">("legacy");
+  const [strategy, setStrategy] = useState("alns");
+  const [seconds, setSeconds] = useState(15);
+  const [seed, setSeed] = useState(42);
+  const active = busy || job?.status === "queued" || job?.status === "running";
+  const jobId = job?.job_id;
 
   const loadDataMall = useCallback(async () => {
     try { setDataMall(await api<DataMall>("/api/datamall/train-service-alerts")); }
@@ -57,7 +67,6 @@ export default function Workspace() {
 
   useEffect(() => { void loadDataMall(); }, [loadDataMall]);
   useEffect(() => {
-    const jobId = job?.job_id;
     if (!jobId) return;
     let disposed = false;
     let timer: ReturnType<typeof setTimeout>;
@@ -66,8 +75,8 @@ export default function Workspace() {
       try {
         const next = await api<Job>(`/api/ps1/jobs/${jobId}`);
         if (disposed) return;
-        for (const scenario of ["A", "B", "C"] as const) {
-          const run = next.scenarios[scenario];
+        for (const scenario of Object.keys(next.scenarios) as Scenario[]) {
+          const run = next.scenarios[scenario]!;
           const version = `${run.solution_revision}-${run.phase}-${run.termination_reason}`;
           if (run.feasible && loaded.get(scenario) !== version) {
             const detail = await api<ScenarioDetail>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}`);
@@ -83,13 +92,14 @@ export default function Workspace() {
     }
     void poll();
     return () => { disposed = true; clearTimeout(timer); };
-  }, [job?.job_id]);
+  }, [jobId]);
 
   const allFilesReady = REQUIRED_FILES.every((name) => files.has(name)) && files.size === REQUIRED_FILES.length;
   const selected = details[selectedScenario];
   const canDownload = job && Object.values(job.scenarios).some((run) => run.feasible);
 
   function acceptFiles(list: FileList | File[]) {
+    if (active) return;
     const next = new Map<string, File>();
     Array.from(list).forEach((file) => { if (file.name.toLowerCase().endsWith(".csv")) next.set(file.name, file); });
     setFiles(next); setError(""); setJob(null); setDetails({});
@@ -97,21 +107,26 @@ export default function Workspace() {
   function handleDrop(event: DragEvent<HTMLLabelElement>) { event.preventDefault(); acceptFiles(event.dataTransfer.files); }
 
   async function start(publicDataset: boolean) {
-    setBusy(true); setError(""); setDetails({});
+    setBusy(true); setError("");
     try {
       const init: RequestInit = { method: "POST" };
-      let path = "/api/ps1/jobs";
-      if (publicDataset) path += "?public=true";
+      const params = new URLSearchParams({ algorithm, strategy, time_limit_seconds: String(seconds), seed: String(seed) });
+      if (publicDataset) params.set("public", "true");
       else {
         const body = new FormData();
         REQUIRED_FILES.forEach((name) => body.append("files", files.get(name)!));
         init.body = body;
       }
-      setJob(await api<Job>(path, init)); setSelectedScenario("A");
+      const created = await api<Job>(`/api/ps1/jobs?${params}`, init);
+      setDetails({}); setJob(created); setSelectedScenario("A");
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "The solve job could not be started."); }
     finally { setBusy(false); }
   }
-  async function cancel() { if (job) setJob(await api<Job>(`/api/ps1/jobs/${job.job_id}`, { method: "DELETE" })); }
+  async function cancel() {
+    if (!job) return;
+    try { setJob(await api<Job>(`/api/ps1/jobs/${job.job_id}`, { method: "DELETE" })); }
+    catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not stop the run."); }
+  }
 
   return (
     <main className="app-shell">
@@ -120,20 +135,35 @@ export default function Workspace() {
         <div className="header-state"><span className="live-dot" /> PS1 decision support</div>
       </header>
       <section className="workspace-title">
-        <div><span className="eyebrow">Railway Track Access Optimisation</span><h1>Build a possession plan that proves itself.</h1><p>Load the eight-file demand book, solve all three operating policies, inspect the trade-offs, and export validator-ready schedules.</p></div>
+        <div><span className="eyebrow">Railway Track Access Optimisation</span><h1>Build a possession plan that proves itself.</h1><p>Choose an algorithm, load the demand book, and compare validated schedules.</p></div>
         {job && <div className={`job-pill ${job.status}`}><Clock3 size={16} /> {job.status}<small>expires {new Date(job.expires_at).toLocaleTimeString()}</small></div>}
       </section>
       {error && <div className="alert error"><AlertTriangle size={18} /><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError("")}><X size={16} /></button></div>}
 
       <section className="intake-grid">
         <div className="tool-panel upload-panel">
+          <fieldset className="algorithm-picker" disabled={active}>
+            <legend>Scheduling algorithm</legend>
+            <div className="algorithm-options">
+              <label className={algorithm === "legacy" ? "chosen" : ""}><input type="radio" name="algorithm" checked={algorithm === "legacy"} onChange={() => setAlgorithm("legacy")} /><span><strong>Existing planner</strong><small>Run Scenarios A, B and C</small></span></label>
+              <label className={algorithm === "strategies" ? "chosen" : ""}><input type="radio" name="algorithm" checked={algorithm === "strategies"} onChange={() => setAlgorithm("strategies")} /><span><strong>Strategy comparison</strong><small>Four search methods · Scenarios A, B and C</small></span></label>
+            </div>
+            {algorithm === "strategies" && <>
+              <div className="solver-options">
+                <label>Search method<select value={strategy} onChange={(event) => setStrategy(event.target.value)}><option value="integrated">Integrated CP-SAT</option><option value="alns">CP-SAT + adaptive LNS</option><option value="random_lns">CP-SAT + random LNS</option><option value="greedy">Greedy baseline</option></select></label>
+                <label>Time per scenario<select value={seconds} onChange={(event) => setSeconds(Number(event.target.value))}>{[15, 30, 60, 120].map((value) => <option key={value} value={value}>{value} seconds</option>)}</select></label>
+                <label>Seed<input type="number" min={0} max={2147483647} step={1} value={seed} onChange={(event) => setSeed(Math.max(0, Math.min(2147483647, Math.trunc(Number(event.target.value)))))} /></label>
+              </div>
+              <p className="solver-note">Runs A → B → C sequentially with the selected method and a separate time budget per scenario. One solver worker. A uses the existing Scenario A safety policy; B/C use the main validator. Official validator parity is unconfirmed.</p>
+            </>}
+          </fieldset>
           <div className="panel-heading"><div><span className="step">01</span><h2>Demand book</h2></div><span>{files.size}/8 files</span></div>
           <label className="drop-zone" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
             <UploadCloud size={30} /><strong>Drop the PS1 folder or select eight CSV files</strong><span>Exact official filenames, UTF-8, up to 2 MB each</span>
-            <input type="file" accept=".csv,text/csv" multiple onChange={(event) => event.target.files && acceptFiles(event.target.files)} />
+            <input type="file" accept=".csv,text/csv" multiple disabled={active} onChange={(event) => event.target.files && acceptFiles(event.target.files)} />
           </label>
           <div className="file-checklist">{REQUIRED_FILES.map((name) => <div key={name} className={files.has(name) ? "ready" : "missing"}>{files.has(name) ? <Check size={15} /> : <FileSpreadsheet size={15} />}<span>{name}</span><small>{files.has(name) ? `${Math.ceil(files.get(name)!.size / 1024)} KB` : "required"}</small></div>)}</div>
-          <div className="button-row"><button className="primary-button" disabled={!allFilesReady || busy || job?.status === "running"} onClick={() => void start(false)}><Play size={17} /> Run hidden instance</button><button className="secondary-button" disabled={busy || job?.status === "running"} onClick={() => void start(true)}><Activity size={17} /> Load public dataset</button></div>
+          <div className="button-row"><button className="primary-button" disabled={!allFilesReady || active} onClick={() => void start(false)}><Play size={17} />{algorithm === "strategies" ? "Run A, B and C" : "Run hidden instance"}</button><button className="secondary-button" disabled={active} onClick={() => void start(true)}>{busy ? <LoaderCircle size={17} className="spin" /> : <Activity size={17} />} Load public dataset</button></div>
         </div>
         <aside className="tool-panel context-panel">
           <div className="panel-heading"><div><Radio size={18} /><h2>Network context</h2></div><button className="icon-button" title="Refresh DataMall" onClick={() => void loadDataMall()}><Radio size={16} /></button></div>
@@ -141,17 +171,27 @@ export default function Workspace() {
         </aside>
       </section>
 
-      {job && <div className="comparison-panel data-panel"><h2>Policy comparison</h2><p>First validated result target: 30 seconds per policy. Each policy may improve for up to 120 seconds total. Results are internally validated.</p><div className="table-wrap"><table><thead><tr><th>Policy</th><th>Work complete</th><th>Overrun</th><th>Excess slots</th><th>ECLO</th><th>Score</th><th>Search state</th></tr></thead><tbody>{(["A", "B", "C"] as const).map(s => { const run = job.scenarios[s]; return <tr key={s}><th>{s}</th><td>{run.scores ? `${run.scores.completion_percent}%` : "Pending"}</td><td>{run.scores?.overrun_days_total ?? "—"}</td><td>{run.scores?.excess_access_nights_total ?? "—"}</td><td>{run.scores?.eclo_nights_total ?? "—"}</td><td>{run.objective_score ?? "—"}</td><td>{run.termination_reason === "optimal" ? "Optimality proved" : run.phase === "improving" ? "Improving" : run.phase === "first_search" ? "Searching" : run.feasible ? "Validated result available" : run.termination_reason === "infeasible" ? "Infeasible under documented policy" : run.termination_reason === "time_limit" ? "No solution within time limit" : run.status}</td></tr>; })}</tbody></table></div><p>Downloadable policies: {Object.entries(job.scenarios).filter(([,run]) => run.feasible).map(([s,run]) => `${s} (revision ${run.solution_revision})`).join(", ") || "None yet"}. The ZIP manifest records included revisions.</p></div>}
+      {job && <div className="comparison-panel data-panel"><h2>Scenario scores</h2><p>{job.algorithm === "legacy" ? "First validated result target: 30 seconds per policy. Each policy may improve for up to 120 seconds total." : `${job.solver_config.strategy}: up to ${job.solver_config.time_limit_seconds} seconds per scenario, run sequentially.`} Results are internally validated; scores have different objectives across scenarios.</p><div className="table-wrap"><table><thead><tr><th>Policy</th><th>Work complete</th><th>Overrun</th><th>Excess slots</th><th>ECLO</th><th>Score</th><th>Search state</th></tr></thead><tbody>{(Object.keys(job.scenarios) as Scenario[]).map(s => { const run = job.scenarios[s]!; return <tr key={s}><th>{s}</th><td>{run.scores ? `${run.scores.completion_percent ?? (run.feasible ? 100 : 0)}%` : "Pending"}</td><td>{run.scores?.overrun_days_total ?? "—"}</td><td>{run.scores?.excess_access_nights_total ?? "—"}</td><td>{run.scores?.eclo_nights_total ?? "—"}</td><td>{run.objective_score ?? "—"}</td><td>{["optimal", "optimal_for_policy"].includes(run.termination_reason ?? "") ? "Optimality proved" : run.phase === "improving" ? "Improving" : run.phase === "first_search" ? "Searching" : run.feasible ? "Validated result available" : run.termination_reason === "infeasible" ? "Infeasible under documented policy" : run.termination_reason === "time_limit" ? "No solution within time limit" : run.status}</td></tr>; })}</tbody></table></div><p>Downloadable policies: {Object.entries(job.scenarios).filter(([,run]) => run.feasible).map(([s,run]) => `${s} (revision ${run.solution_revision})`).join(", ") || "None yet"}. The ZIP manifest records included revisions.</p></div>}
       {job && <section className="results-workspace">
         <div className="scenario-rail">
           <div className="scenario-heading"><span className="step">02</span><div><h2>Policy runs</h2><p>{job.instance.activities} activities · {job.instance.total_accesses} accesses · {job.instance.horizon_weeks} weeks</p></div></div>
-          {(["A", "B", "C"] as const).map((scenario) => { const run = job.scenarios[scenario]; return <button key={scenario} className={`scenario-card ${selectedScenario === scenario ? "selected" : ""}`} onClick={() => setSelectedScenario(scenario)}><span className="scenario-code">{scenario}</span><span className="scenario-copy"><strong>{scenario === "A" ? "Strict supply" : scenario === "B" ? "Strict schedule" : "Balanced"}</strong><small>{run.error || run.message}</small></span><span className={`run-icon ${run.status}`}>{run.status === "running" ? <LoaderCircle size={18} className="spin" /> : run.status === "completed" ? <Check size={18} /> : run.status === "failed" ? <AlertTriangle size={18} /> : <Clock3 size={18} />}</span><span className="progress-track"><i style={{ width: `${run.progress}%` }} /></span></button>; })}
-          <div className="rail-actions">{job.status === "running" && <button className="secondary-button" onClick={() => void cancel()}><CircleStop size={17} /> Cancel</button>}<a className={`primary-button ${canDownload ? "" : "disabled"}`} href={canDownload ? `${API_BASE}/api/ps1/jobs/${job.job_id}/download` : undefined}><Download size={17} /> Download result ZIP</a></div>
+          {(Object.keys(job.scenarios) as Scenario[]).map((scenario) => { const run = job.scenarios[scenario]!; return <button key={scenario} className={`scenario-card ${selectedScenario === scenario ? "selected" : ""}`} onClick={() => setSelectedScenario(scenario)}><span className="scenario-code">{scenario}</span><span className="scenario-copy"><strong>{scenario === "A" ? "Strict supply" : scenario === "B" ? "Strict schedule" : "Balanced"}</strong><small>{run.error || run.message}</small></span><span className={`run-icon ${run.status}`}>{run.status === "running" ? <LoaderCircle size={18} className="spin" /> : run.status === "completed" ? <Check size={18} /> : run.status === "failed" ? <AlertTriangle size={18} /> : <Clock3 size={18} />}</span><span className="progress-track"><i style={{ width: `${run.progress}%` }} /></span></button>; })}
+          <div className="rail-actions">{["queued", "running"].includes(job.status) && <button className="secondary-button" onClick={() => void cancel()}><CircleStop size={17} /> Stop search</button>}<a className={`primary-button ${canDownload ? "" : "disabled"}`} href={canDownload ? `${API_BASE}/api/ps1/jobs/${job.job_id}/download` : undefined}><Download size={17} /> Download result ZIP</a>{job.algorithm === "strategies" && <a className="secondary-button" href={`${API_BASE}/api/ps1/jobs/${job.job_id}/diagnostics`}><Download size={17} /> Search report</a>}</div>
         </div>
-        <div className="scenario-detail">{!selected ? <EmptyResult run={job.scenarios[selectedScenario]} scenario={selectedScenario} /> : <ScenarioView detail={selected} jobId={job.job_id} />}</div>
+        <div className="scenario-detail">{job.algorithm === "strategies" && <SearchProgress scenario={selectedScenario} diagnostics={job.scenarios[selectedScenario]?.diagnostics} />}{!selected ? <EmptyResult run={job.scenarios[selectedScenario]!} scenario={selectedScenario} /> : <ScenarioView detail={selected} jobId={job.job_id} />}</div>
       </section>}
     </main>
   );
+}
+
+function SearchProgress({ scenario, diagnostics: d }: { scenario: Scenario; diagnostics?: Diagnostics }) {
+  const format = (value?: number) => value == null ? "—" : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return <section className="data-panel search-progress" aria-live="polite">
+    <div className="subheading"><h3>Scenario {scenario} search</h3><span>{d?.status === "optimal_for_policy" ? "Optimal for configured policy" : "Best validated schedule"}</span></div>
+    <div className="metric-grid"><Metric label="Best cost" value={format(d?.objective)} /><Metric label="Model lower bound" value={format(d?.global_lower_bound)} /><Metric label="Absolute gap" value={format(d?.absolute_gap)} /><Metric label="First feasible (s)" value={format(d?.time_to_first_feasible)} /></div>
+    <p className="muted">Bounds and validation apply to the documented safety policy. Official validator not supplied. A feasible result does not by itself prove optimality.</p>
+    {!!d?.trajectory?.length && <details><summary>Cost improvements ({d.trajectory.length})</summary><div className="table-wrap"><table><thead><tr><th>Elapsed seconds</th><th>Validated cost</th></tr></thead><tbody>{d.trajectory.map((point, index) => <tr key={index}><td>{format(point.seconds)}</td><td>{format(point.objective)}</td></tr>)}</tbody></table></div></details>}
+  </section>;
 }
 
 function EmptyResult({ run, scenario }: { run: RunState; scenario: string }) {
@@ -169,7 +209,7 @@ function ScenarioView({ detail, jobId }: { detail: ScenarioDetail; jobId: string
     <div className="metric-grid"><Metric label="Objective score" value={String(scores.objective_score ?? "-")} /><Metric label="Overrun days" value={String(scores.overrun_days_total ?? 0)} /><Metric label="Excess access" value={String(scores.excess_access_nights_total ?? 0)} /><Metric label="ECLO nights" value={String(scores.eclo_nights_total ?? 0)} /></div>
     <div className="explanation-strip">{detail.explanations.map((item) => <p key={item}>{item}</p>)}</div>
     <p className="revision-note">Revision {detail.solution_revision} · {detail.solver_stats.optimal ? "Optimality proved for the documented model" : "Best validated result; optimum not proved"} · Cost: delay {detail.score_breakdown.delay}, excess supply {detail.score_breakdown.excess_supply}, ECLO {detail.score_breakdown.eclo}.</p>
-    <Inspection activities={detail.activity_details} usage={detail.validation.detail.location_usage} />
+    {detail.validation.detail.location_usage && <Inspection activities={detail.activity_details} usage={detail.validation.detail.location_usage} />}
     <div className="visual-grid">
       <section className="data-panel"><div className="subheading"><h3>Weekly access load</h3><span>{detail.accesses.length} rows</span></div><div className="week-chart">{weeks.map(([week, count]) => <div key={week} title={`Week ${week}: ${count} accesses`}><i style={{ height: `${Math.max(8, count / maxWeekAccess * 100)}%` }} /><small>{week}</small></div>)}</div></section>
       <section className="data-panel"><div className="subheading"><h3>Capacity hotspots</h3><span>{hotspots.length} at or above supply</span></div><div className="hotspot-list">{hotspots.slice(0, 8).map((item) => <div key={`${item.location_id}-${item.week}`}><span><strong>{item.location_id}</strong><small>Week {item.week}</small></span><i><b style={{ width: `${item.used / maxUsed * 100}%` }} /></i><em>{item.used}/{item.capacity}</em></div>)}{!hotspots.length && <p className="muted">No locations reach nominal capacity.</p>}</div></section>

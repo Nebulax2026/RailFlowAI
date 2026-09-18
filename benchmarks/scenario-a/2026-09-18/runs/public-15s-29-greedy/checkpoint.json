@@ -1,0 +1,106 @@
+{
+  "directory": "incumbent-0001",
+  "diagnostics": {
+    "status": "feasible",
+    "strategy": "greedy",
+    "config": {
+      "strategy": "greedy",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 14.999043832998723,
+      "workers": 1,
+      "seed": 29,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "objective": 672.0,
+    "global_lower_bound": 25.2,
+    "absolute_gap": 646.8,
+    "bound_scope": "full model under local-witnessed-sharing-v1; not an official-validator bound",
+    "optimality_scope": "configured specification policy only",
+    "time_to_first_feasible": 0.03246137499809265,
+    "elapsed_seconds": 0.03953845798969269,
+    "model_build_seconds": 0.0,
+    "search_seconds": 0.0,
+    "validation_seconds": 0.011052041954826564,
+    "trajectory": [
+      {
+        "seconds": 0.03246137499809265,
+        "objective": 672.0
+      }
+    ],
+    "phases": [],
+    "operators": {
+      "delay": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "bottleneck": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "sharing": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "precedence": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "contract": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "diversify": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      }
+    },
+    "policy": "local-witnessed-sharing-v1",
+    "source_revision": "966c976005db2e3e40a691cff268fdb8f396a5df",
+    "official_validator_available": false,
+    "ortools_version": "9.15.6755",
+    "preprocessing_seconds": 0.0010387080255895853,
+    "peak_rss_mb": 86.453125,
+    "deadline_exceeded": false
+  }
+}

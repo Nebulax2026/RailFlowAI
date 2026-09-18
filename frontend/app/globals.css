@@ -18,7 +18,7 @@
 * { box-sizing: border-box; }
 html { background: #edf1f3; }
 body { margin: 0; background: #edf1f3; color: var(--ink); font-family: Arial, Helvetica, sans-serif; letter-spacing: 0; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button, a { transition: background 150ms ease, border-color 150ms ease, color 150ms ease; }
 a { color: inherit; text-decoration: none; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid rgba(20, 113, 91, 0.24); outline-offset: 2px; }
@@ -65,6 +65,23 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .file-checklist small { color: var(--muted); font-size: 10px; }
 .button-row, .rail-actions, .csv-links { display: flex; flex-wrap: wrap; gap: 8px; }
 .button-row { margin-top: 13px; }
+.algorithm-picker { border: 0; border-bottom: 1px solid var(--line); margin: 0 0 18px; padding: 0 0 16px; min-width: 0; }
+.algorithm-picker legend { font-size: 14px; font-weight: 800; padding: 0 0 10px; }
+.algorithm-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.algorithm-options > label { display: flex; align-items: center; gap: 9px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.algorithm-options > label.chosen { border-color: var(--green); background: var(--green-soft); }
+.algorithm-options input { accent-color: var(--green); }
+.algorithm-options strong, .algorithm-options small { display: block; }
+.algorithm-options strong { font-size: 13px; }
+.algorithm-options small { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.solver-options { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+.solver-options label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; min-width: 0; }
+.solver-options select, .solver-options input { width: 100%; min-width: 0; border: 1px solid var(--line); background: white; color: var(--ink); padding: 8px; border-radius: 5px; }
+.solver-note { font-size: 11px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
+.search-progress { margin-bottom: 10px; }
+.search-progress summary { cursor: pointer; color: var(--green-dark); font-size: 12px; }
+fieldset:disabled { opacity: .7; }
+@media (max-width: 600px) { .algorithm-options, .solver-options { grid-template-columns: 1fr; } }
 .primary-button, .secondary-button { align-items: center; border: 1px solid; border-radius: 6px; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 800; gap: 7px; justify-content: center; min-height: 38px; padding: 8px 12px; }
 .primary-button { background: var(--green); border-color: var(--green); color: white; }
 .primary-button:hover { background: var(--green-dark); }
@@ -114,7 +131,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .explanation-strip { background: #edf4f7; border-left: 3px solid var(--blue); border-radius: 3px; margin-top: 10px; padding: 9px 12px; }
 .explanation-strip p { color: #355166; font-size: 12px; line-height: 1.45; margin: 2px 0; }
 .visual-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-top: 10px; }
-.data-panel { padding: 14px; }
+.data-panel { padding: 14px; min-width: 0; }
 .subheading h3 { font-size: 14px; }
 .week-chart { align-items: end; display: flex; gap: 4px; height: 170px; margin-top: 14px; overflow-x: auto; padding-top: 8px; }
 .week-chart div { align-items: center; display: flex; flex: 1 0 16px; flex-direction: column; height: 100%; justify-content: flex-end; min-width: 16px; }
@@ -167,3 +184,4 @@ th { background: var(--soft); color: var(--muted); font-size: 9px; text-transfor
 .location-table th { position: sticky; top: 0; background: var(--soft); }
 select:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 @media (max-width: 720px) { .comparison-panel { margin: 12px 16px; } .activity-browser { grid-template-columns: minmax(0, 1fr); } .activity-list { max-height: 210px; } .inspection-filters label { width: 100%; } }
+@media (max-width: 700px) { .subheading { flex-wrap: wrap; } }

@@ -20,9 +20,7 @@ class SolveFailure(ValueError):
         self.reason = reason
 
 
-def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None, cancel_event=None):
-    started = time.monotonic()
-    cancel_event = cancel_event or threading.Event()
+def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel_event, incumbent=None):
     def check_budget():
         if cancel_event.is_set(): raise SolveFailure("cancelled", "Cancelled while building the model.")
         if time.monotonic() - started >= time_limit_seconds:
@@ -166,6 +164,17 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
                                  "Protection reservations use the documented conservative local-slot policy; official-validator parity is not claimed."]
         return solution
 
+    from types import SimpleNamespace
+    return SimpleNamespace(model=model, x=x, eclo=eclo, local_nights=local_nights,
+                           group_vars=group_vars, patterns=patterns, primary=primary,
+                           work=work, footprint=footprint, extract=extract)
+
+
+def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None, cancel_event=None):
+    started = time.monotonic()
+    cancel_event = cancel_event or threading.Event()
+    built = build_scenario_model(instance, scenario, time_limit_seconds, started, cancel_event, incumbent)
+    model, primary, x, extract = built.model, built.primary, built.x, built.extract
     best = [incumbent]; first_time = [None]; callback_error = [None]
     class Publish(cp_model.CpSolverSolutionCallback):
         def __init__(self): super().__init__(); self.last = -math.inf

@@ -1,0 +1,160 @@
+{
+  "status": "optimal_for_policy",
+  "strategy": "integrated",
+  "config": {
+    "strategy": "integrated",
+    "initialization": "greedy_hint",
+    "time_limit_seconds": 30.0,
+    "workers": 1,
+    "seed": 42,
+    "memory_limit_mb": 2048,
+    "initial_fraction": 0.4,
+    "repair_seconds": 2,
+    "neighborhood_min": 0.15,
+    "neighborhood_max": 0.7,
+    "restart_every": 6
+  },
+  "objective": 40.6,
+  "global_lower_bound": 40.6,
+  "absolute_gap": 0.0,
+  "bound_scope": "full model under local-witnessed-sharing-v1; not an official-validator bound",
+  "optimality_scope": "configured specification policy only",
+  "time_to_first_feasible": 0.031656542036216706,
+  "elapsed_seconds": 18.315780417004135,
+  "model_build_seconds": 0.21753837500000373,
+  "search_seconds": 18.033332374994643,
+  "validation_seconds": 0.08847733319271356,
+  "trajectory": [
+    {
+      "seconds": 0.031656542036216706,
+      "objective": 672.0
+    },
+    {
+      "seconds": 7.076186459045857,
+      "objective": 341.6
+    },
+    {
+      "seconds": 10.423082334047649,
+      "objective": 159.6
+    },
+    {
+      "seconds": 10.925837792048696,
+      "objective": 126.0
+    },
+    {
+      "seconds": 11.449543834023643,
+      "objective": 117.6
+    },
+    {
+      "seconds": 11.972273542021867,
+      "objective": 110.6
+    },
+    {
+      "seconds": 14.212637584016193,
+      "objective": 101.5
+    },
+    {
+      "seconds": 15.305726459017023,
+      "objective": 83.3
+    },
+    {
+      "seconds": 16.618282209034078,
+      "objective": 76.3
+    },
+    {
+      "seconds": 17.414458459010348,
+      "objective": 48.3
+    },
+    {
+      "seconds": 17.884748000011314,
+      "objective": 47.6
+    },
+    {
+      "seconds": 18.292779459035955,
+      "objective": 40.6
+    }
+  ],
+  "phases": [
+    {
+      "phase": "global",
+      "seconds": 18.033332374994643,
+      "solver_status": "OPTIMAL",
+      "relaxed_activities": 54,
+      "bound_scope": "full_model"
+    }
+  ],
+  "operators": {
+    "delay": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "bottleneck": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "sharing": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "precedence": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "contract": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "diversify": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    }
+  },
+  "policy": "local-witnessed-sharing-v1",
+  "source_revision": "966c976005db2e3e40a691cff268fdb8f396a5df",
+  "official_validator_available": false,
+  "ortools_version": "9.15.6755",
+  "preprocessing_seconds": 0.0010103749809786677,
+  "peak_rss_mb": 331.578125,
+  "deadline_exceeded": false,
+  "python_version": "3.12.14",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "cpu_count": 10,
+  "memory_enforcement": "CP-SAT advisory limit; no portable OS address-space cap",
+  "total_elapsed_seconds": 18.336967666982673
+}

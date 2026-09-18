@@ -1,0 +1,181 @@
+{
+  "directory": "incumbent-0009",
+  "diagnostics": {
+    "status": "feasible",
+    "strategy": "random_lns",
+    "config": {
+      "strategy": "random_lns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 4.9990111669758335,
+      "workers": 1,
+      "seed": 11,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "objective": 7752.0,
+    "global_lower_bound": 6053.0,
+    "absolute_gap": 1699.0,
+    "bound_scope": "full model under local-witnessed-sharing-v1; not an official-validator bound",
+    "optimality_scope": "configured specification policy only",
+    "time_to_first_feasible": 0.03451333404518664,
+    "elapsed_seconds": 4.644787334022112,
+    "model_build_seconds": 0.22655508399475366,
+    "search_seconds": 4.285666375071742,
+    "validation_seconds": 0.07582516793627292,
+    "trajectory": [
+      {
+        "seconds": 0.03451333404518664,
+        "objective": 9162.0
+      },
+      {
+        "seconds": 2.5212894590222277,
+        "objective": 8865.4
+      },
+      {
+        "seconds": 2.744086334016174,
+        "objective": 8808.4
+      },
+      {
+        "seconds": 2.8020864170393907,
+        "objective": 8701.0
+      },
+      {
+        "seconds": 2.861708709038794,
+        "objective": 8568.0
+      },
+      {
+        "seconds": 2.9188194590387866,
+        "objective": 8142.0
+      },
+      {
+        "seconds": 3.019397459051106,
+        "objective": 7852.0
+      },
+      {
+        "seconds": 3.0798882090020925,
+        "objective": 7755.0
+      },
+      {
+        "seconds": 3.125210625003092,
+        "objective": 7752.0
+      }
+    ],
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 1.5015848749899305,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 54,
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.3323616250418127,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 21,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 0.25770541600650176,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 11,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 0.5758949170121923,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 25,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 0.5831886249943636,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 36,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 0.03493091702694073,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 25,
+        "bound_scope": "subproblem_not_global"
+      }
+    ],
+    "operators": {
+      "delay": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "bottleneck": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "sharing": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "precedence": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "contract": {
+        "calls": 0,
+        "seconds": 0.0,
+        "feasible": 0,
+        "improvement": 0.0,
+        "best_updates": 0,
+        "weight": 1.0,
+        "feasible_rate": 0.0,
+        "improvement_per_second": 0.0
+      },
+      "diversify": {
+        "calls": 5,
+        "seconds": 2.8319857079768553,
+        "feasible": 3,
+        "improvement": 1410.0,
+        "best_updates": 1,
+        "weight": 2.58203125,
+        "feasible_rate": 0.6,
+        "improvement_per_second": 497.8838685620667
+      }
+    },
+    "policy": "local-witnessed-sharing-v1",
+    "source_revision": "966c976005db2e3e40a691cff268fdb8f396a5df",
+    "official_validator_available": false,
+    "ortools_version": "9.15.6755",
+    "preprocessing_seconds": 0.0010447079548612237,
+    "peak_rss_mb": 343.125,
+    "deadline_exceeded": false
+  }
+}
