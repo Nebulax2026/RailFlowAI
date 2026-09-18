@@ -1,0 +1,384 @@
+{
+  "organizer_sample": {
+    "scenario": "A",
+    "feasible": false,
+    "hard_violations": [
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H01:WB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A023', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H01:WB week 27: 2 possessions including 1 protection reservations exceed supply 1; activities ['A023', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:EB week 21: 2 possessions including 1 protection reservations exceed supply 1; activities ['A004', 'A025', 'A074']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:EB week 22: 2 possessions including 2 protection reservations exceed supply 1; activities ['A004', 'A009']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:EB week 23: 2 possessions including 2 protection reservations exceed supply 1; activities ['A004', 'A009']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A009', 'A072']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 9: 2 possessions including 1 protection reservations exceed supply 1; activities ['A046', 'A058']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 10: 2 possessions including 1 protection reservations exceed supply 1; activities ['A031', 'A046', 'A058']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 11: 2 possessions including 1 protection reservations exceed supply 1; activities ['A031', 'A046', 'A069']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 12: 2 possessions including 1 protection reservations exceed supply 1; activities ['A046', 'A069']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 25: 3 possessions including 2 protection reservations exceed supply 1; activities ['A013', 'A023', 'A046', 'A056', 'A066']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 26: 2 possessions including 2 protection reservations exceed supply 1; activities ['A013', 'A035', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:S02:WB week 27: 3 possessions including 2 protection reservations exceed supply 2; activities ['A023', 'A035', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H01:EB week 24: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A036', 'A042', 'A043', 'A055']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H01:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A036', 'A043']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H01:WB week 18: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H01:WB week 20: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 11: 2 possessions including 1 protection reservations exceed supply 1; activities ['A003', 'A041']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 12: 2 possessions including 1 protection reservations exceed supply 1; activities ['A003', 'A041']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 16: 2 possessions including 1 protection reservations exceed supply 1; activities ['A003', 'A007', 'A011', 'A040', 'A057']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 23: 4 possessions including 3 protection reservations exceed supply 1; activities ['A001', 'A011', 'A042', 'A057']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S14:WB week 16: 3 possessions including 2 protection reservations exceed supply 2; activities ['A012', 'A021', 'A039', 'A049']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S14:WB week 17: 3 possessions including 2 protection reservations exceed supply 2; activities ['A012', 'A021', 'A039', 'A064']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S14:WB week 18: 3 possessions including 2 protection reservations exceed supply 2; activities ['A002', 'A012', 'A039']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S16:EB week 17: 3 possessions including 1 protection reservations exceed supply 2; activities ['A008', 'A017', 'A040', 'A057']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S16:EB week 20: 3 possessions including 1 protection reservations exceed supply 2; activities ['A008', 'A017', 'A040', 'A057']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S17:EB week 11: 3 possessions including 2 protection reservations exceed supply 2; activities ['A003', 'A038', 'A041']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S17:EB week 13: 3 possessions including 2 protection reservations exceed supply 2; activities ['A003', 'A019', 'A040']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S17:EB week 16: 3 possessions including 2 protection reservations exceed supply 2; activities ['A003', 'A007', 'A011', 'A040']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:S18:EB week 23: 3 possessions including 2 protection reservations exceed supply 2; activities ['A001', 'A011', 'A042']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "SEC:ALP:H01_H02:EB week 21: 2 possessions including 1 protection reservations exceed supply 1; activities ['A004', 'A025', 'A074']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "SEC:BET:H01_H02:EB week 24: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A042', 'A043', 'A055']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "SEC:BET:H01_H02:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A043']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "SEC:BET:H01_H02:WB week 18: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "SEC:BET:H01_H02:WB week 20: 2 possessions including 1 protection reservations exceed supply 1; activities ['A012', 'A049']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "SEC:BET:H02_S15:EB week 23: 4 possessions including 3 protection reservations exceed supply 2; activities ['A001', 'A011', 'A042', 'A057']."
+      }
+    ],
+    "soft_scores": {
+      "overrun_days_total": 28,
+      "contracts_overrunning": 3,
+      "earliness_days_total": 21,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 28
+      },
+      "priority_weighted_score": 48.3,
+      "completion_percent": 100.0
+    },
+    "detail": {
+      "nights_scheduled": 192,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 48.3,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "local-protection-reservations-v1"
+    }
+  },
+  "previous_A": {
+    "scenario": "A",
+    "feasible": false,
+    "hard_violations": [
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H01:WB week 21: 2 possessions including 2 protection reservations exceed supply 1; activities ['A023', 'A074']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 9: 2 possessions including 1 protection reservations exceed supply 1; activities ['A046', 'A069']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 10: 2 possessions including 1 protection reservations exceed supply 1; activities ['A046', 'A069']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 11: 2 possessions including 2 protection reservations exceed supply 1; activities ['A046', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 12: 2 possessions including 2 protection reservations exceed supply 1; activities ['A046', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 13: 2 possessions including 2 protection reservations exceed supply 1; activities ['A046', 'A070']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 18: 2 possessions including 1 protection reservations exceed supply 1; activities ['A050', 'A056']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 21: 2 possessions including 2 protection reservations exceed supply 1; activities ['A013', 'A074']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:ALP:H02:WB week 25: 2 possessions including 2 protection reservations exceed supply 1; activities ['A013', 'A023', 'A066']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H01:EB week 24: 2 possessions including 1 protection reservations exceed supply 1; activities ['A036', 'A042', 'A043', 'A057']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H01:EB week 27: 2 possessions including 1 protection reservations exceed supply 1; activities ['A036', 'A043']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 16: 2 possessions including 1 protection reservations exceed supply 1; activities ['A007', 'A008', 'A055', 'A071']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 21: 2 possessions including 2 protection reservations exceed supply 1; activities ['A001', 'A011', 'A074']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 23: 2 possessions including 1 protection reservations exceed supply 1; activities ['A001', 'A007']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 25: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A042']."
+      },
+      {
+        "rule": "closure",
+        "severity": "hard",
+        "detail": "PLAT:BET:H02:EB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A017', 'A042']."
+      }
+    ],
+    "soft_scores": {
+      "overrun_days_total": 28,
+      "contracts_overrunning": 3,
+      "earliness_days_total": 84,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 28
+      },
+      "priority_weighted_score": 32.2,
+      "completion_percent": 100.0
+    },
+    "detail": {
+      "nights_scheduled": 192,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 32.2,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "local-protection-reservations-v1"
+    }
+  },
+  "previous_B": {
+    "scenario": "B",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 0,
+      "contracts_overrunning": 0,
+      "earliness_days_total": 105,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 6,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "priority_weighted_score": 0.0,
+      "completion_percent": 100.0,
+      "objective_score": 30,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "nights_scheduled": 189,
+      "eclo_nights": 6,
+      "score_breakdown": {
+        "delay": 0,
+        "excess_supply": 0,
+        "eclo": 30
+      },
+      "safety_policy": "local-protection-reservations-v1"
+    }
+  },
+  "previous_C": {
+    "scenario": "C",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 21,
+      "contracts_overrunning": 2,
+      "earliness_days_total": 112,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 21
+      },
+      "priority_weighted_score": 25.2,
+      "completion_percent": 100.0,
+      "objective_score": 25.2,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "nights_scheduled": 192,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 25.2,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "local-protection-reservations-v1"
+    }
+  }
+}

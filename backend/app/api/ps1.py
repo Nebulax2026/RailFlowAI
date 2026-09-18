@@ -9,6 +9,7 @@ from app.ps1.exporter import scenario_csvs, solutions_zip
 from app.ps1.jobs import job_manager
 from app.ps1.models import Scenario, SolveJob
 from app.ps1.parser import EXPECTED_FILES, InstanceValidationError
+from app.ps1.evidence import activity_details
 
 router = APIRouter()
 MAX_FILE_BYTES = 2_000_000
@@ -72,6 +73,12 @@ def get_scenario(job_id: str, scenario: Scenario) -> dict:
         "accesses": [asdict(item) for item in solution.accesses],
         "occupancy": [asdict(item) for item in solution.occupancy],
         "downloads": list(files),
+        "phase": run.phase,
+        "termination_reason": run.termination_reason,
+        "solution_revision": solution.solution_revision,
+        "solver_stats": run.solver_stats,
+        "score_breakdown": solution.validation.detail["score_breakdown"],
+        "activity_details": activity_details(job.instance, solution),
     }
 
 
@@ -89,11 +96,13 @@ def download_job(job_id: str) -> Response:
 
 
 @router.get("/jobs/{job_id}/scenarios/{scenario}/files/{filename}")
-def download_scenario_file(job_id: str, scenario: Scenario, filename: str) -> Response:
+def download_scenario_file(job_id: str, scenario: Scenario, filename: str, revision: int | None = None) -> Response:
     job = _require_job(job_id)
     solution = job.scenarios[scenario].solution
     if not solution or not solution.validation.feasible:
         raise HTTPException(status_code=409, detail="A validated scenario output is not available.")
+    if revision is not None and revision != solution.solution_revision:
+        raise HTTPException(status_code=409, detail="A newer result is available. Refresh the scenario before downloading.")
     files = scenario_csvs(solution)
     if filename not in files:
         raise HTTPException(status_code=404, detail="Unknown scenario output file.")
@@ -134,6 +143,11 @@ def _job_payload(job: SolveJob) -> dict:
                 "error": run.error,
                 "feasible": run.solution.validation.feasible if run.solution else None,
                 "objective_score": run.solution.validation.soft_scores.get("objective_score") if run.solution else None,
+                "phase": run.phase,
+                "termination_reason": run.termination_reason,
+                "solution_revision": run.solution.solution_revision if run.solution else 0,
+                "solver_stats": run.solver_stats,
+                "scores": run.solution.validation.soft_scores if run.solution else None,
             }
             for scenario, run in job.scenarios.items()
         },

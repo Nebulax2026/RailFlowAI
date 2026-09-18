@@ -2,6 +2,9 @@
 .github
 .env
 **/.next
+**/out
+**/.pytest_cache
+**/.venv
 **/node_modules
 **/__pycache__
 **/*.pyc

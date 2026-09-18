@@ -1,83 +1,35 @@
-# RailFlowAI PS1 Requirements and Technical Design
+# PS1 engine and judging workspace
 
-## Product Goal
+## Data flow
 
-RailFlowAI is a decision-support workspace for an access planner or works controller. A user uploads an undisclosed PS1 instance, runs the three policy scenarios, inspects why work was placed or delayed, and downloads mechanically valid submission files.
+Eight UTF-8 CSVs -> structural/reference/topology checks -> CP-SAT -> official CSV bytes -> independent validation -> immutable published solution revision -> evidence UI/downloads. Inputs are held in memory with a 60-minute TTL. The local data model and the three official CSV headers remain compatible.
 
-Success means every activity workload is scheduled, every exported file has the official schema, no published hard rule is violated, and the policy trade-off is visible without reading solver logs.
+Input validation covers row width, missing fields, enum/boolean/date/integer values, duplicate identifiers/parameters, connected station/sector order, supply topology, matching activity/contract types and valid endpoints. Zero supply is accepted. Cycles are detected iteratively, including cross-contract links. Empty contracts are rejected because no completion date can be calculated.
 
-## Authoritative Inputs
+## Search
 
-The application accepts exactly the eight files listed in the root README. Headers must match the published schema and identifiers must be unique. Cross-file validation covers lines, stations, sectors, locations, contracts, activities, predecessors, buffer rules, dates, bounds, priorities, capacities, workfronts, and weekly access limits.
+Activity/week access and ECLO are decisions. Local contract night variables enforce workfronts. Complete workload, strict-week precedence, scenario deadlines, per-line ECLO continuity, legal possession patterns and work/protection supply are jointly enforced. Explicit group patterns replace approximate weighted packing. See `validator-spec.md` for the conservative safety interpretation and its known organizer-sample differences.
 
-Limits are 2 MB per file and 16 MB per batch. Inputs must be UTF-8. A failed batch returns row/file-oriented errors and never creates a solve job.
+One worker performs A/B/C first searches (30 seconds each), then non-optimal scenarios receive up to 90 seconds each using validated incumbent hints. Model building counts toward the budget; construction checks and an active StopSearch monitor support cancellation. Native solver shutdown and export validation can add a small overhead. No date horizon extension or dropped workload is permitted. A mathematically infeasible instance cannot be promised a solution; time limit, infeasibility, cancellation, validation failure and unexpected error are distinguished.
 
-DataMall is not a solver input. The fictional Alpha/Beta network cannot be mapped safely to real Singapore line and station codes.
+Each improving candidate is serialized and checked before publication. Only a strictly lower verified score replaces a published revision. Equal-score results can update bounds/status without changing CSVs. Optimal means the documented model's primary optimum is proved. Early placement is optimized only with that optimum fixed.
 
-## Topology and Scheduling Semantics
+## API additions
 
-- An activity's sector endpoints must share line and bound.
-- Expansion includes every sector from the first endpoint through the last and every platform at the stations traversed, including endpoints.
-- An activity receives at most one access occurrence per week.
-- `access_night` is local to contract, activity type, and week and is bounded by the contract's weekly allocation.
-- Concurrent occurrences on one local access night cannot exceed the contract's workfront count.
-- `PM` occupies a possession alone. A `PC` can share with up to three `C` activities. Remaining `C` activities pack four per possession.
-- Every activity occurrence emits occupancy for its complete expanded span. Co-sharing labels are deterministic within each location-week.
-- Predecessor activities must complete in an earlier week. Links may cross contracts, but the predecessor graph must be acyclic.
-- A standard occurrence contributes 1.0 workload; ECLO contributes 1.5.
+Existing job/scenario/download routes are preserved. Job scenario states add `phase`, `termination_reason`, `solution_revision`, `solver_stats`, and `scores`. Phases are queued, first_search, waiting_improvement, improving, finished. Statistics include elapsed/first-feasible seconds, best score/bound, relative gap, model variables, search workers and process peak memory when available.
 
-The implementation is deliberately conservative where the brief is ambiguous. The internal validator is independent of CP-SAT variables and re-parses the final CSVs.
+Scenario detail is available as soon as a validated incumbent exists, even while running. It adds `score_breakdown` and `activity_details` (workload, dates, predecessor completion, local nights, co-workers, protection footprint and possession memberships). Diagnostics do not infer counterfactual causes of delay.
 
-## Scenario Policies
+File downloads accept optional `revision`; stale revisions receive 409 instead of silently downloading a different result. ZIPs contain only validated scenarios, `validation_summary.json`, and a manifest listing scenarios/revisions. Cancellation retains existing results. Expiry deletes results and cancels queued/running work.
 
-### Scenario A
+## Workspace
 
-Nominal `LOCATION_SUPPLY` is hard. ECLO is forbidden. The objective minimizes planned-completion overrun with contract-priority weighting and earlier placement as a deterministic tie-breaker.
+The UI compares A/B/C completion, overrun, excess work slots, ECLO, score and search status. Revision-aware polling retrieves improvements and ignores responses from an old job. Filters select contract, activity or line. Activities have a timeline and table, actual dates, workload, predecessor, shared peers, work/buffer/opposite-bound/interchange lists and per-location memberships. A separate location/week table exposes work and protection usage and related activities. Only internal validation is claimed.
 
-### Scenario B
+DataMall stays contextual. No what-if replanning, natural-language querying, publishing, video production or repository migration is included.
 
-Planned completion dates are hard. Capacity may exceed nominal supply. The solver introduces only the minimum ECLO compression needed to fit an activity between planned start and completion. The objective is `7 * excess access nights + 5 * ECLO nights`.
+## Acceptance and reproducibility
 
-### Scenario C
+Tests include mutated exports, handwritten safety footprints, legal sharing/separate slots, ECLO precedence compression, independent tiny-instance objective enumeration, cancellation, partial failure, expiry, revision downloads and ZIP contents. Public generation runs the same search policy and records platform/timing/gap. Seed-42 congestion and doubled-demand probes record failures as well as successes.
 
-Each location-week may use at most one possession above nominal capacity. The objective combines priority-weighted overrun, excess access nights, and ECLO. If ECLO is used, each affected line's ECLO weeks must fit one continuous two-week window; cross-line Live work affects both windows.
-
-## Job Lifecycle and API
-
-`POST /api/ps1/jobs` accepts eight multipart fields named `files`. `public=true` loads the bundled dataset. It returns HTTP 202 with instance counts and scenario states.
-
-Jobs move through `queued`, `running`, `completed`, `failed`, or `cancelled`. Each scenario has its own status, progress, message, feasibility, and objective score. A single worker protects hosted CPU capacity. Cancellation is cooperative between scenario solves. Jobs expire after 60 minutes.
-
-Scenario detail contains validation, explanations, contract results, access rows, and occupancy rows. CSV and ZIP endpoints are available only for internally feasible scenarios.
-
-## Workspace Requirements
-
-The first screen is the working product, not a landing page. It provides:
-
-- Eight-file checklist, drag-and-drop, and public-data action.
-- A/B/C progress and cancellation.
-- Scenario score, overrun, excess supply, and ECLO metrics.
-- Weekly access chart, capacity hotspots, contract completion table, and explanations.
-- Individual CSV and combined ZIP downloads.
-- DataMall service status with explicit separation from scheduling inputs.
-- Responsive layouts for desktop and mobile without overlapping controls or clipped labels.
-
-## Operational Requirements
-
-- Uploaded data remains in process memory and expires after 60 minutes.
-- AccountKey remains server-side.
-- API errors must not expose secrets or uploaded rows in logs.
-- The Docker image serves static frontend assets and API from one origin.
-- `/api/health` is the deployment health check.
-- CI runs backend tests, frontend type checking/build, and Docker build.
-
-## Acceptance Criteria
-
-- The public instance parses and all 54 activities and 192 requested access units are represented.
-- The supplied Scenario A sample validates with zero hard violations.
-- Generated A/B/C outputs re-parse with exact headers and zero internal hard violations.
-- Scenario A has zero ECLO and zero capacity excess.
-- Scenario B has zero planned-date overrun.
-- Scenario C never exceeds its one-possession elasticity and enforces ECLO continuity when used.
-- The combined ZIP has three scenario directories and `validation_summary.json`.
-- The production container supports the complete public-data workflow from one public origin.
+CI runs pytest, TypeScript/build, and Docker build. Production static assets and API use one origin. `RAILFLOW_STATIC_DIR` optionally selects a prebuilt static export for local single-origin checks; Docker defaults to its bundled static directory.

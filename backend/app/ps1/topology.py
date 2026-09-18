@@ -53,11 +53,16 @@ def closure_locations(instance: Instance, activity: Activity) -> set[str]:
     start_sector = by_id[activity.start_location_id.rsplit(":", 1)[0]]
     end_sector = by_id[activity.end_location_id.rsplit(":", 1)[0]]
     low, high = sorted((start_sector.seq, end_sector.seq))
+    buffer_sectors = [sector for sector in sectors
+                      if low - rule.up_to_buffer_sectors <= sector.seq <= high + rule.up_to_buffer_sectors]
     buffered = {
         f"{sector.sector_id}:{bound}"
         for sector in sectors
         if low - rule.up_to_buffer_sectors <= sector.seq <= high + rule.up_to_buffer_sectors
     }
+    if rule.up_to_buffer_sectors:
+        buffered.update(f"PLAT:{line}:{station}:{bound}" for sector in buffer_sectors
+                        for station in (sector.from_station_id, sector.to_station_id))
     reserved = actual | buffered
     if rule.opposite_bound_required:
         other_bound = "WB" if bound == "EB" else "EB"
@@ -74,3 +79,15 @@ def closure_locations(instance: Instance, activity: Activity) -> set[str]:
                     }
                 )
     return {location for location in reserved if location in instance.supply} - actual
+
+
+def protection_details(instance: Instance, activity: Activity) -> dict[str, list[str]]:
+    work = set(activity_locations(instance, activity))
+    protected = closure_locations(instance, activity)
+    source = instance.supply[activity.start_location_id]
+    return {
+        "work": sorted(work),
+        "buffer": sorted(p for p in protected if instance.supply[p].line_code == source.line_code and instance.supply[p].bound == source.bound),
+        "opposite_bound": sorted(p for p in protected if instance.supply[p].line_code == source.line_code and instance.supply[p].bound != source.bound),
+        "interchange": sorted(p for p in protected if instance.supply[p].line_code != source.line_code),
+    }

@@ -1,0 +1,82 @@
+{
+  "seed": 42,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.14.2",
+  "seconds_per_scenario": 30,
+  "runs": [
+    {
+      "case": "congested",
+      "scenario": "A",
+      "activities": 54,
+      "feasible": false,
+      "termination_reason": "infeasible",
+      "detail": "Scenario A: infeasible; no complete validated schedule available.",
+      "wall_seconds": 1.180022899992764,
+      "process_peak_memory_mb": 149.6
+    },
+    {
+      "case": "congested",
+      "scenario": "B",
+      "activities": 54,
+      "feasible": true,
+      "elapsed_seconds": 30.07888859999366,
+      "first_feasible_seconds": 6.513358799973503,
+      "best_score": 379,
+      "best_bound": 379.0,
+      "relative_gap": 0.0,
+      "optimal": true,
+      "termination_reason": "optimal",
+      "model_variables": 17729,
+      "search_workers": 8,
+      "process_peak_memory_mb": 476.28,
+      "wall_seconds": 30.081599300028756
+    },
+    {
+      "case": "congested",
+      "scenario": "C",
+      "activities": 54,
+      "feasible": true,
+      "elapsed_seconds": 31.932192999986,
+      "first_feasible_seconds": 21.94827399996575,
+      "best_score": 3040.3,
+      "best_bound": 367.1,
+      "relative_gap": 0.8792553366444101,
+      "optimal": false,
+      "termination_reason": "time_limit",
+      "model_variables": 39717,
+      "search_workers": 8,
+      "process_peak_memory_mb": 797.44,
+      "wall_seconds": 31.950975099985953
+    },
+    {
+      "case": "double_demand",
+      "scenario": "A",
+      "activities": 108,
+      "feasible": false,
+      "termination_reason": "time_limit",
+      "detail": "Scenario A: time_limit; no complete validated schedule available.",
+      "wall_seconds": 28.61902270000428,
+      "process_peak_memory_mb": 1089.84
+    },
+    {
+      "case": "double_demand",
+      "scenario": "B",
+      "activities": 108,
+      "feasible": false,
+      "termination_reason": "time_limit",
+      "detail": "Scenario B: time_limit; no complete validated schedule available.",
+      "wall_seconds": 30.25999099999899,
+      "process_peak_memory_mb": 1089.84
+    },
+    {
+      "case": "double_demand",
+      "scenario": "C",
+      "activities": 108,
+      "feasible": false,
+      "termination_reason": "time_limit",
+      "detail": "Scenario C: time_limit; no complete validated schedule available.",
+      "wall_seconds": 31.68669130001217,
+      "process_peak_memory_mb": 1652.08
+    }
+  ]
+}

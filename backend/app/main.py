@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,7 +35,7 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
-STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+STATIC_DIR = Path(os.environ.get("RAILFLOW_STATIC_DIR", str(Path(__file__).resolve().parents[1] / "static"))).resolve()
 if STATIC_DIR.exists():
     app.mount("/_next", StaticFiles(directory=STATIC_DIR / "_next"), name="next-assets")
 

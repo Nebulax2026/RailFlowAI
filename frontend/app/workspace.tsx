@@ -2,12 +2,13 @@
 
 import { Activity, AlertTriangle, Check, CircleStop, Clock3, Download, FileSpreadsheet, Gauge, LoaderCircle, Network, Play, Radio, ShieldCheck, UploadCloud, X } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Inspection, type EvidenceActivity, type LocationUsage } from "./inspection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const REQUIRED_FILES = ["01_LINES.csv", "02_STATIONS.csv", "03_SECTORS.csv", "04_LOCATION_SUPPLY.csv", "05_BUFFER_LOCATION.csv", "06_PARAMETERS.csv", "07_PROJECT_DETAILS.csv", "08_ACTIVITY_DETAILS.csv"];
 type Scenario = "A" | "B" | "C";
 type Status = "queued" | "running" | "completed" | "failed" | "cancelled";
-type RunState = { status: Status; progress: number; message: string; error?: string | null; feasible?: boolean | null; objective_score?: number | null };
+type RunState = { status: Status; progress: number; message: string; error?: string | null; feasible?: boolean | null; objective_score?: number | null; phase: string; termination_reason?: string; solution_revision: number; solver_stats: { elapsed_seconds?: number; optimal?: boolean; relative_gap?: number }; scores?: Record<string, number> };
 type Job = {
   job_id: string; status: Status; source: string; expires_at: string; error?: string | null;
   instance: { lines: number; stations: number; sectors: number; locations: number; contracts: number; activities: number; total_accesses: number; horizon_start: string; horizon_weeks: number };
@@ -15,10 +16,14 @@ type Job = {
 };
 type ScenarioDetail = {
   scenario: Scenario; status: string;
+  solution_revision: number; phase: string; termination_reason?: string;
+  solver_stats: { optimal?: boolean; relative_gap?: number; elapsed_seconds?: number };
+  score_breakdown: { delay: number; excess_supply: number; eclo: number };
+  activity_details: EvidenceActivity[];
   validation: {
     feasible: boolean; hard_violations: { rule: string; severity: string; detail: string }[];
     soft_scores: Record<string, number | string | Record<string, number>>;
-    detail: { capacity_hotspots: { location_id: string; week: number; used: number; capacity: number }[]; nights_scheduled: number; eclo_nights: number };
+    detail: { capacity_hotspots: LocationUsage[]; location_usage: LocationUsage[]; nights_scheduled: number; eclo_nights: number };
   };
   explanations: string[];
   results: { scenario: string; contract_number: string; simulated_completion_date: string; overrun_days: number }[];
@@ -52,21 +57,33 @@ export default function Workspace() {
 
   useEffect(() => { void loadDataMall(); }, [loadDataMall]);
   useEffect(() => {
-    if (!job || !["queued", "running"].includes(job.status)) return;
-    const timer = window.setInterval(async () => {
+    const jobId = job?.job_id;
+    if (!jobId) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const loaded = new Map<string, string>();
+    async function poll() {
       try {
-        const next = await api<Job>(`/api/ps1/jobs/${job.job_id}`);
-        setJob(next);
+        const next = await api<Job>(`/api/ps1/jobs/${jobId}`);
+        if (disposed) return;
         for (const scenario of ["A", "B", "C"] as const) {
-          if (next.scenarios[scenario].status === "completed" && !details[scenario]) {
-            const detail = await api<ScenarioDetail>(`/api/ps1/jobs/${job.job_id}/scenarios/${scenario}`);
+          const run = next.scenarios[scenario];
+          const version = `${run.solution_revision}-${run.phase}-${run.termination_reason}`;
+          if (run.feasible && loaded.get(scenario) !== version) {
+            const detail = await api<ScenarioDetail>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}`);
+            if (disposed) return;
             setDetails((current) => ({ ...current, [scenario]: detail }));
+            loaded.set(scenario, version);
           }
         }
-      } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not refresh the solve job."); }
-    }, 1200);
-    return () => window.clearInterval(timer);
-  }, [job, details]);
+        setJob(next);
+        if (!["queued", "running"].includes(next.status)) return;
+      } catch (requestError) { if (!disposed) setError(requestError instanceof Error ? requestError.message : "Could not refresh the solve job."); }
+      if (!disposed) timer = setTimeout(poll, 1200);
+    }
+    void poll();
+    return () => { disposed = true; clearTimeout(timer); };
+  }, [job?.job_id]);
 
   const allFilesReady = REQUIRED_FILES.every((name) => files.has(name)) && files.size === REQUIRED_FILES.length;
   const selected = details[selectedScenario];
@@ -124,6 +141,7 @@ export default function Workspace() {
         </aside>
       </section>
 
+      {job && <div className="comparison-panel data-panel"><h2>Policy comparison</h2><p>First validated result target: 30 seconds per policy. Each policy may improve for up to 120 seconds total. Results are internally validated.</p><div className="table-wrap"><table><thead><tr><th>Policy</th><th>Work complete</th><th>Overrun</th><th>Excess slots</th><th>ECLO</th><th>Score</th><th>Search state</th></tr></thead><tbody>{(["A", "B", "C"] as const).map(s => { const run = job.scenarios[s]; return <tr key={s}><th>{s}</th><td>{run.scores ? `${run.scores.completion_percent}%` : "Pending"}</td><td>{run.scores?.overrun_days_total ?? "—"}</td><td>{run.scores?.excess_access_nights_total ?? "—"}</td><td>{run.scores?.eclo_nights_total ?? "—"}</td><td>{run.objective_score ?? "—"}</td><td>{run.termination_reason === "optimal" ? "Optimality proved" : run.phase === "improving" ? "Improving" : run.phase === "first_search" ? "Searching" : run.feasible ? "Validated result available" : run.termination_reason === "infeasible" ? "Infeasible under documented policy" : run.termination_reason === "time_limit" ? "No solution within time limit" : run.status}</td></tr>; })}</tbody></table></div><p>Downloadable policies: {Object.entries(job.scenarios).filter(([,run]) => run.feasible).map(([s,run]) => `${s} (revision ${run.solution_revision})`).join(", ") || "None yet"}. The ZIP manifest records included revisions.</p></div>}
       {job && <section className="results-workspace">
         <div className="scenario-rail">
           <div className="scenario-heading"><span className="step">02</span><div><h2>Policy runs</h2><p>{job.instance.activities} activities · {job.instance.total_accesses} accesses · {job.instance.horizon_weeks} weeks</p></div></div>
@@ -150,11 +168,13 @@ function ScenarioView({ detail, jobId }: { detail: ScenarioDetail; jobId: string
     <div className="detail-header"><div><span className="eyebrow">Scenario {detail.scenario}</span><h2>{detail.scenario === "A" ? "Strict supply, flexible schedule" : detail.scenario === "B" ? "Strict schedule, flexible supply" : "Balanced trade-off"}</h2></div><span className={`validation-badge ${detail.validation.feasible ? "valid" : "invalid"}`}><ShieldCheck size={17} />{detail.validation.feasible ? "Internally validated" : "Hard violations"}</span></div>
     <div className="metric-grid"><Metric label="Objective score" value={String(scores.objective_score ?? "-")} /><Metric label="Overrun days" value={String(scores.overrun_days_total ?? 0)} /><Metric label="Excess access" value={String(scores.excess_access_nights_total ?? 0)} /><Metric label="ECLO nights" value={String(scores.eclo_nights_total ?? 0)} /></div>
     <div className="explanation-strip">{detail.explanations.map((item) => <p key={item}>{item}</p>)}</div>
+    <p className="revision-note">Revision {detail.solution_revision} · {detail.solver_stats.optimal ? "Optimality proved for the documented model" : "Best validated result; optimum not proved"} · Cost: delay {detail.score_breakdown.delay}, excess supply {detail.score_breakdown.excess_supply}, ECLO {detail.score_breakdown.eclo}.</p>
+    <Inspection activities={detail.activity_details} usage={detail.validation.detail.location_usage} />
     <div className="visual-grid">
       <section className="data-panel"><div className="subheading"><h3>Weekly access load</h3><span>{detail.accesses.length} rows</span></div><div className="week-chart">{weeks.map(([week, count]) => <div key={week} title={`Week ${week}: ${count} accesses`}><i style={{ height: `${Math.max(8, count / maxWeekAccess * 100)}%` }} /><small>{week}</small></div>)}</div></section>
       <section className="data-panel"><div className="subheading"><h3>Capacity hotspots</h3><span>{hotspots.length} at or above supply</span></div><div className="hotspot-list">{hotspots.slice(0, 8).map((item) => <div key={`${item.location_id}-${item.week}`}><span><strong>{item.location_id}</strong><small>Week {item.week}</small></span><i><b style={{ width: `${item.used / maxUsed * 100}%` }} /></i><em>{item.used}/{item.capacity}</em></div>)}{!hotspots.length && <p className="muted">No locations reach nominal capacity.</p>}</div></section>
     </div>
-    <section className="data-panel results-table-panel"><div className="subheading"><h3>Contract completion</h3><div className="csv-links">{["SCHEDULE_ACCESS.csv", "SCHEDULE_OCCUPANCY.csv", "RESULTS.csv"].map((file) => <a key={file} title={`Download ${file}`} href={`${API_BASE}/api/ps1/jobs/${jobId}/scenarios/${detail.scenario}/files/${file}`}><Download size={14} />{file.replace("SCHEDULE_", "").replace(".csv", "")}</a>)}</div></div><div className="table-wrap"><table><thead><tr><th>Contract</th><th>Completion</th><th>Overrun</th><th>State</th></tr></thead><tbody>{detail.results.map((row) => <tr key={row.contract_number}><td>{row.contract_number}</td><td>{row.simulated_completion_date}</td><td>{row.overrun_days} days</td><td><span className={`row-state ${row.overrun_days ? "late" : "on-time"}`}>{row.overrun_days ? "Overrun" : "On plan"}</span></td></tr>)}</tbody></table></div></section>
+    <section className="data-panel results-table-panel"><div className="subheading"><h3>Contract completion</h3><div className="csv-links">{["SCHEDULE_ACCESS.csv", "SCHEDULE_OCCUPANCY.csv", "RESULTS.csv"].map((file) => <a key={file} title={`Download ${file}`} href={`${API_BASE}/api/ps1/jobs/${jobId}/scenarios/${detail.scenario}/files/${file}?revision=${detail.solution_revision}`}><Download size={14} />{file.replace("SCHEDULE_", "").replace(".csv", "")}</a>)}</div></div><div className="table-wrap"><table><thead><tr><th>Contract</th><th>Completion</th><th>Overrun</th><th>State</th></tr></thead><tbody>{detail.results.map((row) => <tr key={row.contract_number}><td>{row.contract_number}</td><td>{row.simulated_completion_date}</td><td>{row.overrun_days} days</td><td><span className={`row-state ${row.overrun_days ? "late" : "on-time"}`}>{row.overrun_days ? "Overrun" : "On plan"}</span></td></tr>)}</tbody></table></div></section>
   </>;
 }
 

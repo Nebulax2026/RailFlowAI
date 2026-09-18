@@ -1,12 +1,12 @@
 from __future__ import annotations
-
 import csv
 import io
 from collections import Counter, defaultdict
-from datetime import date, timedelta
-
-from app.ps1.models import AccessAssignment, ContractResult, Instance, OccupancyAssignment, Scenario, ValidationReport
-from app.ps1.topology import activity_locations
+from datetime import date
+from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ValidationReport
+from app.ps1.topology import activity_locations, affected_lines
+from app.ps1.safety import legal_mix, possession_usage
+from app.ps1.scoring import FORMULA_VERSION, delay_coefficient, week_end
 
 OUTPUT_HEADERS = {
     "SCHEDULE_ACCESS.csv": ("activity_id", "access_seq", "week", "eclo", "access_night"),
@@ -15,164 +15,113 @@ OUTPUT_HEADERS = {
 }
 
 
-def validate_exported_csvs(instance: Instance, scenario: Scenario, files: dict[str, bytes]) -> ValidationReport:
-    rows = {}
-    for filename, headers in OUTPUT_HEADERS.items():
-        if filename not in files:
-            return ValidationReport(scenario.value, False, [{"rule": "schema", "severity": "hard", "detail": f"Missing {filename}."}], {}, {})
-        reader = csv.DictReader(io.StringIO(files[filename].decode("utf-8-sig")))
-        if tuple(reader.fieldnames or ()) != headers:
-            return ValidationReport(scenario.value, False, [{"rule": "schema", "severity": "hard", "detail": f"Invalid headers in {filename}."}], {}, {})
-        rows[filename] = list(reader)
+def validate_exported_csvs(instance, scenario, files):
     try:
-        accesses = [AccessAssignment(row["activity_id"], int(row["access_seq"]), int(row["week"]), int(row["eclo"]), int(row["access_night"])) for row in rows["SCHEDULE_ACCESS.csv"]]
-        occupancy = [OccupancyAssignment(row["activity_id"], int(row["week"]), row["location_id"], row["co_share_group"]) for row in rows["SCHEDULE_OCCUPANCY.csv"]]
-        results = [ContractResult(row["scenario"], row["contract_number"], date.fromisoformat(row["simulated_completion_date"]), int(row["overrun_days"])) for row in rows["RESULTS.csv"]]
-    except (KeyError, ValueError) as error:
-        return ValidationReport(scenario.value, False, [{"rule": "schema", "severity": "hard", "detail": f"Output parse error: {error}."}], {}, {})
-    mixed = sorted({item.scenario for item in results})
-    if mixed != [scenario.value]:
-        return ValidationReport(scenario.value, False, [{"rule": "scenario", "severity": "hard", "detail": "RESULTS.csv must contain exactly one matching scenario."}], {}, {})
+        tables = {}
+        if set(files) != set(OUTPUT_HEADERS): raise ValueError("Expected exactly three official CSV files.")
+        for name, headers in OUTPUT_HEADERS.items():
+            reader = csv.DictReader(io.StringIO(files[name].decode("utf-8-sig")), strict=True)
+            if tuple(reader.fieldnames or ()) != headers: raise ValueError(f"Invalid headers in {name}.")
+            tables[name] = list(reader)
+            for number, row in enumerate(tables[name], 2):
+                if None in row or any(v is None or not v.strip() for v in row.values()):
+                    raise ValueError(f"{name} row {number}: missing value or wrong field count.")
+        accesses = [AccessAssignment(r['activity_id'], int(r['access_seq']), int(r['week']), int(r['eclo']), int(r['access_night'])) for r in tables['SCHEDULE_ACCESS.csv']]
+        occupancy = [OccupancyAssignment(r['activity_id'], int(r['week']), r['location_id'], r['co_share_group']) for r in tables['SCHEDULE_OCCUPANCY.csv']]
+        results = [ContractResult(r['scenario'], r['contract_number'], date.fromisoformat(r['simulated_completion_date']), int(r['overrun_days'])) for r in tables['RESULTS.csv']]
+    except (UnicodeError, csv.Error, ValueError, TypeError, KeyError) as error:
+        return ValidationReport(scenario.value, False, [{"rule": "schema", "severity": "hard", "detail": str(error)}], {}, {})
     return validate_solution(instance, scenario, accesses, occupancy, results)
 
 
-def validate_solution(
-    instance: Instance,
-    scenario: Scenario,
-    accesses: list[AccessAssignment],
-    occupancy: list[OccupancyAssignment],
-    results: list[ContractResult],
-) -> ValidationReport:
-    violations: list[dict[str, str]] = []
-    by_activity = defaultdict(list)
-    for access in accesses:
-        by_activity[access.activity_id].append(access)
-        if access.week < 1 or access.week > instance.horizon_weeks:
-            _violate(violations, "horizon", f"{access.activity_id} uses invalid week {access.week}.")
-        if scenario == Scenario.A and access.eclo:
-            _violate(violations, "eclo", f"{access.activity_id} uses ECLO in Scenario A.")
-
-    for activity in instance.activities.values():
-        rows = by_activity[activity.activity_id]
-        workload = sum(1.5 if row.eclo else 1 for row in rows)
-        if workload != activity.total_accesses:
-            _violate(violations, "workload", f"{activity.activity_id} has {workload} of {activity.total_accesses} accesses.")
-        weeks = [row.week for row in rows]
-        if len(weeks) != len(set(weeks)):
-            _violate(violations, "weekly_activity", f"{activity.activity_id} has multiple accesses in one week.")
-        earliest_week = max(1, ((activity.planned_start_date - instance.horizon_start).days // 7) + 1)
-        if weeks and min(weeks) < earliest_week:
-            _violate(violations, "planned_start", f"{activity.activity_id} starts before week {earliest_week}.")
-        if activity.predecessor_activity_id and by_activity[activity.predecessor_activity_id] and rows:
-            if max(item.week for item in by_activity[activity.predecessor_activity_id]) >= min(item.week for item in rows):
-                _violate(violations, "predecessor", f"{activity.activity_id} overlaps predecessor {activity.predecessor_activity_id}.")
-
-    contract_nights = defaultdict(set)
-    workfronts = Counter()
-    for access in accesses:
-        activity = instance.activities.get(access.activity_id)
-        if not activity:
-            _violate(violations, "activity", f"Unknown activity {access.activity_id}.")
-            continue
-        contract = instance.contracts[activity.contract_number]
-        if not 1 <= access.access_night <= contract.number_of_maximum_access_per_week:
-            _violate(violations, "weekly_allocation", f"{activity.activity_id} uses invalid access night {access.access_night}.")
-        contract_nights[(contract.contract_number, activity.activity_type, access.week)].add(access.access_night)
-        workfronts[(contract.contract_number, activity.activity_type, access.week, access.access_night)] += 1
-    for key, nights in contract_nights.items():
-        contract = instance.contracts[key[0]]
-        if len(nights) > contract.number_of_maximum_access_per_week:
-            _violate(violations, "weekly_allocation", f"{key} exceeds weekly night allocation.")
-    for key, count in workfronts.items():
-        contract = instance.contracts[key[0]]
-        if count > contract.number_of_workfronts:
-            _violate(violations, "workfront", f"{key} uses {count} workfronts, maximum {contract.number_of_workfronts}.")
-
-    expected_occupancy = {
-        (access.activity_id, access.week, location)
-        for access in accesses
-        for location in activity_locations(instance, instance.activities[access.activity_id])
-    }
-    actual_occupancy = {(row.activity_id, row.week, row.location_id) for row in occupancy}
-    for missing in sorted(expected_occupancy - actual_occupancy):
-        _violate(violations, "occupancy", f"Missing occupancy {missing}.")
-    for extra in sorted(actual_occupancy - expected_occupancy):
-        _violate(violations, "occupancy", f"Unexpected occupancy {extra}.")
-
-    group_slots = defaultdict(set)
+def validate_solution(instance, scenario, accesses, occupancy, results):
+    violations = []
+    def fail(rule, detail): violations.append({"rule": rule, "severity": "hard", "detail": detail})
+    by_activity = defaultdict(list); nights = defaultdict(set); fronts = defaultdict(set)
+    for row in accesses:
+        if row.activity_id not in instance.activities:
+            fail("activity", f"Unknown activity {row.activity_id}."); continue
+        activity = instance.activities[row.activity_id]; contract = instance.contracts[activity.contract_number]
+        if not 1 <= row.week <= instance.horizon_weeks:
+            fail("horizon", f"{row.activity_id}: week {row.week}."); continue
+        by_activity[row.activity_id].append(row)
+        if row.eclo not in (0, 1): fail("eclo", f"{row.activity_id}: eclo must be 0 or 1.")
+        if scenario == Scenario.A and row.eclo: fail("eclo", f"{row.activity_id}: A forbids ECLO.")
+        if not 1 <= row.access_night <= contract.number_of_maximum_access_per_week: fail("weekly_allocation", f"{row.activity_id}: night {row.access_night}.")
+        key = (activity.contract_number, activity.activity_type, row.week)
+        nights[key].add(row.access_night); fronts[(*key, row.access_night)].add(row.activity_id)
+    completion = {}; weighted_tenths = 0; delivered = 0
+    for aid, activity in instance.activities.items():
+        rows = by_activity[aid]; units = sum(2 + r.eclo for r in rows if r.eclo in (0, 1))
+        delivered += min(units, 2 * activity.total_accesses)
+        if units < 2 * activity.total_accesses: fail("workload", f"{aid}: delivered {units / 2} of {activity.total_accesses}.")
+        if sorted(r.access_seq for r in rows) != list(range(1, len(rows) + 1)): fail("access_seq", f"{aid}: access_seq must be positive, unique and contiguous.")
+        if len({r.week for r in rows}) != len(rows): fail("weekly_activity", f"{aid}: duplicate activity/week.")
+        if [r.week for r in sorted(rows, key=lambda r: r.access_seq)] != sorted(r.week for r in rows): fail("access_seq", f"{aid}: access_seq is not chronological.")
+        earliest = max(1, (activity.planned_start_date - instance.horizon_start).days // 7 + 1)
+        if rows and min(r.week for r in rows) < earliest: fail("planned_start", f"{aid}: starts before week {earliest}.")
+        predecessor = by_activity.get(activity.predecessor_activity_id, [])
+        if rows and predecessor and max(r.week for r in predecessor) >= min(r.week for r in rows): fail("predecessor", f"{aid}: predecessor {activity.predecessor_activity_id} has not finished.")
+        if rows:
+            end = week_end(instance, max(r.week for r in rows)); contract = instance.contracts[activity.contract_number]
+            completion[activity.contract_number] = max(end, completion.get(activity.contract_number, end))
+            weighted_tenths += delay_coefficient(contract, activity) * max(0, (end - contract.planned_completion_date).days)
+    for key, members in fronts.items():
+        if len(members) > instance.contracts[key[0]].number_of_workfronts: fail("workfront", f"{key}: {sorted(members)} exceed workfronts.")
+    for key, values in nights.items():
+        if len(values) > instance.contracts[key[0]].number_of_maximum_access_per_week: fail("weekly_allocation", f"{key}: too many nights.")
+    expected = {(r.activity_id, r.week, loc) for aid, rows in by_activity.items() if aid in instance.activities for r in rows for loc in activity_locations(instance, instance.activities[aid])}
+    actual = Counter((r.activity_id, r.week, r.location_id) for r in occupancy)
+    for key, count in actual.items():
+        if count != 1: fail("occupancy", f"Duplicate occupancy {key}.")
+    for key in sorted(expected - actual.keys()): fail("occupancy", f"Missing occupancy {key}.")
+    for key in sorted(actual.keys() - expected): fail("occupancy", f"Unexpected occupancy {key}.")
+    groups = defaultdict(set)
     for row in occupancy:
-        group_slots[(row.location_id, row.week)].add(row.co_share_group)
-    excess_total = 0
-    hotspots = []
-    for (location, week), groups in sorted(group_slots.items()):
-        nominal = instance.supply[location].supply_capacity
-        excess = max(0, len(groups) - nominal)
-        excess_total += excess
-        if len(groups) >= nominal:
-            hotspots.append({"location_id": location, "week": week, "used": len(groups), "capacity": nominal})
-        if scenario == Scenario.A and excess:
-            _violate(violations, "capacity", f"{location} week {week} exceeds capacity by {excess}.")
-        if scenario == Scenario.C and excess > 1:
-            _violate(violations, "capacity", f"{location} week {week} exceeds Scenario C allowance.")
-
-    result_by_contract = {item.contract_number: item for item in results}
-    for contract in instance.contracts.values():
-        result = result_by_contract.get(contract.contract_number)
-        if not result:
-            _violate(violations, "results", f"Missing result for {contract.contract_number}.")
-        elif scenario == Scenario.B and result.overrun_days > 0:
-            _violate(violations, "planned_date", f"{contract.contract_number} overruns by {result.overrun_days} days.")
-
-    eclo_total = sum(row.eclo for row in accesses)
-    if scenario == Scenario.C and eclo_total:
-        for line_code in instance.lines:
-            eclo_weeks = []
-            for access in accesses:
-                if not access.eclo:
-                    continue
-                activity = instance.activities[access.activity_id]
-                work_line = instance.supply[activity.start_location_id].line_code
-                contract = instance.contracts[activity.contract_number]
-                cross_line_live = contract.nature_of_activity == "Live" and any("H01_H02" in location for location in activity_locations(instance, activity))
-                if work_line == line_code or cross_line_live:
-                    eclo_weeks.append(access.week)
-            if eclo_weeks and max(eclo_weeks) - min(eclo_weeks) + 1 > 2:
-                _violate(violations, "eclo_continuity", f"{line_code} ECLO use spans more than two calendar weeks.")
-    overrun_total = sum(item.overrun_days for item in results)
-    priority_overrun = {str(priority): 0 for priority in (1, 2, 3)}
-    weighted = 0.0
-    for result in results:
-        contract = instance.contracts[result.contract_number]
-        priority_overrun[str(contract.contract_priority)] += result.overrun_days
-    activity_nudges = {1: 1.3, 2: 1.2, 3: 1.0}
-    for activity in instance.activities.values():
-        rows = by_activity[activity.activity_id]
-        if not rows:
-            continue
-        completion_date = instance.horizon_start + timedelta(days=max(item.week for item in rows) * 7 - 1)
-        contract = instance.contracts[activity.contract_number]
-        activity_overrun = max(0, (completion_date - contract.planned_completion_date).days)
-        weight = {1: 100, 2: 10, 3: 1}[contract.contract_priority]
-        weighted += weight * activity_nudges[activity.activity_priority] * activity_overrun
-    objective = (0 if scenario == Scenario.B else weighted) + (0 if scenario == Scenario.A else 7 * excess_total + 5 * eclo_total)
-    scores = {
-        "objective_score": objective,
-        "overrun_days_total": overrun_total,
-        "contracts_overrunning": sum(item.overrun_days > 0 for item in results),
-        "excess_access_nights_total": excess_total,
-        "eclo_nights_total": eclo_total,
-        "priority_overrun": priority_overrun,
-        "priority_weighted_score": weighted,
-        "formula_version": "ps1-2026-v1",
-    }
-    return ValidationReport(
-        scenario.value,
-        not violations,
-        violations,
-        scores,
-        {"capacity_hotspots": hotspots[:100], "nights_scheduled": len(accesses), "eclo_nights": eclo_total},
-    )
-
-
-def _violate(violations: list[dict[str, str]], rule: str, detail: str) -> None:
-    violations.append({"rule": rule, "severity": "hard", "detail": detail})
+        if not row.co_share_group.strip(): fail("occupancy", f"{row.activity_id}: empty group.")
+        if row.activity_id in instance.activities: groups[(row.location_id, row.week, row.co_share_group)].add(row.activity_id)
+    for key, members in groups.items():
+        if not legal_mix(instance, members): fail("legal_mix", f"{key}: illegal group {sorted(members)}.")
+    usage = possession_usage(instance, accesses, occupancy); excess = 0
+    for item in usage:
+        over = max(0, item['used'] - item['capacity'])
+        work_over = max(0, item['work_possessions'] - item['capacity'])
+        excess += work_over
+        allowance = 1 if scenario == Scenario.C else 0
+        if scenario != Scenario.B and work_over > allowance:
+            fail("capacity", f"{item['location_id']} week {item['week']}: {item['work_possessions']} work possessions exceed supply {item['capacity']} and allowance {allowance}.")
+        if scenario != Scenario.B and over > allowance and item['protection_possessions']:
+            fail("closure", f"{item['location_id']} week {item['week']}: {item['used']} possessions including {item['protection_possessions']} protection reservations exceed supply {item['capacity']}; activities {item['activities']}.")
+    eclo_weeks = defaultdict(list)
+    for aid, rows in by_activity.items():
+        if aid not in instance.activities: continue
+        for row in rows:
+            if row.eclo == 1:
+                for line in affected_lines(instance, instance.activities[aid]): eclo_weeks[line].append(row.week)
+    if scenario == Scenario.C:
+        for line, weeks in eclo_weeks.items():
+            if max(weeks) - min(weeks) > 1: fail("eclo_continuity", f"{line}: ECLO spans weeks {min(weeks)}–{max(weeks)}.")
+    result_counts = Counter(r.contract_number for r in results)
+    for row in results:
+        if row.scenario != scenario.value: fail("scenario", f"Wrong scenario {row.scenario}.")
+        if row.contract_number not in instance.contracts: fail("results", f"Unknown contract {row.contract_number}."); continue
+        end = completion.get(row.contract_number); contract = instance.contracts[row.contract_number]
+        if end != row.simulated_completion_date or (end and row.overrun_days != max(0, (end - contract.planned_completion_date).days)):
+            fail("results", f"{row.contract_number}: completion/overrun differs from actual access schedule.")
+    overruns = {}; priority = {str(p): 0 for p in (1, 2, 3)}
+    for cid, contract in instance.contracts.items():
+        if result_counts[cid] != 1: fail("results", f"{cid}: expected exactly one result.")
+        if cid in completion:
+            overruns[cid] = max(0, (completion[cid] - contract.planned_completion_date).days)
+            priority[str(contract.contract_priority)] += overruns[cid]
+            if scenario == Scenario.B and overruns[cid]: fail("planned_date", f"{cid}: actual completion overruns by {overruns[cid]} days.")
+    eclo = sum(r.eclo == 1 for r in accesses)
+    breakdown = {"delay": 0 if scenario == Scenario.B else weighted_tenths / 10, "excess_supply": 0 if scenario == Scenario.A else 7 * excess, "eclo": 0 if scenario == Scenario.A else 5 * eclo}
+    scores = {"overrun_days_total": sum(overruns.values()), "contracts_overrunning": sum(v > 0 for v in overruns.values()),
+              "earliness_days_total": sum(max(0, (instance.contracts[c].planned_completion_date - d).days) for c, d in completion.items()),
+              "excess_access_nights_total": excess, "eclo_nights_total": eclo, "priority_overrun": priority, "priority_weighted_score": weighted_tenths / 10,
+              "completion_percent": round(100 * delivered / max(1, 2 * sum(a.total_accesses for a in instance.activities.values())), 2)}
+    if not violations: scores.update(objective_score=sum(breakdown.values()), formula_version=FORMULA_VERSION)
+    return ValidationReport(scenario.value, not violations, violations, scores,
+                            {"capacity_hotspots": [u for u in usage if u['used'] >= u['capacity']], "location_usage": usage,
+                             "nights_scheduled": len(accesses), "eclo_nights": eclo, "score_breakdown": breakdown, "safety_policy": "local-protection-reservations-v1"})

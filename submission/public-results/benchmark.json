@@ -1,0 +1,54 @@
+{
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.14.2",
+  "runs": {
+    "A": [
+      {
+        "phase": "first",
+        "elapsed_seconds": 30.146210899984,
+        "first_feasible_seconds": 12.028845500026364,
+        "best_score": 40.6,
+        "best_bound": 40.6,
+        "relative_gap": 0.0,
+        "optimal": true,
+        "termination_reason": "optimal",
+        "model_variables": 37774,
+        "search_workers": 8,
+        "process_peak_memory_mb": 570.7,
+        "wall_seconds": 30.150296100007836
+      }
+    ],
+    "B": [
+      {
+        "phase": "first",
+        "elapsed_seconds": 11.38332119997358,
+        "first_feasible_seconds": 4.322464799974114,
+        "best_score": 30,
+        "best_bound": 30.0,
+        "relative_gap": 0.0,
+        "optimal": true,
+        "termination_reason": "optimal",
+        "model_variables": 17729,
+        "search_workers": 8,
+        "process_peak_memory_mb": 570.7,
+        "wall_seconds": 11.386734500003513
+      }
+    ],
+    "C": [
+      {
+        "phase": "first",
+        "elapsed_seconds": 29.08327050000662,
+        "first_feasible_seconds": 8.446439100021962,
+        "best_score": 25.2,
+        "best_bound": 25.2,
+        "relative_gap": 0.0,
+        "optimal": true,
+        "termination_reason": "optimal",
+        "model_variables": 39717,
+        "search_workers": 8,
+        "process_peak_memory_mb": 742.47,
+        "wall_seconds": 29.088113399979193
+      }
+    ]
+  }
+}

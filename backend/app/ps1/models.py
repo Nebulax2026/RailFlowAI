@@ -143,6 +143,8 @@ class ScenarioSolution:
     results: list[ContractResult]
     validation: ValidationReport
     explanations: list[str] = field(default_factory=list)
+    solver_stats: dict[str, Any] = field(default_factory=dict)
+    solution_revision: int = 0
 
 
 @dataclass
@@ -152,6 +154,9 @@ class ScenarioRun:
     message: str = "Waiting to run."
     solution: ScenarioSolution | None = None
     error: str | None = None
+    phase: str = "queued"
+    termination_reason: str | None = None
+    solver_stats: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

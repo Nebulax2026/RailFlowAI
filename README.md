@@ -1,16 +1,17 @@
 # RailFlowAI
 
-RailFlowAI is a validator-first railway possession planner for NebulaX 2026 Problem Statement 1. It accepts the official eight-file demand book, schedules every activity under Scenarios A, B, and C, explains the trade-offs, and exports the exact three CSV files required for each scenario.
+RailFlowAI is a validator-first railway possession planner for NebulaX 2026 Problem Statement 1. It accepts the official eight-file demand book, searches for complete schedules under Scenarios A, B, and C, explains the trade-offs, and exports the exact three CSV files required for each validated scenario.
 
 ## What It Does
 
 - Validates all eight PS1 files and their cross-file references before solving.
 - Expands activity spans into every tunnel and platform location they occupy.
 - Uses OR-Tools CP-SAT to assign access weeks and contract-local access nights.
-- Packs legal `PC + C` and `C + C` co-sharing possessions.
+- Selects legal `PC + C` and `C + C` possessions inside the optimisation model.
+- Optimises ECLO jointly with precedence and capacity, including C's per-line two-week windows.
 - Applies strict-supply, strict-schedule, and balanced scenario policies.
 - Re-parses and independently validates exported CSV bytes before enabling downloads.
-- Shows contract completion, weekly workload, capacity hotspots, and plain-language explanations.
+- Shows activity timelines/tables, shared possessions, protection footprints, score breakdowns, and location/week evidence.
 - Displays LTA DataMall train service alerts as context only; live data never changes synthetic PS1 inputs.
 
 ## Required Input
@@ -40,7 +41,7 @@ SCHEDULE_OCCUPANCY.csv
 RESULTS.csv
 ```
 
-The combined download uses `scenario_A/`, `scenario_B/`, and `scenario_C/` directories and includes `validation_summary.json`.
+The combined download includes only available validated scenarios under `scenario_A/`, `scenario_B/`, and `scenario_C/`. It includes `validation_summary.json` and `manifest.json`, which identifies included scenarios and revisions. Partial results remain downloadable during improvement and after cancellation.
 
 ## Architecture
 
@@ -56,7 +57,7 @@ Strict CSV parser -> topology expansion -> CP-SAT solver
                    scenario CSVs and ZIP
 ```
 
-Solve jobs run one at a time, expose scenario progress independently, and expire after 60 minutes. Uploads are held only in memory and are not logged.
+Solve jobs run one at a time and expire after 60 minutes. A/B/C each receive a first search budget of 30 seconds, then up to 90 additional seconds with the incumbent as a hint. Thirty seconds is a first-result target, not a guarantee. Optimal scenarios skip improvement. Cancellation interrupts the active solve; it retains validated results. Uploads remain in memory and are not logged.
 
 ## Local Development
 
@@ -116,7 +117,18 @@ cd ..
 docker build -t railflowai .
 ```
 
-The supplied feasible submission is a golden validator fixture. Generated outputs are accepted only after workload, dates, weekly allocation, workfront, occupancy, capacity, ECLO, completion, and schema checks pass.
+Generated outputs are accepted only after schema, workload, actual completion dates, weekly allocation, workfront, occupancy, legal mix, protection reservations, capacity, and ECLO checks pass. Scores are withheld for invalid schedules.
+
+The organizers describe their sample as feasible. Our explicit conservative protection policy reports compatibility differences against it; it is a compatibility fixture, not a claimed parity certificate. See [validator assumptions](docs/validator-spec.md) and [compatibility report](submission/public-results/compatibility_report.json). In particular, protection-only slots constrain safety supply while the published excess-access penalty counts exported work possessions. The official executable validator is unavailable.
+
+Regenerate public results and run reproducible stress probes:
+
+```powershell
+py scripts/generate_public_results.py
+py scripts/benchmark_ps1.py --seconds 30
+```
+
+Public generation uses the same 30+90 second policy. `benchmark.json` records first-feasible time, score, bound, gap, and platform. Stress reports include infeasibility and time-limit outcomes instead of omitting failed cases. Process peak memory is a process-wide measurement, not per-scenario allocation.
 
 ## Deployment
 
@@ -136,5 +148,6 @@ docker run --rm -p 8000:8000 -e DATAMALL_ACCOUNT_KEY=your-key railflowai
 - 2-3 minute pitch script: `docs/video-pitch.md`
 - Product and technical contract: `docs/requirements-design.md`
 - Validator rules and known assumptions: `docs/validator-spec.md`
+- Implementation checks and remaining limits: `docs/implementation-verification.md`
 
-The official reference validator was not included in the information pack. RailFlowAI therefore uses the published rules and organizers' feasible sample as its parity baseline.
+The official reference validator was not included in the information pack. The app says **Internally validated**. Optimality refers only to the documented conservative model, not to the unknown official benchmark.

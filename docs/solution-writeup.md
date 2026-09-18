@@ -6,7 +6,7 @@ Rail maintenance contractors compete for a small number of overnight possessions
 
 ## Our Solution
 
-RailFlowAI turns the official demand book into three auditable policy answers. A strict parser first rejects malformed or inconsistent data. A topology engine expands every job into the locations a controller must protect. OR-Tools CP-SAT then assigns access weeks and local nights, while deterministic possession packing converts compatible work into legal co-sharing groups.
+RailFlowAI searches the official demand book for three auditable policy answers. A strict parser rejects malformed or inconsistent data. A topology engine expands work and protection footprints. OR-Tools CP-SAT jointly chooses access weeks, local nights, ECLO, and explicit legal co-sharing possessions. First searches target 30 seconds per scenario; validated incumbents may improve for another 90 seconds.
 
 Every generated CSV is re-read by a separate validator before download. This “prove the artifact” boundary prevents UI or serialization defects from being mistaken for a valid plan.
 
@@ -17,7 +17,7 @@ The original RailFlowAI prototype scheduled ad-hoc maintenance requests against 
 - Validator-first outputs with exact official schemas.
 - All three scenarios solved from one upload and compared in one workspace.
 - Explanations tied to completion, capacity, excess supply, and ECLO.
-- Conservative, deterministic co-sharing that is easy to audit.
+- Explicit legal co-sharing patterns and a documented conservative protection policy.
 - Ephemeral hidden-instance handling with no database retention.
 - Live LTA network context without pretending that real line codes map to the fictional judging network.
 
@@ -36,3 +36,7 @@ The optional server-side integration reads Train Service Alerts using an Account
 ## Impact
 
 RailFlowAI reduces a dense spreadsheet-and-manual-checking exercise to a repeatable workflow: load, validate, solve, inspect, and export. The controller sees not just a schedule, but why it is feasible and where each policy spends its flexibility.
+
+## Validation boundary
+
+The official executable validator is unavailable. Protection-slot accounting reports 36 compatibility differences against the organizers' sample; these are documented in the validator specification and compatibility report, not hidden. Internal optimality refers to the documented model. Activity evidence reports observed constraints and costs, not untested counterfactual causes. Infeasibility and time-limit failures are surfaced while preserving other validated scenarios.

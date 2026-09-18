@@ -9,6 +9,17 @@ from dataclasses import asdict
 from app.ps1.models import ScenarioSolution
 
 
+def validation_summary(report):
+    """Compact portable report; complete location evidence stays in scenario API."""
+    payload = asdict(report)
+    detail = payload['detail']
+    detail.pop('location_usage', None)
+    hotspots = detail.get('capacity_hotspots', [])
+    detail['capacity_hotspots_total'] = len(hotspots)
+    detail['capacity_hotspots'] = [{k: row[k] for k in ('location_id', 'week', 'used', 'capacity', 'work_possessions', 'protection_possessions') if k in row} for row in hotspots[:100]]
+    return payload
+
+
 def scenario_csvs(solution: ScenarioSolution) -> dict[str, bytes]:
     return {
         "SCHEDULE_ACCESS.csv": _csv_bytes(
@@ -33,8 +44,10 @@ def solutions_zip(solutions: list[ScenarioSolution]) -> bytes:
         for solution in solutions:
             for filename, content in scenario_csvs(solution).items():
                 archive.writestr(f"scenario_{solution.scenario.value}/{filename}", content)
-            summary[solution.scenario.value] = asdict(solution.validation)
+            summary[solution.scenario.value] = validation_summary(solution.validation)
         archive.writestr("validation_summary.json", json.dumps(summary, indent=2, default=str))
+        archive.writestr("manifest.json", json.dumps({"included_scenarios": [s.scenario.value for s in solutions],
+                            "revisions": {s.scenario.value: s.solution_revision for s in solutions}}, indent=2))
     return stream.getvalue()
 
 
