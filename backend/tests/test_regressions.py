@@ -2,6 +2,7 @@ import csv
 import io
 import itertools
 import threading
+import time
 from dataclasses import replace
 from datetime import timedelta
 from collections import Counter
@@ -9,7 +10,7 @@ import pytest
 from .test_ps1 import instance, DATA
 from app.ps1.models import AccessAssignment, OccupancyAssignment, ContractResult, Scenario, ScenarioSolution
 from app.ps1.parser import parse_instance, EXPECTED_FILES, InstanceValidationError
-from app.ps1.solver import solve_scenario, SolveFailure
+from app.ps1.solver import build_scenario_model, solve_scenario, SolveFailure
 from app.ps1.topology import activity_locations, closure_locations
 from app.ps1.validator import validate_solution, validate_exported_csvs
 from app.ps1.exporter import scenario_csvs, solutions_zip
@@ -86,6 +87,36 @@ def test_predecessor_eclo_compression(tiny):
     assert s.validation.feasible
     assert sum(r.eclo for r in s.accesses)==4
     assert max(r.week for r in s.accesses if r.activity_id==a.activity_id)<min(r.week for r in s.accesses if r.activity_id==b.activity_id)
+
+
+@pytest.mark.parametrize('scenario,duration', [(Scenario.A, 3), (Scenario.B, 2), (Scenario.C, 2)])
+def test_precedence_windows_propagate_both_directions(tiny, scenario, duration):
+    a = next(iter(tiny.activities.values()))
+    c = next(iter(tiny.contracts.values()))
+    b = replace(a, activity_id='SUCCESSOR', predecessor_activity_id=a.activity_id)
+    # Reverse input order to ensure propagation follows dependencies.
+    i = replace(tiny, horizon_weeks=8, activities={b.activity_id: b, a.activity_id: a},
+                contracts={c.contract_number: replace(c, planned_completion_date=week_end(tiny, 8))})
+    built = build_scenario_model(i, scenario, 10, time.monotonic(), None)
+    assert {w for aid, w in built.x if aid == a.activity_id} == set(range(1, 9 - duration))
+    assert {w for aid, w in built.x if aid == b.activity_id} == set(range(1 + duration, 9))
+
+
+def test_c_duration_respects_two_week_eclo_limit(tiny):
+    a = next(iter(tiny.activities.values()))
+    c = next(iter(tiny.contracts.values()))
+    i = replace(tiny, activities={a.activity_id: replace(a, total_accesses=6)},
+                contracts={c.contract_number: replace(c, planned_completion_date=week_end(tiny, 5))})
+    # Four unrestricted ECLO nights can deliver six accesses in B, but C
+    # needs at least five weeks because only two nights can receive ECLO.
+    assert solve_scenario(i, Scenario.B, 3).validation.feasible
+    with pytest.raises(SolveFailure, match='workload and precedence') as error:
+        build_scenario_model(i, Scenario.C, 10, time.monotonic(), None)
+    assert error.value.reason == 'infeasible'
+    solution = solve_scenario(replace(i, horizon_weeks=5), Scenario.C, 3)
+    assert solution.validation.feasible
+    assert len(solution.accesses) == 5
+    assert sum(r.eclo for r in solution.accesses) == 2
 
 
 @pytest.mark.parametrize('scenario',list(Scenario))

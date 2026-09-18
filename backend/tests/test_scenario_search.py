@@ -1,11 +1,14 @@
 from dataclasses import replace
+from datetime import timedelta
 from types import SimpleNamespace
+import random
+import time
 
 import pytest
 from fastapi.testclient import TestClient
 
 from .test_ps1 import instance
-from .test_regressions import tiny
+from .test_regressions import tiny, manual
 from app.main import app
 from app.api import ps1 as api
 from app.ps1 import jobs
@@ -14,7 +17,10 @@ from app.ps1.jobs import JobManager
 from app.ps1.models import JobStatus, Scenario
 from app.ps1.scenario_a.search import SearchConfig, SearchResult
 from app.ps1.scenario_a import worker
-from app.ps1.scenario_search import solve
+from app.ps1.scenario_search import solve, neighborhood
+from app.ps1.solver import build_scenario_model
+from app.ps1.scoring import week_end
+from ortools.sat.python import cp_model
 from app.ps1.validator import validate_exported_csvs
 
 
@@ -26,6 +32,7 @@ def test_four_methods_respect_bc_rules_and_score(tiny, strategy, scenario):
     report = validate_exported_csvs(tiny, scenario, scenario_csvs(result.solution))
     assert report.feasible
     assert result.diagnostics["objective"] == report.soft_scores["objective_score"]
+    assert ('eclo_window' in result.diagnostics['operators']) == (scenario == Scenario.C)
     if strategy != "greedy":
         # Exhaustive single-activity oracle in test_regressions: 2 ECLO
         # accesses before week 3 give the optimum of 10 in both B and C.
@@ -51,6 +58,60 @@ def test_bc_cancel_keeps_csv_valid_incumbent(tiny):
                    cancelled=lambda: bool(saved), checkpoint=lambda s, d: saved.append(s))
     assert result.diagnostics["status"] == "cancelled_with_feasible"
     assert result.solution.validation.feasible
+
+
+def test_c_window_repair_can_move_eclo_to_later_urgent_work(tiny):
+    a = next(iter(tiny.activities.values()))
+    c = next(iter(tiny.contracts.values()))
+    urgent = replace(a, activity_id='URGENT', contract_number='URGENT',
+                     planned_start_date=tiny.horizon_start + timedelta(weeks=2))
+    i = replace(tiny, horizon_weeks=5,
+                activities={a.activity_id: a, urgent.activity_id: urgent},
+                contracts={c.contract_number: replace(c, contract_priority=3, planned_completion_date=week_end(tiny, 5)),
+                           'URGENT': replace(c, contract_number='URGENT', contract_priority=1,
+                                             planned_completion_date=week_end(tiny, 4))})
+    baseline = manual(i, Scenario.C, [(a.activity_id, 1, 1), (a.activity_id, 2, 1),
+                                    ('URGENT', 3, 0), ('URGENT', 4, 0), ('URGENT', 5, 0)])
+    assert baseline.validation.feasible
+    built = build_scenario_model(i, Scenario.C, 10, time.monotonic(), None)
+    relaxed = neighborhood(i, built, baseline, 'eclo_window', .5, random.Random(42))
+    old = {(r.activity_id, r.week): r.eclo for r in baseline.accesses}
+
+    def repair(released):
+        model = built.model.clone()
+        for key, var in built.x.items():
+            if key[0] not in released:
+                model.add(var == int(key in old))
+                model.add(built.eclo[key] == old.get(key, 0))
+        solver = cp_model.CpSolver()
+        solver.parameters.num_search_workers = 1
+        solver.parameters.max_time_in_seconds = 3
+        assert solver.solve(model) == cp_model.OPTIMAL
+        return built.extract(solver)
+
+    pinned = repair({'URGENT'})
+    improved = repair(relaxed)
+    assert improved.validation.feasible
+    assert improved.validation.soft_scores['objective_score'] < pinned.validation.soft_scores['objective_score']
+    assert {r.week for r in improved.accesses if r.eclo} == {3, 4}
+
+
+def test_c_window_release_follows_cross_line_eclo_and_dependencies(tiny, monkeypatch):
+    from app.ps1 import scenario_search
+    a = next(iter(tiny.activities.values()))
+    ids = ['anchor', 'bridge', 'beta', 'successor', 'unrelated']
+    activities = {aid: replace(a, activity_id=aid, predecessor_activity_id='beta' if aid == 'successor' else None)
+                  for aid in ids}
+    i = replace(tiny, activities=activities)
+    lines = {'anchor': {'ALP'}, 'bridge': {'ALP', 'BET'}, 'beta': {'BET'},
+             'successor': {'BET'}, 'unrelated': {'BET'}}
+    monkeypatch.setattr(scenario_search, 'affected_lines', lambda inst, item: lines[item.activity_id])
+    rows = [SimpleNamespace(activity_id=aid, week=1, eclo=int(aid in {'bridge', 'beta'})) for aid in ids]
+    solution = SimpleNamespace(accesses=rows, occupancy=[])
+    rng = random.Random(42)
+    monkeypatch.setattr(rng, 'choices', lambda *args, **kwargs: ['anchor'])
+    released = neighborhood(i, None, solution, 'eclo_window', .1, rng)
+    assert released == {'anchor', 'bridge', 'beta', 'successor'}
 
 
 def test_api_runs_all_scenarios_and_preserves_partial_results(tiny, monkeypatch):

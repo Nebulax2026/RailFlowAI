@@ -122,7 +122,13 @@ def neighborhood(instance, built, solution, operator, fraction, rng):
         costs[aid] = delay_coefficient(c, a) * max(0, (week_end(instance, max(r.week for r in rows[aid])) - c.planned_completion_date).days) / 10 + 5 * sum(r.eclo for r in rows[aid])
     anchor = rng.choices(aids, weights=[1 + costs[a] for a in aids])[0]
     selected = {anchor}
-    if operator == "bottleneck":
+    if operator == "eclo_window":
+        # Release promising work on the anchor's lines, even when it has no
+        # ECLO yet. Let CP-SAT choose the new window jointly with placements.
+        lines = {a: set(affected_lines(instance, instance.activities[a])) for a in aids}
+        candidates = [a for a in aids if lines[a] & lines[anchor]]
+        selected.update(sorted(candidates, key=lambda a: (-costs[a], a))[:target])
+    elif operator == "bottleneck":
         usage = solution.validation.detail["location_usage"]
         site = rng.choices(usage, weights=[1 + max(0, u["used"] - u["capacity"]) * 10 + u["used"] for u in usage])[0]
         selected.update(a for a in aids if site["location_id"] in built.footprint[a] and any(abs(r.week - site["week"]) <= 2 for r in rows[a]))
@@ -143,11 +149,23 @@ def neighborhood(instance, built, solution, operator, fraction, rng):
     # Nights/cohorts remain free globally, so no stale labels constrain repairs.
     groups = defaultdict(set)
     for r in solution.occupancy: groups[r.week, r.co_share_group].add(r.activity_id)
+    if operator == "eclo_window" and len(selected) < target:
+        selected.update(rng.sample(sorted(set(aids) - selected), target - len(selected)))
     changed = True
     while changed:
         before = len(selected)
         for members in groups.values():
             if selected & members: selected.update(members)
+        if operator == "eclo_window":
+            # Fixed ECLO accesses would pin the old line window. Release all
+            # of them, transitively across Live work affecting both lines.
+            active_lines = set().union(*(lines[a] for a in selected))
+            selected.update(a for a in aids if lines[a] & active_lines and any(r.eclo for r in rows[a]))
+            # Moving a window can move completion and unlock downstream work.
+            for aid in aids:
+                pred = instance.activities[aid].predecessor_activity_id
+                if pred and (aid in selected or pred in selected):
+                    selected.update((aid, pred))
         changed = len(selected) > before
     if len(selected) < target:
         selected.update(rng.sample(sorted(set(aids) - selected), target - len(selected)))
@@ -164,7 +182,8 @@ def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
     best, bound, first = None, 0.0, None
     status = "no_solution_within_budget"
     trajectory, phases = [], []
-    operators = {op: dict(calls=0, seconds=0.0, feasible=0, improvement=0.0, best_updates=0, weight=1.0) for op in OPERATORS}
+    available_operators = OPERATORS + (("eclo_window",) if scenario == Scenario.C else ())
+    operators = {op: dict(calls=0, seconds=0.0, feasible=0, improvement=0.0, best_updates=0, weight=1.0) for op in available_operators}
     rng = random.Random(config.seed)
     stop = threading.Event()
 
@@ -270,7 +289,9 @@ def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
                 iteration += 1
                 if best is None or iteration % config.restart_every == 0:
                     phase(config.repair_seconds, label="global_restart"); continue
-                op = "diversify" if config.strategy == "random_lns" else rng.choices(OPERATORS, weights=[operators[o]["weight"] for o in OPERATORS])[0]
+                op = "diversify" if config.strategy == "random_lns" else rng.choices(available_operators, weights=[operators[o]["weight"] for o in available_operators])[0]
+                if config.strategy == "alns" and scenario == Scenario.C and operators["eclo_window"]["calls"] == 0:
+                    op = "eclo_window"
                 fraction = min(config.neighborhood_max, config.neighborhood_min*(1+stagnation/3))
                 relaxed = neighborhood(instance, built, best, op, fraction, rng)
                 before = best.validation.soft_scores["objective_score"]; t = time.monotonic()

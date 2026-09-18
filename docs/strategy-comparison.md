@@ -37,6 +37,15 @@ diagnostics.
   predecessor, contract and diversification neighborhoods by observed reward.
   Repairs preserve original hard constraints and fix weeks/ECLO outside the
   neighborhood. Local nights and cohort membership stay free for all repairs.
+- C Adaptive LNS also uses an `eclo_window` neighborhood, tried on its first
+  repair and subsequently selected by observed reward. It releases costly work
+  together with existing ECLO users on the affected lines, shared partners and
+  predecessor/successor chains. Cross-line Live work propagates the release to
+  both lines so fixed ECLO decisions cannot pin the old window. CP-SAT jointly
+  chooses new weeks and ECLO under the original two-week constraints. This
+  closure can exceed the requested neighborhood fraction. The operator does
+  not change Existing planner, Integrated CP-SAT, Greedy or Random LNS into
+  adaptive search; select **Adaptive LNS** to use it.
 - Global lower bounds come only from whole-model optimization; repair bounds
   are never reported as global. The last validated incumbent survives timeout.
 

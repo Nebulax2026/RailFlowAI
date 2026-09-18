@@ -4,7 +4,7 @@ import itertools
 import math
 import threading
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from ortools.sat.python import cp_model
 from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ScenarioSolution
 from app.ps1.scoring import delay_coefficient, week_end
@@ -46,22 +46,42 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
         earliest = max(1, (activity.planned_start_date - instance.horizon_start).days // 7 + 1)
         latest = horizon if scenario != Scenario.B else min(horizon, ((contract.planned_completion_date - instance.horizon_start).days + 1) // 7)
         windows[aid] = (earliest, latest)
-    # Safe precedence propagation using the best possible yield; never fixes ECLO.
-    for _ in instance.activities:
-        changed = False
-        for aid, activity in instance.activities.items():
-            pred = activity.predecessor_activity_id
-            if pred:
-                p = instance.activities[pred]
-                duration = p.total_accesses if scenario == Scenario.A else math.ceil(2 * p.total_accesses / 3)
-                low, high = windows[aid]; new = max(low, windows[pred][0] + duration)
-                if low != new: windows[aid] = (new, high); changed = True
-        if not changed: break
+    # Best-case durations preserve all feasible schedules. C permits at most
+    # two ECLO accesses per activity, saving at most one standard access week.
+    durations = {
+        aid: (a.total_accesses if scenario == Scenario.A else
+              max(math.ceil(2 * a.total_accesses / 3), a.total_accesses - 1)
+              if scenario == Scenario.C else math.ceil(2 * a.total_accesses / 3))
+        for aid, a in instance.activities.items()
+    }
+    successors = defaultdict(list)
+    ready = deque()
+    for aid, activity in instance.activities.items():
+        if activity.predecessor_activity_id:
+            successors[activity.predecessor_activity_id].append(aid)
+        else:
+            ready.append(aid)
+    order = []
+    while ready:
+        check_budget()
+        aid = ready.popleft()
+        order.append(aid)
+        for child in successors[aid]:
+            low, high = windows[child]
+            windows[child] = (max(low, windows[aid][0] + durations[aid]), high)
+            ready.append(child)
+    if len(order) != len(instance.activities):
+        raise SolveFailure("infeasible", "Predecessor cycle prevents a complete schedule.")
+    # A predecessor must leave enough weeks for every successor's workload.
+    for aid in reversed(order):
+        check_budget()
+        low, high = windows[aid]
+        windows[aid] = (low, min([high] + [windows[s][1] - durations[s] for s in successors[aid]]))
     x = {}; eclo = {}; local_nights = {}; starts = {}; finishes = {}; objective = []; by_contract_night = defaultdict(list)
     line_windows = {line: model.NewIntVar(1, horizon, f"ECLO_window_{line}") for line in instance.lines} if scenario == Scenario.C else {}
     for aid, activity in instance.activities.items():
         low, high = windows[aid]; contract = instance.contracts[activity.contract_number]
-        minimum = activity.total_accesses if scenario == Scenario.A else math.ceil(2 * activity.total_accesses / 3)
+        minimum = durations[aid]
         if high - low + 1 < minimum:
             raise SolveFailure("infeasible", f"{aid}: workload and precedence cannot fit weeks {low}..{high} under Scenario {scenario.value}.")
         end_terms = []; start_terms = []; workload = []
