@@ -1093,6 +1093,7 @@ svg {
   height: 100%;
   pointer-events: none;
   z-index: 3;
+  overflow: visible;
 }
 
 .chart-overlay-svg polyline {

@@ -188,7 +188,23 @@ function ScenarioWorkspace({
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
   }, [detail?.accesses]);
 
-  const maxWeekAccess = Math.max(1, ...weekStats.map((item) => item[1].count));
+  // Global maximum across all policies (active scenario + compared scenarios) to ensure no curve shoots off the top
+  const maxWeekAccess = useMemo(() => {
+    let max = Math.max(1, ...weekStats.map((item) => item[1].count));
+    (["A", "B", "C"] as Scenario[]).forEach((s) => {
+      const otherDetail = details[s];
+      if (otherDetail) {
+        const countMap = new Map<number, number>();
+        otherDetail.accesses.forEach((acc) => {
+          countMap.set(acc.week, (countMap.get(acc.week) || 0) + 1);
+        });
+        countMap.forEach((cnt) => {
+          if (cnt > max) max = cnt;
+        });
+      }
+    });
+    return max;
+  }, [details, weekStats]);
 
   // Cross-policy comparison overlay lines
   const otherPoliciesCurves = useMemo(() => {
@@ -684,7 +700,7 @@ function ScenarioWorkspace({
                             {otherPoliciesCurves.map((curve) => {
                               const coords = curve.counts.map((cnt, i) => ({
                                 x: (i + 0.5) * 10,
-                                y: 94 - (cnt / maxWeekAccess) * 84
+                                y: 92 - (cnt / maxWeekAccess) * 80
                               }));
                               const pointsStr = coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
                               const strokeColor = curve.scenario === "A" ? "#10b981" : curve.scenario === "B" ? "#ec4899" : "#8b5cf6";
@@ -728,7 +744,7 @@ function ScenarioWorkspace({
                         {/* Bars Row */}
                         <div className="chart-bars-row">
                           {weekStats.map(([week, stat]) => {
-                            const heightPct = Math.max(6, (stat.count / maxWeekAccess) * 84 + 6);
+                            const heightPct = Math.max(6, (stat.count / maxWeekAccess) * 80 + 8);
                             const isHovered = hoveredWeek?.week === week;
                             return (
                               <div
