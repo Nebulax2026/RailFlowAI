@@ -1,0 +1,1874 @@
+{
+  "purpose": "Interpretation audit, not an official safety verdict.",
+  "hypothesis": "Each activity/week occupies its whole span on one physical night; same local groups mean the same night and different local groups mean different nights.",
+  "input_sha256": {
+    "01_LINES.csv": "69d47e99de632c08f09229b34d2642af74dba4b7a6b8870e41f853cae9793eaa",
+    "02_STATIONS.csv": "9f9f44b6c2500a26cea9b3fa2c77ba957079ab5a01fd92d7c4d0be11296340d8",
+    "03_SECTORS.csv": "4b30ddd5d31cd6abc1ab8cc152a08bbc68060e39d65a5242521593fa885efcec",
+    "04_LOCATION_SUPPLY.csv": "d5e4bdfa8c4fb3116c83a7f53749e048f5c6c5963f0343c6d825b8120e62dc35",
+    "05_BUFFER_LOCATION.csv": "2abb5e1daeafddbe73be60554d77c5e4ee544085bbcbb4d89d65c367f10dddf9",
+    "06_PARAMETERS.csv": "5765599b4475e6f2fc9fc3226357dc826b5d4008817ae513701551e7803de7bd",
+    "07_PROJECT_DETAILS.csv": "4949a7cb8826c3f234910b29988e8aa4ae9e4d6b7e6294f402a1506846ec33b8",
+    "08_ACTIVITY_DETAILS.csv": "8f0a52bc6e062b98f1c980cdacabf5c4572f091ae127fc76f734e977d2201eb6",
+    "RESULTS.csv": "9eca188c07c21438f3b1adc03cb83bb7ec0264f0a816756f9293c565bbc0ae1a",
+    "SCHEDULE_ACCESS.csv": "fb5c55cc8e01b19340bb52b20abc3c3ae558f11192facfa858c6d5de91677ff1",
+    "SCHEDULE_OCCUPANCY.csv": "0a5a69c60cb57b5f553b716034c3ff017a1487ab570d7eb04b7323b4668e9c0d"
+  },
+  "current_policy": "work-supply-local-night-v2",
+  "current_hard_violations": [
+    {
+      "rule": "closure",
+      "severity": "hard",
+      "detail": "Activities ['A001', 'A007'] week 22 local night 3: overlapping work/protection at ['PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'SEC:BET:H02_S15:EB']."
+    }
+  ],
+  "direct_clock_contradiction_count": 45,
+  "direct_clock_contradictions": [
+    {
+      "week": 11,
+      "activities": [
+        "A003",
+        "A041"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          19,
+          532
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A041",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          20,
+          533
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A041",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 12,
+      "activities": [
+        "A003",
+        "A041"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          26,
+          535
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A041",
+            "group": "b2"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          27,
+          536
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A041",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 13,
+      "activities": [
+        "A003",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          31,
+          483
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          33,
+          485
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 13,
+      "activities": [
+        "A003",
+        "A060"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          32,
+          802
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          34,
+          804
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 13,
+      "activities": [
+        "A040",
+        "A060"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          484,
+          802
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          485,
+          803
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 14,
+      "activities": [
+        "A003",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          38,
+          490
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          40,
+          492
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 14,
+      "activities": [
+        "A003",
+        "A060"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          39,
+          807
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          40,
+          808
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 14,
+      "activities": [
+        "A040",
+        "A060"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          491,
+          807
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:H02_S15:EB",
+        "csv_rows": [
+          495,
+          810
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A060",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 15,
+      "activities": [
+        "A021",
+        "A039"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S11:WB",
+        "csv_rows": [
+          288,
+          455
+        ],
+        "members": [
+          {
+            "activity_id": "A021",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:S11_S12:WB",
+        "csv_rows": [
+          291,
+          459
+        ],
+        "members": [
+          {
+            "activity_id": "A021",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 16,
+      "activities": [
+        "A003",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          45,
+          497
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          48,
+          500
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 16,
+      "activities": [
+        "A003",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          46,
+          688
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          48,
+          690
+        ],
+        "members": [
+          {
+            "activity_id": "A003",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 16,
+      "activities": [
+        "A011",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          138,
+          499
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          139,
+          500
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 16,
+      "activities": [
+        "A011",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          138,
+          689
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b2"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          139,
+          690
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 16,
+      "activities": [
+        "A021",
+        "A039"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S11:WB",
+        "csv_rows": [
+          293,
+          462
+        ],
+        "members": [
+          {
+            "activity_id": "A021",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S12:WB",
+        "csv_rows": [
+          294,
+          463
+        ],
+        "members": [
+          {
+            "activity_id": "A021",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 16,
+      "activities": [
+        "A040",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          498,
+          688
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:S15_S16:EB",
+        "csv_rows": [
+          503,
+          692
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b4"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 17,
+      "activities": [
+        "A017",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          219,
+          504
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:H02_S15:EB",
+        "csv_rows": [
+          224,
+          509
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 17,
+      "activities": [
+        "A017",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          220,
+          693
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          221,
+          694
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 17,
+      "activities": [
+        "A021",
+        "A039"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S11:WB",
+        "csv_rows": [
+          298,
+          469
+        ],
+        "members": [
+          {
+            "activity_id": "A021",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:S11_S12:WB",
+        "csv_rows": [
+          301,
+          473
+        ],
+        "members": [
+          {
+            "activity_id": "A021",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 17,
+      "activities": [
+        "A040",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          505,
+          693
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          506,
+          694
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 18,
+      "activities": [
+        "A002",
+        "A039"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S11:WB",
+        "csv_rows": [
+          12,
+          476
+        ],
+        "members": [
+          {
+            "activity_id": "A002",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S13:WB",
+        "csv_rows": [
+          14,
+          478
+        ],
+        "members": [
+          {
+            "activity_id": "A002",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A039",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 18,
+      "activities": [
+        "A012",
+        "A049"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:WB",
+        "csv_rows": [
+          174,
+          622
+        ],
+        "members": [
+          {
+            "activity_id": "A012",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A049",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:H02_S15:WB",
+        "csv_rows": [
+          177,
+          625
+        ],
+        "members": [
+          {
+            "activity_id": "A012",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A049",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 20,
+      "activities": [
+        "A012",
+        "A049"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:WB",
+        "csv_rows": [
+          179,
+          627
+        ],
+        "members": [
+          {
+            "activity_id": "A012",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A049",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:WB",
+        "csv_rows": [
+          180,
+          628
+        ],
+        "members": [
+          {
+            "activity_id": "A012",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A049",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 20,
+      "activities": [
+        "A017",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          233,
+          511
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          236,
+          514
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 20,
+      "activities": [
+        "A017",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          234,
+          703
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          236,
+          705
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 20,
+      "activities": [
+        "A040",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          512,
+          703
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:S15_S16:EB",
+        "csv_rows": [
+          517,
+          707
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 23,
+      "activities": [
+        "A001",
+        "A011"
+      ],
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          7,
+          143
+        ],
+        "members": [
+          {
+            "activity_id": "A001",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A011",
+            "group": "b1"
+          }
+        ]
+      },
+      "same_night": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          8,
+          144
+        ],
+        "members": [
+          {
+            "activity_id": "A001",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 23,
+      "activities": [
+        "A001",
+        "A057"
+      ],
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          7,
+          709
+        ],
+        "members": [
+          {
+            "activity_id": "A001",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "same_night": {
+        "location_id": "SEC:BET:S15_S16:EB",
+        "csv_rows": [
+          10,
+          712
+        ],
+        "members": [
+          {
+            "activity_id": "A001",
+            "group": "b4"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 23,
+      "activities": [
+        "A011",
+        "A042"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          143,
+          538
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A042",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          144,
+          539
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A042",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 23,
+      "activities": [
+        "A011",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          143,
+          709
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          144,
+          710
+        ],
+        "members": [
+          {
+            "activity_id": "A011",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 23,
+      "activities": [
+        "A042",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          538,
+          709
+        ],
+        "members": [
+          {
+            "activity_id": "A042",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:S15_S16:EB",
+        "csv_rows": [
+          542,
+          712
+        ],
+        "members": [
+          {
+            "activity_id": "A042",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 24,
+      "activities": [
+        "A036",
+        "A055"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          400,
+          662
+        ],
+        "members": [
+          {
+            "activity_id": "A036",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A055",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S14:EB",
+        "csv_rows": [
+          401,
+          665
+        ],
+        "members": [
+          {
+            "activity_id": "A036",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A055",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A013",
+        "A056"
+      ],
+      "same_night": {
+        "location_id": "PLAT:ALP:S05:WB",
+        "csv_rows": [
+          192,
+          677
+        ],
+        "members": [
+          {
+            "activity_id": "A013",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A056",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:ALP:S06:WB",
+        "csv_rows": [
+          193,
+          678
+        ],
+        "members": [
+          {
+            "activity_id": "A013",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A056",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A017",
+        "A040"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          254,
+          525
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          257,
+          528
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A017",
+        "A042"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          256,
+          552
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A042",
+            "group": "b2"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S16:EB",
+        "csv_rows": [
+          257,
+          553
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A042",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A017",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          255,
+          713
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          256,
+          714
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A017",
+        "A073"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H01:EB",
+        "csv_rows": [
+          254,
+          919
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A073",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:BET:H02_S15:EB",
+        "csv_rows": [
+          259,
+          923
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A073",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A040",
+        "A057"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          526,
+          713
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          527,
+          714
+        ],
+        "members": [
+          {
+            "activity_id": "A040",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A046",
+        "A056"
+      ],
+      "same_night": {
+        "location_id": "PLAT:ALP:S05:WB",
+        "csv_rows": [
+          585,
+          677
+        ],
+        "members": [
+          {
+            "activity_id": "A046",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A056",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:ALP:S06:WB",
+        "csv_rows": [
+          586,
+          678
+        ],
+        "members": [
+          {
+            "activity_id": "A046",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A056",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 25,
+      "activities": [
+        "A057",
+        "A073"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          713,
+          920
+        ],
+        "members": [
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A073",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          714,
+          921
+        ],
+        "members": [
+          {
+            "activity_id": "A057",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A073",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 26,
+      "activities": [
+        "A017",
+        "A043"
+      ],
+      "same_night": {
+        "location_id": "PLAT:BET:H02:EB",
+        "csv_rows": [
+          262,
+          566
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A043",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:BET:S15:EB",
+        "csv_rows": [
+          263,
+          567
+        ],
+        "members": [
+          {
+            "activity_id": "A017",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A043",
+            "group": "b1"
+          }
+        ]
+      }
+    },
+    {
+      "week": 26,
+      "activities": [
+        "A023",
+        "A035"
+      ],
+      "different_nights": {
+        "location_id": "PLAT:ALP:S03:WB",
+        "csv_rows": [
+          315,
+          385
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A035",
+            "group": "b2"
+          }
+        ]
+      },
+      "same_night": {
+        "location_id": "SEC:ALP:S03_S04:WB",
+        "csv_rows": [
+          317,
+          388
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b4"
+          },
+          {
+            "activity_id": "A035",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 26,
+      "activities": [
+        "A023",
+        "A070"
+      ],
+      "different_nights": {
+        "location_id": "PLAT:ALP:S03:WB",
+        "csv_rows": [
+          315,
+          900
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A070",
+            "group": "b2"
+          }
+        ]
+      },
+      "same_night": {
+        "location_id": "SEC:ALP:S03_S04:WB",
+        "csv_rows": [
+          317,
+          902
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b4"
+          },
+          {
+            "activity_id": "A070",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 27,
+      "activities": [
+        "A023",
+        "A035"
+      ],
+      "same_night": {
+        "location_id": "PLAT:ALP:S03:WB",
+        "csv_rows": [
+          318,
+          390
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A035",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:ALP:S04:WB",
+        "csv_rows": [
+          319,
+          391
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A035",
+            "group": "b2"
+          }
+        ]
+      }
+    },
+    {
+      "week": 27,
+      "activities": [
+        "A023",
+        "A070"
+      ],
+      "same_night": {
+        "location_id": "PLAT:ALP:S03:WB",
+        "csv_rows": [
+          318,
+          905
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A070",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "SEC:ALP:S03_S04:WB",
+        "csv_rows": [
+          320,
+          907
+        ],
+        "members": [
+          {
+            "activity_id": "A023",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A070",
+            "group": "b4"
+          }
+        ]
+      }
+    },
+    {
+      "week": 27,
+      "activities": [
+        "A035",
+        "A070"
+      ],
+      "same_night": {
+        "location_id": "PLAT:ALP:S03:WB",
+        "csv_rows": [
+          390,
+          905
+        ],
+        "members": [
+          {
+            "activity_id": "A035",
+            "group": "b1"
+          },
+          {
+            "activity_id": "A070",
+            "group": "b1"
+          }
+        ]
+      },
+      "different_nights": {
+        "location_id": "PLAT:ALP:S04:WB",
+        "csv_rows": [
+          391,
+          906
+        ],
+        "members": [
+          {
+            "activity_id": "A035",
+            "group": "b2"
+          },
+          {
+            "activity_id": "A070",
+            "group": "b1"
+          }
+        ]
+      }
+    }
+  ],
+  "conclusion": "The proposed single-night interpretation is inconsistent with this schedule."
+}

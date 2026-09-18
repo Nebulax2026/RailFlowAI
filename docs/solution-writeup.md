@@ -17,18 +17,16 @@ The original RailFlowAI prototype scheduled ad-hoc maintenance requests against 
 - Validator-first outputs with exact official schemas.
 - All three scenarios solved from one upload and compared in one workspace.
 - Explanations tied to completion, capacity, excess supply, and ECLO.
-- Explicit legal co-sharing patterns and a documented conservative protection policy.
+- Location-local legal co-sharing patterns and separate work-capacity and cross-contract physical-night safety checks.
 - Ephemeral hidden-instance handling with no database retention.
-- Live LTA network context without pretending that real line codes map to the fictional judging network.
-
-## DataMall
-
-The optional server-side integration reads Train Service Alerts using an AccountKey. It gives a works controller current operating context, but it never mutates Alpha/Beta capacity or influences validator scoring. This avoids an unsafe synthetic-to-real mapping.
+- Emergency location-capacity re-planning with a hard operational cap, frozen past work, and score-first minimum-churn recovery.
+- Baseline-to-revised impact evidence plus a grounded Schedule Assistant with an optional Gemini intent classifier.
 
 ## Technology
 
 - FastAPI and Pydantic-compatible Python domain services
 - Google OR-Tools CP-SAT
+- Gemini Enterprise Agent Platform through the Google Gen AI SDK when deploy-time ADC is configured
 - Next.js, React, TypeScript, and Lucide icons
 - Docker single-origin deployment on Render
 - Pytest and GitHub Actions
@@ -37,6 +35,8 @@ The optional server-side integration reads Train Service Alerts using an Account
 
 RailFlowAI reduces a dense spreadsheet-and-manual-checking exercise to a repeatable workflow: load, validate, solve, inspect, and export. The controller sees not just a schedule, but why it is feasible and where each policy spends its flexibility.
 
+After an urgent maintenance restriction, a controller can reduce one location's available capacity over a week range and re-plan the selected policy. The disruption is an additional hard limit even under flexible-supply policies. Completed past weeks remain fixed; future changes are minimized only after preserving the best policy score. Revised files pass both the normal export validator and a dedicated disruption-capacity audit before download.
+
 ## Validation boundary
 
-The official executable validator is unavailable. Protection-slot accounting reports 36 compatibility differences against the organizers' sample; these are documented in the validator specification and compatibility report, not hidden. Internal optimality refers to the documented model. Activity evidence reports observed constraints and costs, not untested counterfactual causes. Infeasibility and time-limit failures are surfaced while preserving other validated scenarios.
+The official executable validator is unavailable. Unsupported protection-slot supply charges have been removed. The sample is format-only per user clarification, so safety violations are negative test cases. The validator reconstructs a seven-night assignment independently from CSV and exposes it as evidence. Exact maintenance availability dates are not supplied. Internal optimality refers to the documented model. Activity evidence reports observed constraints and costs, not untested counterfactual causes. Infeasibility and time-limit failures are surfaced while preserving other validated scenarios.

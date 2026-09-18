@@ -13,13 +13,14 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.ps1.exporter import scenario_csvs, solutions_zip, validation_summary  # noqa: E402
 from app.ps1.models import Scenario  # noqa: E402
 from app.ps1.parser import EXPECTED_FILES, parse_instance  # noqa: E402
-from app.ps1.solver import solve_scenario  # noqa: E402
+from app.ps1.solver import solve_scenario, SolveFailure  # noqa: E402
 from app.ps1.validator import validate_exported_csvs  # noqa: E402
 
 
 def main() -> None:
     source = ROOT / "PS1" / "01_data"
     destination = ROOT / "submission" / "public-results"
+    destination.mkdir(parents=True, exist_ok=True)
     instance = parse_instance({name: (source / name).read_bytes() for name in EXPECTED_FILES})
     solutions = {}
     summary = {}
@@ -36,16 +37,25 @@ def main() -> None:
             compatibility[f"previous_{scenario.value}"] = validation_summary(validate_exported_csvs(instance, scenario, old_files))
     for report in compatibility.values():
         report['detail'] = {k:v for k,v in report['detail'].items() if k in ('safety_policy','nights_scheduled','eclo_nights','score_breakdown')}
+    compatibility["organizer_sample"]["detail"]["sample_role"] = "format_only_per_user_clarification"
     for phase, seconds in (("first", 30), ("improve", 90)):
         for scenario in Scenario:
             previous = solutions.get(scenario)
             if previous and previous.solver_stats.get("optimal"): continue
             start = time.monotonic()
-            solution = solve_scenario(instance, scenario, time_limit_seconds=seconds, incumbent=previous)
+            try:
+                solution = solve_scenario(instance, scenario, time_limit_seconds=seconds, incumbent=previous)
+            except SolveFailure as error:
+                benchmark["runs"].setdefault(scenario.value, []).append({"phase": phase, "termination_reason": error.reason, "wall_seconds": time.monotonic() - start})
+                print(f"{phase} {scenario.value}: {error.reason}; {error}", flush=True)
+                continue
             benchmark["runs"].setdefault(scenario.value, []).append({"phase": phase, **solution.solver_stats, "wall_seconds": time.monotonic() - start})
             solution.solution_revision = (previous.solution_revision if previous else 0) + 1
             solutions[scenario] = solution
             print(f"{phase} {scenario.value}: score {solution.validation.soft_scores['objective_score']}, {solution.solver_stats}", flush=True)
+    if len(solutions) != len(Scenario):
+        (destination / "failed_generation_benchmark.json").write_text(json.dumps(benchmark, indent=2), encoding="utf-8")
+        raise RuntimeError("Not all scenarios have valid outputs; existing bundle was not replaced. See failed_generation_benchmark.json.")
     for scenario, solution in solutions.items():
         files = scenario_csvs(solution)
         solution.validation = validate_exported_csvs(instance, scenario, files)

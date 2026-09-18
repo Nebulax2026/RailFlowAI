@@ -147,6 +147,30 @@ class ScenarioSolution:
     solution_revision: int = 0
 
 
+@dataclass(frozen=True)
+class Disruption:
+    location_id: str
+    start_week: int
+    end_week: int
+    capacity: int
+    reason: str
+
+
+@dataclass
+class ReplanRun:
+    replan_id: str
+    scenario: Scenario
+    baseline_revision: int
+    baseline_solution: ScenarioSolution
+    disruption: Disruption
+    status: JobStatus = JobStatus.QUEUED
+    message: str = "Waiting to re-plan."
+    solution: ScenarioSolution | None = None
+    disruption_audit: dict[str, Any] = field(default_factory=dict)
+    diff: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+
+
 @dataclass
 class ScenarioRun:
     status: JobStatus = JobStatus.QUEUED
@@ -168,5 +192,6 @@ class SolveJob:
     source: str
     instance: Instance
     scenarios: dict[Scenario, ScenarioRun]
+    replans: dict[str, ReplanRun] = field(default_factory=dict)
     cancel_requested: bool = False
     error: str | None = None

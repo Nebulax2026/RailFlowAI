@@ -12,7 +12,6 @@ RailFlowAI is a validator-first railway possession planner for NebulaX 2026 Prob
 - Applies strict-supply, strict-schedule, and balanced scenario policies.
 - Re-parses and independently validates exported CSV bytes before enabling downloads.
 - Shows activity timelines/tables, shared possessions, protection footprints, score breakdowns, and location/week evidence.
-- Displays LTA DataMall train service alerts as context only; live data never changes synthetic PS1 inputs.
 
 ## Required Input
 
@@ -48,7 +47,7 @@ The combined download includes only available validated scenarios under `scenari
 ```text
 Next.js workspace
       |
-FastAPI job API ---- LTA DataMall context proxy
+FastAPI job API
       |
 Strict CSV parser -> topology expansion -> CP-SAT solver
       |                                      |
@@ -82,10 +81,12 @@ RAILFLOW_API_BASE_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_API_BASE_URL=
 RAILFLOW_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 RAILFLOW_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
-DATAMALL_ACCOUNT_KEY=
+GOOGLE_CLOUD_PROJECT=
+GOOGLE_CLOUD_LOCATION=asia-southeast1
+RAILFLOW_GEMINI_MODEL=
 ```
 
-`DATAMALL_ACCOUNT_KEY` is optional. It remains server-side and is never returned to the browser.
+Scheduling uses the uploaded PS1 CSVs or the bundled public dataset. No external API key is required. When Agent Platform ADC and all three optional Google variables are available, Gemini classifies free-form Schedule Assistant questions; deterministic schedule evidence still produces every answer.
 
 ## API
 
@@ -94,8 +95,11 @@ POST   /api/ps1/jobs
 GET    /api/ps1/jobs/{job_id}
 DELETE /api/ps1/jobs/{job_id}
 GET    /api/ps1/jobs/{job_id}/scenarios/{A|B|C}
+POST   /api/ps1/jobs/{job_id}/scenarios/{A|B|C}/replans
+GET    /api/ps1/jobs/{job_id}/scenarios/{A|B|C}/replans/{replan_id}
+GET    /api/ps1/jobs/{job_id}/scenarios/{A|B|C}/replans/{replan_id}/files/{filename}
+POST   /api/ps1/jobs/{job_id}/assistant/query
 GET    /api/ps1/jobs/{job_id}/download
-GET    /api/datamall/train-service-alerts
 GET    /api/health
 ```
 
@@ -117,9 +121,9 @@ cd ..
 docker build -t railflowai .
 ```
 
-Generated outputs are accepted only after schema, workload, actual completion dates, weekly allocation, workfront, occupancy, legal mix, protection reservations, capacity, and ECLO checks pass. Scores are withheld for invalid schedules.
+Generated outputs are accepted only after schema, workload, actual completion dates, weekly allocation, workfront, occupancy, legal mix, cross-contract physical-night safety, work capacity, and ECLO checks pass. Scores are withheld for invalid schedules.
 
-The organizers describe their sample as feasible. Our explicit conservative protection policy reports compatibility differences against it; it is a compatibility fixture, not a claimed parity certificate. See [validator assumptions](docs/validator-spec.md) and [compatibility report](submission/public-results/compatibility_report.json). In particular, protection-only slots constrain safety supply while the published excess-access penalty counts exported work possessions. The official executable validator is unavailable.
+The supplied submission sample is **format-only**, per the user's clarification; it is not a feasible golden answer. We follow the README scheduling rules and independently reconstruct a consistent seven-night assignment from exported CSVs, including cross-contract protection conflicts. The UI and ZIP metadata expose that witness. Work groups alone consume supply. Exact maintenance calendars and the official executable validator are unavailable. See [validation rules](docs/validator-spec.md) and [sample diagnostics](submission/public-results/compatibility_report.json).
 
 Regenerate public results and run reproducible stress probes:
 
@@ -136,10 +140,10 @@ The production image builds a static Next.js export and serves it from FastAPI o
 
 ```bash
 docker build -t railflowai .
-docker run --rm -p 8000:8000 -e DATAMALL_ACCOUNT_KEY=your-key railflowai
+docker run --rm -p 8000:8000 railflowai
 ```
 
-`render.yaml` defines the hosted Render service. Connect the GitHub repository, create the blueprint, set `DATAMALL_ACCOUNT_KEY` as a secret, and verify `/api/health` before submitting the generated domain.
+`render.yaml` defines the hosted Render service. Connect the GitHub repository, create the blueprint, and verify `/api/health` before submitting the generated domain.
 
 ## Submission Assets
 

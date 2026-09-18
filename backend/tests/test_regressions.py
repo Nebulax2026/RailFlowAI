@@ -189,7 +189,13 @@ def test_buffer_work_collision_and_separate_local_possessions(tiny):
     r=manual(i,Scenario.A,[('LEFT',1,0),('RIGHT',1,0)]).validation
     assert any(v['rule']=='closure' and 'S02_S03' in v['detail'] for v in r.hard_violations)
     roomy=replace(i,supply={k:replace(v,supply_capacity=2) for k,v in i.supply.items()})
-    assert manual(roomy,Scenario.A,[('LEFT',1,0),('RIGHT',1,0)]).validation.feasible
+    # Extra supply cannot cure a collision on the same local night.
+    same=manual(roomy,Scenario.A,[('LEFT',1,0),('RIGHT',1,0)])
+    assert any(v['rule']=='closure' for v in same.validation.hard_violations)
+    same.accesses[1]=replace(same.accesses[1],access_night=2)
+    report=validate_exported_csvs(i,Scenario.A,scenario_csvs(same))
+    assert report.feasible
+    assert all(u['used']==u['work_possessions'] for u in report.detail['location_usage'])
 
 
 def test_workfront_is_independent_of_location(tiny):
@@ -199,6 +205,7 @@ def test_workfront_is_independent_of_location(tiny):
     s=manual(i,Scenario.A,[(a.activity_id,1,0),('B',1,0)])
     assert 'workfront' in {v['rule'] for v in s.validation.hard_violations}
     s.accesses[1]=replace(s.accesses[1],access_night=2)
+    s.occupancy=[replace(r,co_share_group=r.activity_id) for r in s.occupancy]
     assert validate_exported_csvs(i,Scenario.A,scenario_csvs(s)).feasible
 
 
@@ -206,3 +213,145 @@ def test_non_live_never_crosses_interchange(tiny):
     a=next(iter(tiny.activities.values()))
     a=replace(a,start_location_id='SEC:ALP:H01_H02:EB',end_location_id='SEC:ALP:H01_H02:EB')
     assert not any(':BET:' in loc for loc in closure_locations(tiny,a))
+
+
+@pytest.mark.parametrize('scenario', list(Scenario))
+def test_safety_independent_of_supply_and_scenario(tiny, scenario):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    a=replace(a,activity_id='LEFT',total_accesses=1,start_location_id='SEC:ALP:S01_S02:EB',end_location_id='SEC:ALP:S01_S02:EB')
+    b=replace(a,activity_id='RIGHT',start_location_id='SEC:ALP:S03_S04:EB',end_location_id='SEC:ALP:S03_S04:EB')
+    i=replace(tiny,activities={'LEFT':a,'RIGHT':b},contracts={c.contract_number:replace(c,nature_of_activity='Non-live (Consist)')})
+    report=manual(i,scenario,[('LEFT',1,0),('RIGHT',1,0)]).validation
+    assert any(v['rule']=='closure' and 'SEC:ALP:S02_S03:EB' in v['detail'] for v in report.hard_violations)
+    solved=solve_scenario(i,scenario,3)
+    assert solved.validation.feasible
+    if len({r.week for r in solved.accesses})==1:
+        assert len({r.access_night for r in solved.accesses})==2
+
+
+def test_cross_contract_night_numbers_are_not_global(tiny):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    a=replace(a,total_accesses=1,start_location_id='SEC:ALP:S01_S02:EB',end_location_id='SEC:ALP:S01_S02:EB')
+    b=replace(a,activity_id='OTHER',contract_number='OTHER',start_location_id='SEC:ALP:S03_S04:EB',end_location_id='SEC:ALP:S03_S04:EB')
+    c=replace(c,nature_of_activity='Non-live (Consist)')
+    i=replace(tiny,activities={a.activity_id:a,'OTHER':b},contracts={c.contract_number:c,'OTHER':replace(c,contract_number='OTHER')})
+    report=manual(i,Scenario.A,[(a.activity_id,1,0),('OTHER',1,0)]).validation
+    assert report.feasible
+    assert report.detail['safety_status']=='verified'
+    assert len({r['physical_night'] for r in report.detail['physical_night_assignment']})==2
+
+
+def test_inconsistent_sharing_across_locations_is_rejected(tiny):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    a=replace(a,total_accesses=1);b=replace(a,activity_id='B',contract_number='OTHER')
+    i=replace(tiny,activities={a.activity_id:a,'B':b},contracts={c.contract_number:c,'OTHER':replace(c,contract_number='OTHER')})
+    s=manual(i,Scenario.A,[(a.activity_id,1,0),('B',1,0)])
+    s.occupancy=[replace(r,co_share_group=r.activity_id) if r.location_id.startswith('PLAT:') else r for r in s.occupancy]
+    report=validate_exported_csvs(i,Scenario.A,scenario_csvs(s))
+    assert not report.feasible
+    assert any(v['rule']=='closure' for v in report.hard_violations)
+    assert 'objective_score' not in report.soft_scores
+
+
+
+def test_solver_can_share_with_different_partners_at_different_locations(tiny):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    left=replace(a,activity_id='LEFT',contract_number='LEFT',total_accesses=1,start_location_id='SEC:ALP:S01_S02:EB',end_location_id='SEC:ALP:S01_S02:EB')
+    right=replace(left,activity_id='RIGHT',contract_number='RIGHT',start_location_id='SEC:ALP:S03_S04:EB',end_location_id='SEC:ALP:S03_S04:EB')
+    span=replace(left,activity_id='SPAN',contract_number='SPAN',end_location_id='SEC:ALP:S03_S04:EB')
+    i=replace(tiny,horizon_weeks=1,activities={x.activity_id:x for x in (left,right,span)},
+              contracts={cid:replace(c,contract_number=cid,access_type='C' if cid=='SPAN' else 'PC') for cid in ('LEFT','RIGHT','SPAN')},
+              supply={k:replace(v,supply_capacity=1) for k,v in tiny.supply.items()})
+    solution=solve_scenario(i,Scenario.A,3)
+    assert solution.validation.feasible
+    labels={(r.activity_id,r.location_id):r.co_share_group for r in solution.occupancy}
+    assert labels['LEFT','SEC:ALP:S01_S02:EB']==labels['SPAN','SEC:ALP:S01_S02:EB']
+    assert labels['RIGHT','SEC:ALP:S03_S04:EB']==labels['SPAN','SEC:ALP:S03_S04:EB']
+
+
+@pytest.mark.parametrize('location', ['SEC:ALP:H01_H02:WB', 'SEC:BET:H01_H02:EB'])
+def test_live_closure_conflict_at_handwritten_locations(tiny, location):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    a=replace(a,activity_id='LIVE',total_accesses=1,start_location_id='SEC:ALP:H01_H02:EB',end_location_id='SEC:ALP:H01_H02:EB')
+    b=replace(a,activity_id='EXTERNAL',start_location_id=location,end_location_id=location)
+    i=replace(tiny,activities={'LIVE':a,'EXTERNAL':b},contracts={c.contract_number:replace(c,nature_of_activity='Live')})
+    report=manual(i,Scenario.B,[('LIVE',1,0),('EXTERNAL',1,0)]).validation
+    assert any(v['rule']=='closure' and location in v['detail'] for v in report.hard_violations)
+
+
+@pytest.mark.parametrize('count,feasible', [(7, True), (8, False)])
+def test_independent_contracts_must_fit_seven_nights(tiny,count,feasible):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    contracts={str(n):replace(c,contract_number=str(n),access_type='PM') for n in range(count)}
+    activities={str(n):replace(a,activity_id=str(n),contract_number=str(n),total_accesses=1) for n in range(count)}
+    i=replace(tiny,contracts=contracts,activities=activities,supply={k:replace(v,supply_capacity=8) for k,v in tiny.supply.items()})
+    s=manual(i,Scenario.B,[(aid,1,0) for aid in activities])
+    s.occupancy=[replace(r,co_share_group=r.activity_id) for r in s.occupancy]
+    report=validate_exported_csvs(i,Scenario.B,scenario_csvs(s))
+    assert report.feasible==feasible
+    if feasible:
+        assert len({r['physical_night'] for r in report.detail['physical_night_assignment']})==7
+    else:
+        assert any('seven physical nights' in v['detail'] for v in report.hard_violations)
+
+
+def test_safety_timeout_is_not_infeasibility(tiny,monkeypatch):
+    import app.ps1.safety as safety
+    def exhausted(*args): raise TimeoutError
+    monkeypatch.setattr(safety,'_color_nights',exhausted)
+    aid=next(iter(tiny.activities))
+    report=manual(tiny,Scenario.B,[(aid,1,1),(aid,2,1)]).validation
+    assert not report.feasible
+    assert report.detail['safety_status']=='unknown'
+    assert 'safety_unknown' in {v['rule'] for v in report.hard_violations}
+    assert 'objective_score' not in report.soft_scores
+
+
+def test_transitive_sharing_does_not_waive_external_buffers(tiny):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    specs=[('LEFT','SEC:ALP:S01_S02:EB','SEC:ALP:S01_S02:EB'),
+           ('RIGHT','SEC:ALP:S03_S04:EB','SEC:ALP:S03_S04:EB'),
+           ('BRIDGE','SEC:ALP:S01_S02:EB','SEC:ALP:S03_S04:EB')]
+    activities={aid:replace(a,activity_id=aid,contract_number=aid,total_accesses=1,start_location_id=lo,end_location_id=hi) for aid,lo,hi in specs}
+    contracts={aid:replace(c,contract_number=aid,nature_of_activity='Non-live (Consist)') for aid in activities}
+    i=replace(tiny,contracts=contracts,activities=activities)
+    report=manual(i,Scenario.A,[(aid,1,0) for aid in activities]).validation
+    assert not report.feasible
+    assert any('LEFT/RIGHT' in v['detail'] and 'SEC:ALP:S02_S03:EB' in v['detail'] for v in report.hard_violations)
+
+
+
+def test_cross_contract_global_safety_is_in_solver(tiny):
+    # Three legal sharing groups form a forced equality chain. The two outer
+    # activities have overlapping buffers but no direct sharing exemption.
+    # With one week and one work slot everywhere the only putative assignment
+    # is unsafe, even though location capacities and each contract alone fit.
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    specs=[('LEFT','SEC:ALP:S01_S02:EB','SEC:ALP:S01_S02:EB'),
+           ('RIGHT','SEC:ALP:S03_S04:EB','SEC:ALP:S03_S04:EB'),
+           ('BRIDGE','SEC:ALP:S01_S02:EB','SEC:ALP:S03_S04:EB')]
+    activities={aid:replace(a,activity_id=aid,contract_number=aid,total_accesses=1,start_location_id=lo,end_location_id=hi) for aid,lo,hi in specs}
+    contracts={aid:replace(c,contract_number=aid,nature_of_activity='Non-live (Consist)') for aid in activities}
+    i=replace(tiny,horizon_weeks=1,contracts=contracts,activities=activities,
+              supply={k:replace(v,supply_capacity=1) for k,v in tiny.supply.items()})
+    with pytest.raises(SolveFailure) as caught: solve_scenario(i,Scenario.A,3)
+    assert caught.value.reason=='infeasible'
+    # More work supply permits a second physical night, not extra protection slots.
+    roomy=replace(i,supply={k:replace(v,supply_capacity=2) for k,v in i.supply.items()})
+    solution=solve_scenario(roomy,Scenario.A,3)
+    assert solution.validation.feasible
+    nights={r['activity_id']:r['physical_night'] for r in solution.validation.detail['physical_night_assignment']}
+    assert nights['LEFT'] != nights['RIGHT']
+
+
+def test_stale_unsafe_incumbent_cannot_escape_revalidation(tiny):
+    a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
+    a=replace(a,total_accesses=1);b=replace(a,activity_id='B',contract_number='OTHER')
+    i=replace(tiny,activities={a.activity_id:a,'B':b},contracts={c.contract_number:c,'OTHER':replace(c,contract_number='OTHER')})
+    old=manual(i,Scenario.A,[(a.activity_id,1,0),('B',1,0)])
+    old.occupancy=[replace(r,co_share_group=r.activity_id) if r.location_id.startswith('PLAT:') else r for r in old.occupancy]
+    # old.validation still says feasible, despite changed CSV data.
+    assert old.validation.feasible
+    result=solve_scenario(i,Scenario.A,3,incumbent=old)
+    assert result.validation.feasible
+    assert validate_exported_csvs(i,Scenario.A,scenario_csvs(result)).feasible

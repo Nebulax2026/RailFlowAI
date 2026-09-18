@@ -1,29 +1,71 @@
+# Current README-rules update
+
+The user confirmed that the supplied sample is format-only, not a feasible
+reference answer. The current implementation is `readme-physical-night-v3`;
+the previous v2 measurements below are historical and do not certify current outputs.
+
+- 71 targeted backend tests passed (public solves are measured separately).
+- Type checking and the production frontend build passed.
+- New coverage: contradictory cross-location sharing, transitive cross-contract
+  conflicts, seven/eight-night limits, validation timeout vs infeasibility,
+  unsafe incumbent revalidation, and API physical-night evidence.
+- No browser interaction or Docker runtime verification was performed for this update.
+- A/B/C CSVs were regenerated under v3, independently revalidated and checked
+  byte-for-byte against the ZIP. Every exported physical-night witness was also
+  checked directly against raw CSV local indices, sharing relations and protection
+  intersections, without using the coloring search.
+
+| Scenario | First 30-second pass | Final score | Model optimum proved |
+| --- | --- | ---: | --- |
+| A | No solution in first 30 s | 25.2 | True |
+| B | 29.63 s | 30 | True |
+| C | No solution in first 30 s | 25.2 | True |
+
+All three required the improvement pass in the final measured run. A first found
+an incumbent 28.81 seconds into its additional pass; C 21.72 seconds into its
+additional pass. These are not first-pass success times. The 30-second first-result
+target was missed for A and C. B's first-pass score was 439 and improved to 30.
+The final scores are A 25.2 / B 30 / C 25.2; A/C each have 21 contract-overrun days
+across two contracts, B has zero delay and six ECLO accesses, all have zero excess
+work slots. Peak process memory: 1712.71 MiB. Eight CP-SAT workers were used.
+Exact OS/Python, wall times and bounds are in `benchmark.json`.
+
+The format-only sample produces 64 safety diagnostics under the current model
+and receives no objective score. This is an expected negative fixture, not a
+requirement to weaken validation. Historic reports below are explicitly superseded.
+
+---
+
+## Historical v2 verification (superseded)
+
 # PS1 improvement verification
 
 Implementation includes hardened parsing/export validation, joint ECLO and possession optimisation, lexicographic early placement, two-pass jobs with cancellation and retained incumbents, revision-aware APIs/downloads, and an activity/location evidence UI. Deployment publishing, video production, GitLab migration and what-if replanning were not performed.
 
-## Checks performed
+## Current supply/safety correction checks
 
-- Backend suite: 50 tests passed, including public A/B/C solves. After the final parser/export refinements, 47 targeted tests passed; the three public solves were also regenerated separately.
-- Frontend: `npm run lint` (Next type generation + TypeScript) and production static build passed.
-- Docker: production image built successfully with Python 3.12 and Node 22. Real localhost container requests passed health/static serving, public A/B/C completion, 54 evidence rows per scenario, all nine CSVs in ZIP, eight-file multipart upload, cancellation request, and stale/current revision download checks. The final image also passed health/static/CSV parsing smoke checks.
-- CSVs were regenerated and independently re-parsed. ZIP includes validation summary and a revision manifest. Compatibility and stress failures are retained in JSON.
-- Browser interaction/visual QA remains **unverified**: the Browser runtime reported no available browsers, and its discovery list was empty. HTTP and type/build checks do not substitute for clicking, filter interaction, accessibility or responsive visual verification.
+- 55 backend regression/API tests passed; three public solve tests also passed during the first check, and final A/B/C outputs were subsequently regenerated and independently re-parsed.
+- New cases cover supply-independent same-night collisions in A/B/C, separate local nights, cross-contract timing uncertainty, location-local sharing partners, and handwritten Live mirroring/interchange conflicts. Existing schema, date, workload, ECLO, workfront and objective-enumeration tests remain green.
+- Frontend `npm.cmd run lint` and production build passed. No browser interaction or Docker runtime checks were rerun for this correction; earlier Docker verification is historical, not verification of this revision.
+- Official sample now has one explicit same-local-night buffer ambiguity (A001/A007, week 22), instead of 36 unsupported protection-slot capacity failures. The official CSVs were not changed.
+- Regenerated CSVs and ZIP contain current work-only supply accounting and safety-coverage diagnostics. API `location_usage.used` and the UI both show work possessions only.
 
-## Public run
+## Public run after correction
 
 | Scenario | First validated solution | Final score | Primary model optimum proved |
 | --- | ---: | ---: | --- |
-| A | 12.03 s | 40.6 | Yes |
-| B | 4.32 s | 30 | Yes |
-| C | 8.45 s | 25.2 | Yes |
+| A | 9.39 s | 25.2 | Yes |
+| B | 6.00 s | 30 | Yes |
+| C | 10.34 s | 25.2 | Yes |
 
-All 54 activities meet the requested workload in each scenario. A has 35 contract-overrun days, B zero, C 21; B uses six ECLO nights. All three have zero excess exported work possessions. Peak memory is process-wide: 742.47 MiB at the end of the public generation process. See `submission/public-results/benchmark.json` for exact platform, timings, bounds and measurements. These are observations, not a hidden-instance runtime guarantee.
+All 54 activities meet the requested workload. A and C each have 21 contract-overrun days across two contracts; B has zero delay and six ECLO nights. All scenarios have zero excess work possessions. Peak process memory was 1034.32 MiB. C's total run including extraction and validation took 30.30 s; the search budget is not a strict wall-clock response guarantee. Exact environment and timing are in `submission/public-results/benchmark.json`.
+
+Before this correction A scored 40.6 with 35 contract-overrun days across four contracts under the previous protection-reservation policy. The new result uses a different constraint interpretation, so this is a policy correction, not evidence of beating the old model at its own objective.
 
 ## Known compatibility and scaling boundaries
 
-The conservative protection policy differs from the organizers' stated-feasible sample at 36 location/weeks and rejects the old A result at 16. This is explicitly an interpretation difference. The old A score must not be compared to the new A score as if both passed the same validator. The official executable validator is unavailable; model optimality is not official benchmark optimality. See `validator-spec.md` and `compatibility_report.json`.
+The official executable validator is unavailable. Comparable contract/type-local nights are checked; network-wide physical timing across contracts remains unverified. Potential cross-contract intersections are exposed in the validation report, not certified safe. One organizer-sample buffer-sharing interpretation remains unresolved. Model optimality is not official benchmark optimality. See `validator-spec.md` and `compatibility_report.json`.
 
-Seed-42 reduced-supply stress: A was proved infeasible under this policy; B found a validated model optimum; C found a validated incumbent with a remaining gap. Doubled demand (108 activities) produced no validated result within the 30-second probe for A/B/C. The stress process reached approximately 1652 MiB peak working set. Explicit possession pattern enumeration scales combinatorially, and build-time budgeting prevents an unbounded search rather than guaranteeing larger instances finish. The stress probe uses one 30-second pass, not the production improvement pass. See `stress_benchmark.json`.
+`stress_benchmark.json` and the `previous_*` compatibility entries are historical measurements of `local-protection-reservations-v1`, not measurements of this revision. The earlier doubled-demand probe found no result within 30 seconds; current larger-instance performance has not been remeasured. Location-local pattern enumeration still scales combinatorially.
 
 Manual browser verification remains necessary when a browser becomes available: load public data, observe improving revisions, filter activities/contracts/lines, toggle timeline/table, inspect protection and shared memberships, filter location/week usage, cancel while retaining output, and verify desktop/mobile layout and downloads.

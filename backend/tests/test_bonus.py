@@ -1,0 +1,108 @@
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+import threading
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+from .test_regressions import tiny
+from .test_ps1 import instance
+from app.ps1.assistant import answer_question
+from app.main import app
+from app.ps1.jobs import job_manager
+from app.ps1.models import Disruption, JobStatus, Scenario, ScenarioRun, SolveJob
+from app.ps1.replanning import audit_disruption, solution_diff
+from app.ps1.solver import solve_scenario
+from app.ps1.topology import activity_locations
+
+
+@pytest.mark.parametrize("scenario", list(Scenario))
+def test_disruption_is_a_hard_cap_for_every_policy(tiny, scenario):
+    aid = next(iter(tiny.activities))
+    instance = replace(tiny, activities={aid: replace(tiny.activities[aid], total_accesses=1)})
+    baseline = solve_scenario(instance, scenario, 3)
+    location = activity_locations(instance, instance.activities[aid])[0]
+    disruption = Disruption(location, 1, 1, 0, "urgent_maintenance")
+    revised = solve_scenario(instance, scenario, 3, incumbent=baseline, disruption=disruption)
+    audit = audit_disruption(instance, revised, disruption)
+    assert revised.validation.feasible
+    assert audit["feasible"]
+    assert not any(row.activity_id == aid and row.week == 1 for row in revised.accesses)
+
+
+def test_replan_freezes_past_and_reports_diff(tiny):
+    baseline = solve_scenario(tiny, Scenario.A, 3)
+    aid = next(iter(tiny.activities)); location = activity_locations(tiny, tiny.activities[aid])[0]
+    disruption = Disruption(location, 2, 2, 0, "defect")
+    revised = solve_scenario(tiny, Scenario.A, 3, incumbent=baseline, disruption=disruption)
+    old_past = [(r.activity_id, r.week, r.eclo, r.access_night) for r in baseline.accesses if r.week < 2]
+    new_past = [(r.activity_id, r.week, r.eclo, r.access_night) for r in revised.accesses if r.week < 2]
+    assert old_past == new_past
+    diff = solution_diff(tiny, baseline, revised, disruption)
+    assert diff["summary"]["moved_activities"] >= 1
+    assert diff["activity_changes"][0]["reason"] == "direct_disruption"
+
+
+def test_schedule_assistant_intents(tiny):
+    solution = solve_scenario(tiny, Scenario.A, 3)
+    aid = next(iter(tiny.activities)); location = activity_locations(tiny, tiny.activities[aid])[0]
+    questions = [
+        (f"What is the downstream risk from {aid}?", "downstream_risk"),
+        (f"Capacity at {location} week 1", "capacity_status"),
+        (f"Who co-shares with {aid}?", "co_share_status"),
+        ("Handover brief for week 1", "handover_brief"),
+    ]
+    for question, intent in questions:
+        response = answer_question(tiny, solution, question)
+        assert response["intent"] == intent
+        assert response["answer"]
+
+
+def test_move_reason_is_grounded_in_replan_diff(tiny):
+    baseline = solve_scenario(tiny, Scenario.A, 3)
+    aid = next(iter(tiny.activities)); location = activity_locations(tiny, tiny.activities[aid])[0]
+    disruption = Disruption(location, 2, 2, 0, "defect")
+    revised = solve_scenario(tiny, Scenario.A, 3, incumbent=baseline, disruption=disruption)
+    diff = solution_diff(tiny, baseline, revised, disruption)
+    response = answer_question(tiny, revised, f"Why was {aid} moved?", diff)
+    assert response["intent"] == "activity_move_reason"
+    assert aid in response["evidence"]
+
+
+def test_replan_api_download_and_assistant(tiny):
+    aid = next(iter(tiny.activities))
+    instance = replace(tiny, activities={aid: replace(tiny.activities[aid], total_accesses=1)})
+    baseline = solve_scenario(instance, Scenario.A, 3); baseline.solution_revision = 1
+    run = ScenarioRun(status=JobStatus.COMPLETED, progress=100, solution=baseline, phase="finished")
+    now = datetime.now(UTC); job_id = "bonus-api-test"
+    job = SolveJob(job_id, JobStatus.COMPLETED, now, now + timedelta(minutes=5), "test", instance,
+                   {Scenario.A: run, Scenario.B: ScenarioRun(), Scenario.C: ScenarioRun()})
+    location = activity_locations(instance, instance.activities[aid])[0]
+    with job_manager._lock:
+        job_manager._jobs[job_id] = job; job_manager._events[job_id] = threading.Event()
+    client = TestClient(app)
+    try:
+        response = client.post(f"/api/ps1/jobs/{job_id}/scenarios/A/replans", json={
+            "location_id": location, "start_week": 1, "end_week": 1,
+            "capacity": 0, "reason": "urgent_maintenance",
+        })
+        assert response.status_code == 202
+        replan_id = response.json()["replan_id"]
+        payload = None
+        for _ in range(50):
+            payload = client.get(f"/api/ps1/jobs/{job_id}/scenarios/A/replans/{replan_id}").json()
+            if payload["status"] in {"completed", "failed"}: break
+            time.sleep(0.05)
+        assert payload["status"] == "completed"
+        assert payload["disruption_audit"]["feasible"]
+        download = client.get(f"/api/ps1/jobs/{job_id}/scenarios/A/replans/{replan_id}/files/RESULTS.csv")
+        assert download.status_code == 200
+        answer = client.post(f"/api/ps1/jobs/{job_id}/assistant/query", json={
+            "scenario": "A", "replan_id": replan_id, "question": f"Why was {aid} moved?",
+        })
+        assert answer.status_code == 200
+        assert answer.json()["intent"] == "activity_move_reason"
+    finally:
+        with job_manager._lock:
+            job_manager._events.pop(job_id, None); job_manager._jobs.pop(job_id, None)

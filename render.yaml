@@ -10,5 +10,3 @@ services:
         value: railflowai.onrender.com,localhost,127.0.0.1
       - key: RAILFLOW_CORS_ORIGINS
         value: https://railflowai.onrender.com
-      - key: DATAMALL_ACCOUNT_KEY
-        sync: false

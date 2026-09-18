@@ -4,7 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
-from app.ps1.models import JobStatus, Scenario, ScenarioRun, SolveJob
+from app.ps1.models import Disruption, JobStatus, ReplanRun, Scenario, ScenarioRun, SolveJob
+from app.ps1.replanning import audit_disruption, solution_diff
 from app.ps1.exporter import scenario_csvs
 from app.ps1.parser import EXPECTED_FILES, parse_instance
 from app.ps1.solver import solve_scenario, SolveFailure
@@ -34,6 +35,23 @@ class JobManager:
     def get(self, job_id):
         self.cleanup()
         with self._lock: return self._jobs.get(job_id)
+
+    def create_replan(self, job_id, scenario, disruption):
+        job = self.get(job_id)
+        if not job: return None
+        with self._lock:
+            run = job.scenarios[scenario]
+            if run.status != JobStatus.COMPLETED or not run.solution or not run.solution.validation.feasible:
+                raise ValueError(f"Scenario {scenario.value} must be completed and feasible before re-planning.")
+            replan_id = uuid4().hex
+            replan = ReplanRun(replan_id, scenario, run.solution.solution_revision, run.solution, disruption)
+            job.replans[replan_id] = replan
+        self._executor.submit(self._run_replan, job_id, replan_id)
+        return replan
+
+    def get_replan(self, job_id, replan_id):
+        job = self.get(job_id)
+        return job.replans.get(replan_id) if job else None
 
     def cancel(self, job_id):
         self.cleanup()
@@ -108,6 +126,30 @@ class JobManager:
         with self._lock:
             job.status = JobStatus.COMPLETED if all(r.solution for r in job.scenarios.values()) else JobStatus.FAILED
             if job.status == JobStatus.FAILED: job.error = "Some scenarios have no validated output; available scenarios remain downloadable."
+
+    def _run_replan(self, job_id, replan_id):
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if not job or replan_id not in job.replans: return
+            replan = job.replans[replan_id]
+            replan.status = JobStatus.RUNNING; replan.message = "Re-planning around the disruption."
+        try:
+            solution = solve_scenario(job.instance, replan.scenario, self.first_seconds,
+                                      incumbent=replan.baseline_solution, disruption=replan.disruption)
+            audit = audit_disruption(job.instance, solution, replan.disruption)
+            if not audit["feasible"]:
+                raise SolveFailure("disruption_validation_failed", str(audit["hard_violations"][:3]))
+            diff = solution_diff(job.instance, replan.baseline_solution, solution, replan.disruption)
+            with self._lock:
+                if job_id not in self._jobs: return
+                replan.solution = solution; replan.disruption_audit = audit; replan.diff = diff
+                replan.status = JobStatus.COMPLETED; replan.message = "Validated revised schedule available."
+        except SolveFailure as error:
+            with self._lock:
+                replan.status = JobStatus.FAILED; replan.error = str(error); replan.message = "No revised schedule was found."
+        except Exception as error:
+            with self._lock:
+                replan.status = JobStatus.FAILED; replan.error = f"{type(error).__name__}: re-planning failed."
 
 
 job_manager = JobManager()
