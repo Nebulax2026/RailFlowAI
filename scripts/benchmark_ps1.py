@@ -27,12 +27,12 @@ def main():
     congested = replace(base, supply={k:replace(v,supply_capacity=max(0,v.supply_capacity-rng.choice((0,0,1)))) for k,v in base.supply.items()})
     scaled = replace(base, contracts={**base.contracts, **{k+'X':replace(v,contract_number=k+'X') for k,v in base.contracts.items()}},
                      activities={**base.activities, **{k+'X':replace(v,activity_id=k+'X',contract_number=v.contract_number+'X',predecessor_activity_id=v.predecessor_activity_id+'X' if v.predecessor_activity_id else None) for k,v in base.activities.items()}})
-    report = {'seed':42,'platform':platform.platform(),'python':platform.python_version(),'seconds_per_scenario':args.seconds,'runs':[]}
+    report = {'seed':42,'workers':8,'platform':platform.platform(),'python':platform.python_version(),'seconds_per_scenario':args.seconds,'runs':[]}
     for name, instance in [('congested',congested),('double_demand',scaled)]:
         for scenario in Scenario:
             start=time.monotonic()
             try:
-                solution=solve_scenario(instance,scenario,args.seconds)
+                solution=solve_scenario(instance,scenario,args.seconds,workers=8)
                 row={'case':name,'scenario':scenario.value,'activities':len(instance.activities),'feasible':solution.validation.feasible,**solution.solver_stats}
             except SolveFailure as error:
                 row={'case':name,'scenario':scenario.value,'activities':len(instance.activities),'feasible':False,'termination_reason':error.reason,'detail':str(error)}

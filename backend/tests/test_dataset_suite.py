@@ -46,9 +46,11 @@ def test_batch_average_counts_valid_zero_but_excludes_failed_and_pending(monkeyp
     manager = BenchmarkManager()
     manager._executor = SimpleNamespace(submit=lambda *args: None)
     created = manager.create("greedy", 5, 42, ["A01_small", "B01_small", "C01_small"])
+    assert created["workers_per_case"] == 8
     assert [row["status"] for row in created["rows"]] == ["queued"] * 3
     scores = {"A": 0.0, "C": 25.2}
     def fake_run(instance, files, config, cancelled, on_update, scenario, legacy=False):
+        assert config["workers"] == 8
         if scenario.value not in scores:
             return SearchResult(None, {"status": "no_solution_within_budget"})
         solution = SimpleNamespace(validation=SimpleNamespace(soft_scores={"objective_score": scores[scenario.value]}))

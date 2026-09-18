@@ -1,11 +1,13 @@
 """Bounded legacy-model run for comparisons at the same worker/time budget."""
 import time
+from dataclasses import asdict
 from app.ps1.solver import solve_scenario, SolveFailure
 from app.ps1.scenario_a.search import SearchResult
 
 
 def solve(instance, scenario, config, stop, checkpoint):
     started = time.monotonic()
+    config = config.resolved()
     best, first = None, None
     trajectory = []
 
@@ -13,7 +15,7 @@ def solve(instance, scenario, config, stop, checkpoint):
         stats = best.solver_stats if best else {}
         cost = best.validation.soft_scores["objective_score"] if best else None
         bound = stats.get("best_bound")
-        return dict(status=status, scenario=scenario.value, strategy="legacy", objective=cost,
+        return dict(status=status, scenario=scenario.value, strategy="legacy", config=asdict(config), objective=cost,
                     global_lower_bound=bound, absolute_gap=None if cost is None or bound is None else max(0, cost-bound),
                     elapsed_seconds=time.monotonic()-started, time_to_first_feasible=first,
                     trajectory=list(trajectory), policy="local-protection-reservations-v1",

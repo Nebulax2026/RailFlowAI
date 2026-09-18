@@ -26,7 +26,7 @@ def main():
     rows = []
     for strategy in ("greedy", "integrated", "random_lns", "alns"):
         for scenario in Scenario:
-            config = asdict(SearchConfig(strategy=strategy, time_limit_seconds=args.seconds, seed=args.seed))
+            config = asdict(SearchConfig(strategy=strategy, time_limit_seconds=args.seconds, seed=args.seed, workers=8))
             result = run_worker(instance, files, config, lambda: False, lambda *_: None, scenario)
             directory = args.output / strategy / scenario.value
             directory.mkdir(parents=True)

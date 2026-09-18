@@ -28,7 +28,7 @@ def main():
             break
         time.sleep(.2)
     payload = dict(platform=platform.platform(), python=platform.python_version(),
-                   ortools=ortools.__version__, workers_per_case=1, run=result)
+                   ortools=ortools.__version__, workers_per_case=result["workers_per_case"], run=result)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2)+"\n")
     print(json.dumps(dict(status=result["status"], summary=result["summary"]), indent=2))

@@ -53,7 +53,8 @@ def main(argv=None):
     parser.add_argument("--strategy", choices=("greedy", "integrated", "random_lns", "alns"))
     parser.add_argument("--initialization", choices=("direct", "feasibility", "greedy_hint"))
     parser.add_argument("--seconds", type=float)
-    parser.add_argument("--workers", type=int)
+    parser.add_argument("--workers", choices=("auto", *map(str, range(1, 9))),
+                        help="auto (default): select 1/2/4/8 workers from available CPUs; or set 1-8")
     parser.add_argument("--seed", type=int)
     parser.add_argument("--memory-limit-mb", type=int)
     args = parser.parse_args(argv)
@@ -61,7 +62,8 @@ def main(argv=None):
     for argument, field in (("strategy", "strategy"), ("initialization", "initialization"), ("seconds", "time_limit_seconds"),
                             ("workers", "workers"), ("seed", "seed"), ("memory_limit_mb", "memory_limit_mb")):
         if getattr(args, argument) is not None:
-            values[field] = getattr(args, argument)
+            value = getattr(args, argument)
+            values[field] = int(value) if field == "workers" and value != "auto" else value
     args.output.mkdir(parents=True, exist_ok=True)
     # Never accidentally publish an incumbent from a previous invocation.
     if (args.output / "checkpoint.json").exists():
@@ -70,7 +72,7 @@ def main(argv=None):
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     try:
-        config = SearchConfig(**values)
+        config = SearchConfig(**values).resolved()
         memory_enforcement = "CP-SAT advisory limit; no portable OS address-space cap"
         if sys.platform.startswith("linux"):
             import resource

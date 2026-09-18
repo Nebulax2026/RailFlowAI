@@ -7,8 +7,10 @@ eight CSV files and click **Run A, B and C**.
 Each of Greedy, Integrated CP-SAT, Random LNS and Adaptive LNS now runs A, B and
 C sequentially. **Time per scenario** applies separately: 15 seconds means up
 to about 45 seconds of search for the job, plus worker startup/export overhead.
-One solver worker and one active subprocess prevent the three runs from
-competing for CPU. Seed and method apply to all three scenarios.
+One active subprocess keeps the three scenarios sequential. Solver workers
+default to automatic CPU-based selection (1/2/4/8, capped at 8); see
+[worker configuration](scenario-a-usage.md). Existing planner and replanning
+also select workers automatically. Seed and method apply to all three scenarios.
 
 The **Scenario scores** table shows validated scores, workload completion,
 overrun, excess slots and ECLO for all three. Click a scenario to inspect its
@@ -84,7 +86,8 @@ download, mobile layout and switching back to the existing planner.
 The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 10 witnessed
 feasible inputs for each scenario. The UI offers **Run selected method · 30
 cases** and **Compare all 5 methods · 150 cases**. Both run serially with the
-same configured time and one CP-SAT worker per case. The old Existing planner
+same configured time and eight CP-SAT workers per case. Historical benchmark
+results below were recorded with one worker; new runs use eight. The old Existing planner
 uses one bounded pass per dataset, matching the time budget used for the other
 methods. A single-input Existing planner run retains its original 30+90 second
 search workflow. The average uses validated finished runs only and displays

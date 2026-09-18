@@ -5,13 +5,14 @@ import random
 import threading
 import time
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Callable
 
 import ortools
 from ortools.sat.python import cp_model
 
 from app.ps1.exporter import scenario_csvs
+from app.ps1.cpu_budget import resolve_workers, validate_workers
 from app.ps1.models import Instance, ScenarioSolution
 from app.ps1.scenario_a.model import build_model, greedy
 from app.ps1.scenario_a.policy import POLICY_VERSION, SOURCE_REVISION, prepare
@@ -28,7 +29,7 @@ class SearchConfig:
     strategy: str = "integrated"
     initialization: str = "greedy_hint"
     time_limit_seconds: float = 30
-    workers: int = 1
+    workers: int | str = "auto"
     seed: int = 42
     memory_limit_mb: int = 2048
     initial_fraction: float = 0.4
@@ -42,14 +43,18 @@ class SearchConfig:
             raise ValueError("Unknown Scenario A strategy.")
         if self.initialization not in {"direct", "feasibility", "greedy_hint"}:
             raise ValueError("Unknown initialization.")
-        if not 0.2 <= self.time_limit_seconds <= 600 or not 1 <= self.workers <= 8:
-            raise ValueError("Use 0.2–600 seconds and 1–8 workers.")
+        validate_workers(self.workers)
+        if not 0.2 <= self.time_limit_seconds <= 600:
+            raise ValueError("Use 0.2–600 seconds.")
         if not 256 <= self.memory_limit_mb <= 16384 or not 0 <= self.seed <= 2**31 - 1:
             raise ValueError("Invalid memory limit or seed.")
         if not 0 < self.initial_fraction <= 1 or not 0 < self.neighborhood_min <= self.neighborhood_max <= 1:
             raise ValueError("Invalid search fractions.")
         if self.repair_seconds <= 0 or self.restart_every < 1:
             raise ValueError("Invalid repair/restart configuration.")
+
+    def resolved(self):
+        return replace(self, workers=resolve_workers(self.workers))
 
 
 @dataclass
@@ -65,6 +70,7 @@ def solve(instance: Instance, config: SearchConfig = SearchConfig(),
           cancelled: Callable[[], bool] = lambda: False,
           checkpoint: Callable[[ScenarioSolution, dict], None] | None = None) -> SearchResult:
     started = time.monotonic()
+    config = config.resolved()
     deadline = started + config.time_limit_seconds
     search_deadline = deadline - min(1.0, config.time_limit_seconds * 0.08)
     rng = random.Random(config.seed)

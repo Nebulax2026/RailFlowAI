@@ -27,7 +27,7 @@ class BenchmarkManager:
         self._lock = threading.RLock()
         self._runs = {}
         # Share the one-slot queue with ordinary solve jobs. The worker itself
-        # runs one CP-SAT worker; no concurrent solver processes are started.
+        # runs eight CP-SAT workers; no concurrent solver processes are started.
         self._executor = job_manager._executor
 
     def create(self, method, seconds, seed, case_ids=None):
@@ -81,7 +81,7 @@ class BenchmarkManager:
                                     mean_score=round(sum(r["score"] for r in valid)/len(valid), 3) if valid else None,
                                     worst_score=max((r["score"] for r in valid), default=None)))
         return dict(id=run_id, status=run["status"], method=run["method"],
-                    seconds=run["seconds"], seed=run["seed"],
+                    seconds=run["seconds"], seed=run["seed"], workers_per_case=8,
                     created_at=run["created_at"], expires_at=run["expires_at"],
                     error=run["error"], rows=rows, summary=summary)
 
@@ -115,7 +115,7 @@ class BenchmarkManager:
                     files = {name: (folder / name).read_bytes() for name in EXPECTED_FILES}
                     instance = parse_instance(files)
                     strategy = "integrated" if row["method"] == "legacy" else row["method"]
-                    config = SearchConfig(strategy=strategy, time_limit_seconds=run["seconds"], workers=1, seed=run["seed"])
+                    config = SearchConfig(strategy=strategy, time_limit_seconds=run["seconds"], workers=8, seed=run["seed"])
 
                     def update(solution, diagnostics):
                         if solution:

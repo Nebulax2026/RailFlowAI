@@ -9,6 +9,7 @@ import math
 import random
 import threading
 import time
+from dataclasses import asdict
 from collections import Counter, defaultdict
 
 from ortools.sat.python import cp_model
@@ -157,6 +158,7 @@ def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
     if scenario not in (Scenario.B, Scenario.C):
         raise ValueError("Use the existing Scenario A solver for A.")
     started = time.monotonic()
+    config = config.resolved()
     deadline = started + config.time_limit_seconds
     search_deadline = deadline - min(1, config.time_limit_seconds * .08)
     best, bound, first = None, 0.0, None
@@ -168,7 +170,7 @@ def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
 
     def summary():
         score = best.validation.soft_scores["objective_score"] if best else None
-        return dict(scenario=scenario.value, strategy=config.strategy, status=status, objective=score,
+        return dict(scenario=scenario.value, strategy=config.strategy, config=asdict(config), status=status, objective=score,
                     global_lower_bound=bound, absolute_gap=None if score is None else max(0, score-bound),
                     time_to_first_feasible=first, elapsed_seconds=time.monotonic()-started,
                     trajectory=list(trajectory), phases=list(phases), operators={op: dict(v) for op, v in operators.items()},

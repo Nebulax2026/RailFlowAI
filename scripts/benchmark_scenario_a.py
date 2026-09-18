@@ -99,7 +99,7 @@ def main():
                     directory = output / "runs" / f"{name}-{budget:g}s-{seed}-{strategy}"
                     started = time.monotonic()
                     process = subprocess.run([sys.executable, "-m", "app.ps1.scenario_a.cli", "--input", str(inputs[name]),
-                        "--output", str(directory), "--strategy", strategy, "--seconds", str(budget), "--seed", str(seed), "--workers", "1", "--initialization", args.initialization],
+                        "--output", str(directory), "--strategy", strategy, "--seconds", str(budget), "--seed", str(seed), "--workers", "8", "--initialization", args.initialization],
                         cwd=ROOT / "backend", capture_output=True, text=True, timeout=budget + 15)
                     wall = time.monotonic() - started
                     diagnostics = json.loads((directory / "diagnostics.json").read_text())
@@ -128,7 +128,7 @@ def summarize(output, runs):
                      "median_wall_seconds": statistics.median(r["wall_seconds"] for r in group),
                      "peak_rss_mb": max((r["diagnostics"].get("peak_rss_mb", 0) for r in group)),
                      "median_gap": statistics.median(r["diagnostics"]["absolute_gap"] for r in valid) if valid else None})
-    (output / "summary.json").write_text(json.dumps({"platform": platform.platform(), "python": platform.python_version(), "workers": 1, "concurrent_runs": 1, "rows": rows}, indent=2))
+    (output / "summary.json").write_text(json.dumps({"platform": platform.platform(), "python": platform.python_version(), "workers": 8, "concurrent_runs": 1, "rows": rows}, indent=2))
     lines = ["# Scenario A benchmark", "", "All costs use the documented policy and independent CSV validation. Invalid runs have no cost. Medians/worst costs cover feasible runs only; read them with the success counts. No official validator was available.", "", "| Case | Seconds | Strategy | Feasible | Median cost | Worst cost | Median gap | First feasible (s) | Wall (s) | Peak RSS MB |", "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|"]
     def fmt(v): return "—" if v is None else f"{v:.2f}"
     for row in rows:

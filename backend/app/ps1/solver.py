@@ -238,8 +238,10 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
 
 
 def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None,
-                   cancel_event=None, disruption=None, workers=8, seed=42):
+                   cancel_event=None, disruption=None, workers="auto", seed=42):
+    from app.ps1.cpu_budget import resolve_workers
     started = time.monotonic()
+    workers = resolve_workers(workers)
     cancel_event = cancel_event or threading.Event()
     built = build_scenario_model(instance, scenario, time_limit_seconds, started, cancel_event, incumbent, disruption)
     model, primary, x, extract = built.model, built.primary, built.x, built.extract
