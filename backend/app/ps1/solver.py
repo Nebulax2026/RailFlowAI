@@ -170,7 +170,7 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
                            work=work, footprint=footprint, extract=extract)
 
 
-def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None, cancel_event=None):
+def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None, cancel_event=None, workers=8, seed=42):
     started = time.monotonic()
     cancel_event = cancel_event or threading.Event()
     built = build_scenario_model(instance, scenario, time_limit_seconds, started, cancel_event, incumbent)
@@ -193,7 +193,7 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
             self.last = time.monotonic()
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = max(0.01, time_limit_seconds - (time.monotonic() - started))
-    solver.parameters.num_search_workers = 8; solver.parameters.random_seed = 42
+    solver.parameters.num_search_workers = workers; solver.parameters.random_seed = seed
     done = threading.Event()
     def monitor():
         while not done.wait(0.1):
@@ -215,7 +215,8 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
         model.Minimize(sum(week * var for (aid, week), var in x.items()))
         early_solver = cp_model.CpSolver()
         early_solver.parameters.max_time_in_seconds = remaining
-        early_solver.parameters.num_search_workers = 8
+        early_solver.parameters.num_search_workers = workers
+        early_solver.parameters.random_seed = seed
         early_done = threading.Event()
         def early_monitor():
             while not early_done.wait(0.1):
@@ -234,6 +235,6 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
     solution.solver_stats = {"elapsed_seconds": time.monotonic() - started, "first_feasible_seconds": first_time[0], "best_score": score,
                              "best_bound": bound, "relative_gap": None if bound is None else max(0, score - bound) / max(1, abs(score)),
                              "optimal": status == cp_model.OPTIMAL, "termination_reason": reason,
-                             "model_variables": len(model.Proto().variables), "search_workers": 8,
+                             "model_variables": len(model.Proto().variables), "search_workers": workers,
                              "process_peak_memory_mb": peak_memory_mb()}
     return solution

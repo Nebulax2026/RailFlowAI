@@ -1,7 +1,7 @@
 # Four search methods, three scenarios
 
-Start `npm run dev`, open http://localhost:3000, select **Strategy comparison**,
-choose a **Search method**, then click **Load public dataset** or upload the
+Start `npm run dev`, open http://localhost:3000, choose a **Search method**
+(including Existing planner), then click **Load public dataset** or upload the
 eight CSV files and click **Run A, B and C**.
 
 Each of Greedy, Integrated CP-SAT, Random LNS and Adaptive LNS now runs A, B and
@@ -78,3 +78,40 @@ lint/type checking.
 Chrome smoke checks also passed: A/B/C score rows and detail navigation,
 public/uploaded input, full ALNS run, cancellation retaining output, ZIP
 download, mobile layout and switching back to the existing planner.
+
+## Thirty dataset average
+
+The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 10 witnessed
+feasible inputs for each scenario. The UI offers **Run selected method · 30
+cases** and **Compare all 5 methods · 150 cases**. Both run serially with the
+same configured time and one CP-SAT worker per case. The old Existing planner
+uses one bounded pass per dataset, matching the time budget used for the other
+methods. A single-input Existing planner run retains its original 30+90 second
+search workflow. The average uses validated finished runs only and displays
+the valid, finished and total counts. Failed or cancelled cases never
+contribute zero to a mean. The JSON download contains each individual result.
+
+The datasets are generated from feasible witness schedules, with synthetic
+supply chosen to cover those witnesses. They test parsing, safety and search
+across varied workloads; they do not reproduce the distribution of unseen
+organizer inputs. Witness schedules are stored separately and are never given
+to the batch solver as hints.
+
+For a saved result outside the browser:
+
+```sh
+backend/.venv/bin/python scripts/benchmark_dataset_suite.py \
+  --method greedy --seconds 5 --seed 42 \
+  --output benchmarks/dataset-suite/new-greedy-run.json
+```
+
+`--method all` runs all five methods on all 30 cases. At five seconds per case
+this can take more than 12 minutes, and at 15 seconds per case up to about
+38 minutes plus setup. The all-method run has not been used to select a winner;
+the UI displays observed results when the user starts it.
+
+The completed five-second Greedy run reached 10/10 validated cases in each
+scenario. Its measured means were A 1147.13, B 625.8 and C 1357.56; raw
+cases and runtime are in the [batch result](../benchmarks/dataset-suite/RESULTS.md).
+All five methods were also exercised on the three small cases as a 15-run
+integration check. The full 150-run comparison remains an on-demand operation.

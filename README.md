@@ -61,9 +61,15 @@ Solve jobs run one at a time and expire after 60 minutes. A/B/C each receive a f
 
 ## Local Development
 
-The workspace now offers **Existing planner** (the original A/B/C algorithm) and
-**Strategy comparison** (Greedy, integrated CP-SAT, random LNS or adaptive LNS, each running A/B/C).
-Select the new option before loading public data or running an upload.
+The workspace has one search-method selector: Existing planner, Greedy,
+integrated CP-SAT, random LNS or adaptive LNS. Each handles A/B/C. The
+30 synthetic datasets (10 per scenario) can be downloaded and used for a
+one-click average-score comparison, with valid-run counts shown beside averages.
+See [dataset suite](datasets/scenario-suite-v1/README.md).
+The browser can run one method over all 30 cases or all five methods over 150
+case-method pairs. Reported means use only validated outputs and include the
+valid-run denominator. A [reproducible batch command](docs/strategy-comparison.md)
+can save the same data to JSON.
 See [strategy selection and scenario scores](docs/strategy-comparison.md),
 [Scenario A usage and benchmarks](docs/scenario-a-usage.md) and
 [rule evidence / validation limitations](docs/scenario-a-rules.md).

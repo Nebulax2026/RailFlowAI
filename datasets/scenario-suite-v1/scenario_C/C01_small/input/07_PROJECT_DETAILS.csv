@@ -1,0 +1,11 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic small programme C001,2026-08-30,Renewal,Non-live (Consist),1,2027-06-21,2027-04-04,1,PC,3
+C002,Synthetic small programme C002,2026-07-09,Construction,Non-live (Others),2,2027-06-21,2027-04-11,1,C,3
+C003,Synthetic small programme C003,2026-11-03,Construction,Non-live (Others),3,2027-06-21,2027-03-28,1,PC,3
+C004,Synthetic small programme C004,2026-06-19,Renewal,Live,3,2027-06-21,2027-04-04,1,PC,2
+C005,Synthetic small programme C005,2026-05-20,Renewal,Live,2,2027-06-21,2027-04-04,1,C,2
+C006,Synthetic small programme C006,2026-06-30,Renewal,Live,3,2027-06-21,2027-02-28,1,C,2
+C007,Synthetic small programme C007,2026-10-28,Renewal,Non-live (Consist),3,2027-06-21,2027-03-07,1,C,3
+C008,Synthetic small programme C008,2026-10-17,Renewal,Live,3,2027-06-21,2027-04-18,1,PM,2
+C009,Synthetic small programme C009,2026-08-20,Renewal,Non-live (Consist),1,2027-06-21,2027-02-14,1,C,3
+C010,Synthetic small programme C010,2026-06-11,Renewal,Non-live (Consist),3,2027-06-21,2027-03-14,1,C,3

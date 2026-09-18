@@ -16,10 +16,10 @@ from app.ps1.scenario_a.search import SearchResult
 from app.ps1.scenario_a.validation import HEADERS, validate_csvs
 
 
-def read_solution(instance, directory, scenario=Scenario.A):
+def read_solution(instance, directory, scenario=Scenario.A, legacy=False):
     files = {name: (directory / name).read_bytes() for name in HEADERS}
     from app.ps1.validator import validate_exported_csvs
-    report = validate_csvs(instance, files) if scenario == Scenario.A else validate_exported_csvs(instance, scenario, files)
+    report = validate_csvs(instance, files) if scenario == Scenario.A and not legacy else validate_exported_csvs(instance, scenario, files)
     if not report.feasible:
         raise ValueError("Worker checkpoint failed independent CSV validation.")
     tables = {name: list(csv.DictReader(io.StringIO(content.decode()))) for name, content in files.items()}
@@ -31,7 +31,7 @@ def read_solution(instance, directory, scenario=Scenario.A):
                              "Official validator is not publicly supplied; policy parity remains unconfirmed."])
 
 
-def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.A):
+def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.A, legacy=False):
     best, diagnostics, last_checkpoint = None, {}, None
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="railflow-scenario-a-") as temporary:
@@ -44,7 +44,7 @@ def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.
         config_path.write_text(json.dumps(config))
         with (root / "worker.log").open("w+") as log:
             process = subprocess.Popen([sys.executable, "-m", "app.ps1.scenario_a.cli", "--input", str(inputs),
-                                        "--output", str(output), "--config", str(config_path), "--scenario", scenario.value],
+                                        "--output", str(output), "--config", str(config_path), "--scenario", scenario.value] + (["--legacy"] if legacy else []),
                                        cwd=Path(__file__).resolve().parents[3], stdout=log, stderr=log)
             terminated_at = None
             try:
@@ -55,7 +55,7 @@ def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.
                         content = manifest.read_text()
                         if content != last_checkpoint:
                             saved = json.loads(content)
-                            candidate = read_solution(instance, output / saved["directory"], scenario)
+                            candidate = read_solution(instance, output / saved["directory"], scenario, legacy)
                             best, diagnostics = candidate, saved["diagnostics"]
                             on_update(best, diagnostics)
                             last_checkpoint = content

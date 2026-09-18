@@ -1,0 +1,52 @@
+{
+  "scenario": "C",
+  "profile": {
+    "name": "live_closures",
+    "activities": 54,
+    "horizon": 30,
+    "span": 2,
+    "group": 3,
+    "live": 0.5,
+    "links": 0.2,
+    "cluster": true,
+    "slack": 0,
+    "due": 14,
+    "contracts": 16
+  },
+  "seed": 20262923,
+  "split": "evaluation",
+  "generator": "synthetic-witness-first-v1",
+  "feasibility": "validated_witness_exists",
+  "optimality": "not_proved",
+  "official_validator_available": false,
+  "activities": 54,
+  "contracts": 16,
+  "horizon_weeks": 30,
+  "total_workload": 196,
+  "predecessor_links": 3,
+  "live_activities": 29,
+  "access_type_counts": {
+    "PC": 13,
+    "C": 37,
+    "PM": 4
+  },
+  "supply_range": [
+    1,
+    5
+  ],
+  "witness_score": 3095.3,
+  "witness_eclo": 9,
+  "witness_excess": 17,
+  "input_sha256": {
+    "01_LINES.csv": "b6e60b0e7726e4266efd059bf5061b3b3a2c9825ae7dd85a6431f41b81b383e7",
+    "02_STATIONS.csv": "4a27d6508defd03e8c833133b523390ac8850a1c1717f309033e40f364720e24",
+    "03_SECTORS.csv": "643fdb2bd317126b42572fafcce8f8108008e8e9c7b71c08dfd31cec11c3ee34",
+    "04_LOCATION_SUPPLY.csv": "89440d13a33f1e02a0392b6547d4d85771dfe60deb7f23976a5801de97af156f",
+    "05_BUFFER_LOCATION.csv": "4b9fe7fd6a1f9128bd6e83405496dc64a8028f997bb1fcd28355582a6d554de0",
+    "06_PARAMETERS.csv": "b1dc97167de0700ec43992174880767e58766ec2c3d98ee12e487ed1a4e18cf6",
+    "07_PROJECT_DETAILS.csv": "6ac3f086bac62a73573771cced8a15ee9990569dfbb7a5d3e390247550452362",
+    "08_ACTIVITY_DETAILS.csv": "7dbb8ae9bdfa29068221ce1d8f9cc2f13959de75ba85a4efbf3d0c7711855d1e"
+  },
+  "case_id": "C06_live_closures",
+  "input_path": "scenario_C/C06_live_closures/input"
+}

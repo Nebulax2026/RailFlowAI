@@ -1,0 +1,17 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic live_closures programme C001,2026-10-01,Renewal,Live,1,2028-01-17,2027-10-23,1,PC,2
+C002,Synthetic live_closures programme C002,2027-02-05,Renewal,Live,2,2028-01-17,2027-12-11,1,C,2
+C003,Synthetic live_closures programme C003,2027-02-05,Construction,Non-live (Others),1,2028-01-17,2027-07-10,1,PC,3
+C004,Synthetic live_closures programme C004,2027-01-20,Construction,Non-live (Others),2,2028-01-17,2027-07-05,1,C,3
+C005,Synthetic live_closures programme C005,2026-11-10,Renewal,Non-live (Consist),1,2028-01-17,2027-12-10,1,C,3
+C006,Synthetic live_closures programme C006,2026-12-26,Renewal,Live,3,2028-01-17,2027-12-04,1,PM,2
+C007,Synthetic live_closures programme C007,2026-10-27,Renewal,Non-live (Consist),2,2028-01-17,2027-12-11,1,PC,3
+C008,Synthetic live_closures programme C008,2026-11-19,Construction,Non-live (Others),1,2028-01-17,2027-10-04,1,C,3
+C009,Synthetic live_closures programme C009,2026-12-12,Renewal,Live,3,2028-01-17,2027-12-14,2,C,2
+C010,Synthetic live_closures programme C010,2027-03-01,Renewal,Live,2,2028-01-17,2027-11-29,1,PC,2
+C011,Synthetic live_closures programme C011,2026-10-14,Construction,Non-live (Others),3,2028-01-17,2027-08-01,1,PC,3
+C012,Synthetic live_closures programme C012,2026-12-10,Renewal,Non-live (Consist),3,2028-01-17,2027-12-16,1,C,3
+C013,Synthetic live_closures programme C013,2026-10-08,Construction,Non-live (Others),3,2028-01-17,2027-12-03,1,C,3
+C014,Synthetic live_closures programme C014,2027-02-18,Renewal,Non-live (Consist),2,2028-01-17,2027-09-05,1,C,3
+C015,Synthetic live_closures programme C015,2026-11-12,Construction,Non-live (Others),3,2028-01-17,2027-09-12,1,C,3
+C016,Synthetic live_closures programme C016,2026-12-22,Renewal,Live,1,2028-01-17,2027-12-05,1,C,2

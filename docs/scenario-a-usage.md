@@ -1,6 +1,9 @@
 # Using the separate Scenario A optimizer
 
-Run `npm run dev` at the repository root and open http://localhost:3000. The **Existing planner** option still runs the original A/B/C solver. **Strategy comparison** now runs the selected method for A, B and C; see [current UI instructions](strategy-comparison.md). The A-only API and CLI described below remain available.
+Run `npm run dev` at the repository root and open http://localhost:3000. Choose
+Existing planner or one of the four other methods from the same selector; see
+[current UI instructions](strategy-comparison.md). The A-only API and CLI
+described below remain available.
 
 An `algorithm=scenario_a` API run includes only A. Its default is **ALNS, 15 seconds, seed 42**, selected using the two-seed public tuning experiment. Integrated CP-SAT remains selectable; the library/CLI without a configuration file defaults to that reference model. The run reports the best independently validated cost, full-model lower bound, absolute gap and time to first feasible. A valid incumbent becomes downloadable while search continues. **Stop search** preserves it. The ZIP contains only `scenario_A/` CSVs plus validation; the separate **Search report** contains configurations, timings, bounds, trajectory and operator statistics. Bounds and validation refer to the documented safety policy, not an unavailable official validator.
 

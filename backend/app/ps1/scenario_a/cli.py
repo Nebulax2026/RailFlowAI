@@ -46,6 +46,7 @@ def main(argv=None):
     started = time.monotonic()
     parser = argparse.ArgumentParser(description="Select a search strategy and solve one PS1 scenario.")
     parser.add_argument("--scenario", choices=("A", "B", "C"), default="A")
+    parser.add_argument("--legacy", action="store_true", help="Use the existing planner with this run's time/worker budget.")
     parser.add_argument("--input", type=Path, default=ROOT / "PS1/01_data")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--config", type=Path)
@@ -81,7 +82,10 @@ def main(argv=None):
         if remaining < 0.2:
             raise TimeoutError("Input parsing exhausted the total budget.")
         callback = lambda s, d: save_solution(args.output, s, d)
-        if args.scenario == "A":
+        if args.legacy:
+            from app.ps1.legacy_search import solve as solve_legacy
+            result = solve_legacy(instance, Scenario(args.scenario), replace(config, time_limit_seconds=remaining), stop, callback)
+        elif args.scenario == "A":
             result = solve(instance, replace(config, time_limit_seconds=remaining), stop.is_set, callback)
         else:
             from app.ps1.scenario_search import solve as solve_other

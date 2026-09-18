@@ -15,6 +15,7 @@ COPY backend/requirements.txt /app/backend/requirements.txt
 RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 COPY backend/ /app/backend/
 COPY PS1/01_data/ /app/PS1/01_data/
+COPY datasets/scenario-suite-v1/ /app/datasets/scenario-suite-v1/
 COPY --from=frontend-build /app/frontend/out/ /app/backend/static/
 WORKDIR /app/backend
 EXPOSE 8000

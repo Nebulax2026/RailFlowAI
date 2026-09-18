@@ -12,10 +12,58 @@ from app.ps1.jobs import job_manager
 from app.ps1.models import Scenario, SolveJob
 from app.ps1.parser import EXPECTED_FILES, InstanceValidationError
 from app.ps1.evidence import activity_details
+from app.ps1.benchmark import benchmark_manager, catalog
 
 router = APIRouter()
 MAX_FILE_BYTES = 2_000_000
 MAX_TOTAL_BYTES = 16_000_000
+
+
+@router.get("/benchmark/datasets")
+def benchmark_datasets() -> dict:
+    return {"datasets": [
+        {key: row[key] for key in ("case_id", "scenario", "profile", "split", "activities",
+                                   "contracts", "horizon_weeks", "predecessor_links", "live_activities")}
+        for row in catalog()
+    ], "count": 30, "per_scenario": 10,
+        "provenance": "Synthetic, with internally validated feasible witness schedules; not organizer hidden data."}
+
+
+@router.get("/benchmark/datasets/download/{scenario}")
+def download_benchmark_datasets(scenario: Scenario) -> Response:
+    from app.ps1.benchmark import SUITE
+    return Response((SUITE / f"scenario_{scenario.value}_inputs.zip").read_bytes(),
+                    media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="scenario-{scenario.value}-10-datasets.zip"'})
+
+
+@router.post("/benchmark/runs", status_code=202)
+def create_benchmark(method: Literal["legacy", "greedy", "integrated", "random_lns", "alns", "all"] = "all",
+                     time_limit_seconds: float = Query(default=15, ge=5, le=120),
+                     seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
+    return benchmark_manager.create(method, time_limit_seconds, seed)
+
+
+@router.get("/benchmark/runs/{run_id}")
+def get_benchmark(run_id: str) -> dict:
+    run = benchmark_manager.get(run_id)
+    if not run: raise HTTPException(status_code=404, detail="Benchmark run not found or expired.")
+    return run
+
+
+@router.delete("/benchmark/runs/{run_id}")
+def cancel_benchmark(run_id: str) -> dict:
+    run = benchmark_manager.cancel(run_id)
+    if not run: raise HTTPException(status_code=404, detail="Benchmark run not found or expired.")
+    return run
+
+
+@router.get("/benchmark/runs/{run_id}/report")
+def benchmark_report(run_id: str) -> Response:
+    run = benchmark_manager.get(run_id)
+    if not run: raise HTTPException(status_code=404, detail="Benchmark run not found or expired.")
+    return Response(json.dumps(run, indent=2), media_type="application/json",
+                    headers={"Content-Disposition": 'attachment; filename="dataset-benchmark.json"'})
 
 
 @router.post("/jobs", status_code=202)

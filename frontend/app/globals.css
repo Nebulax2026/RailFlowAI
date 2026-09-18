@@ -162,6 +162,12 @@ th { background: var(--soft); color: var(--muted); font-size: 9px; text-transfor
 @media (max-width: 700px) { .workspace-title { align-items: stretch; flex-direction: column; } .intake-grid, .results-workspace { padding: 0 10px; } .file-checklist, .visual-grid, .metric-grid { grid-template-columns: 1fr 1fr; } .scenario-card { display: grid; margin-right: 0; width: 100%; } .detail-header { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 460px) { .app-header { align-items: flex-start; flex-direction: column; } .file-checklist, .visual-grid, .metric-grid { grid-template-columns: 1fr; } .button-row > *, .rail-actions > * { width: 100%; } }
 .comparison-panel { margin: 12px auto 24px; max-width: 1372px; }
+.dataset-panel { padding: 18px; min-width: 0; }
+.dataset-panel .subheading { margin: 10px 0; }
+.dataset-panel details { margin: 14px 0; }
+.dataset-panel summary { color: var(--green-dark); cursor: pointer; font-size: 13px; font-weight: 700; }
+.dataset-downloads { margin: 14px 0; }
+.dataset-downloads a { border: 1px solid var(--line); border-radius: 5px; color: var(--green-dark); font-size: 12px; padding: 8px; }
 .comparison-panel p, .revision-note { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .inspection { display: grid; gap: 18px; margin: 20px 0; min-width: 0; }
 .inspection-filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
