@@ -266,7 +266,7 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
     from types import SimpleNamespace
     return SimpleNamespace(model=model, x=x, eclo=eclo, local_nights=local_nights,
                            group_vars=group_vars, patterns=patterns, primary=primary,
-                           work=work, footprint=footprint, extract=extract,
+                           work=work, footprint=footprint, starts=starts, finishes=finishes, extract=extract,
                            churn=churn, incumbent=incumbent)
 
 

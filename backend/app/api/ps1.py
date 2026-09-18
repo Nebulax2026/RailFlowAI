@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Literal
 import json
+import hashlib
+import threading
+import time
+from uuid import uuid4
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
@@ -13,11 +17,14 @@ from app.ps1.jobs import job_manager
 from app.ps1.models import Disruption, JobStatus, Scenario, SolveJob
 from app.ps1.parser import EXPECTED_FILES, InstanceValidationError
 from app.ps1.evidence import activity_details
-from app.ps1.assistant import answer_question, enforce_query_rate
+from app.ps1.assistant import enforce_query_rate
 
 router = APIRouter()
 MAX_FILE_BYTES = 2_000_000
 MAX_TOTAL_BYTES = 16_000_000
+PREVIEW_TTL_SECONDS = 10 * 60
+_replan_previews: dict[str, dict] = {}
+_preview_lock = threading.RLock()
 
 
 class ReplanRequest(BaseModel):
@@ -28,10 +35,38 @@ class ReplanRequest(BaseModel):
     reason: str = Field(pattern="^(urgent_maintenance|defect|access_restriction|other)$")
 
 
+class ConversationMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=12000)
+
+
 class AssistantRequest(BaseModel):
-    scenario: Scenario
+    scenario: Scenario | None = None
     question: str = Field(min_length=1, max_length=500)
     replan_id: str | None = None
+    pending_preview_id: str | None = Field(default=None, min_length=16, max_length=64)
+    history: list[ConversationMessage] = Field(default_factory=list, max_length=12)
+
+
+class ReplanPreviewExecuteRequest(BaseModel):
+    preview_id: str = Field(min_length=16, max_length=64)
+
+
+def _validated_disruption(job: SolveJob, request: ReplanRequest) -> Disruption:
+    supply = job.instance.supply.get(request.location_id)
+    if not supply:
+        raise HTTPException(status_code=422, detail="Unknown disruption location_id.")
+    if request.start_week > request.end_week or request.end_week > job.instance.horizon_weeks:
+        raise HTTPException(status_code=422, detail="Disruption weeks must be ordered and inside the planning horizon.")
+    if request.capacity >= supply.supply_capacity:
+        raise HTTPException(status_code=422, detail="Disruption capacity must be lower than nominal supply.")
+    return Disruption(**request.model_dump())
+
+
+def _baseline_token(job: SolveJob, scenario: Scenario) -> str:
+    run = job.scenarios.get(scenario)
+    revision = run.solution.solution_revision if run and run.solution else 0
+    return hashlib.sha256(f"{job.job_id}:{scenario.value}:{revision}".encode()).hexdigest()
 
 
 @router.post("/jobs", status_code=202)
@@ -116,15 +151,58 @@ def get_scenario(job_id: str, scenario: Scenario) -> dict:
 @router.post("/jobs/{job_id}/scenarios/{scenario}/replans", status_code=202)
 def create_replan(job_id: str, scenario: Scenario, request: ReplanRequest) -> dict:
     job = _require_job(job_id)
-    supply = job.instance.supply.get(request.location_id)
-    if not supply:
-        raise HTTPException(status_code=422, detail="Unknown disruption location_id.")
-    if request.start_week > request.end_week or request.end_week > job.instance.horizon_weeks:
-        raise HTTPException(status_code=422, detail="Disruption weeks must be ordered and inside the planning horizon.")
-    if request.capacity >= supply.supply_capacity:
-        raise HTTPException(status_code=422, detail="Disruption capacity must be lower than nominal supply.")
+    disruption = _validated_disruption(job, request)
     try:
-        replan = job_manager.create_replan(job_id, scenario, Disruption(**request.model_dump()))
+        replan = job_manager.create_replan(job_id, scenario, disruption)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    if not replan:
+        raise HTTPException(status_code=404, detail="Solve job not found or expired.")
+    return _replan_payload(job, replan, include_solution=False)
+
+
+@router.post("/jobs/{job_id}/scenarios/{scenario}/replans/preview")
+def preview_replan(job_id: str, scenario: Scenario, request: ReplanRequest) -> dict:
+    """Validate a disruption draft. This endpoint never starts a solver run."""
+    job = _require_job(job_id)
+    disruption = _validated_disruption(job, request)
+    run = job.scenarios.get(scenario)
+    if not run or not run.solution or not run.solution.validation.feasible:
+        raise HTTPException(status_code=409, detail=f"Scenario {scenario.value} must have a validated baseline before re-planning.")
+    preview_id = uuid4().hex
+    expires_at = time.monotonic() + PREVIEW_TTL_SECONDS
+    record = {"job_id": job_id, "scenario": scenario.value, "disruption": asdict(disruption),
+              "baseline_token": _baseline_token(job, scenario), "expires_at": expires_at}
+    with _preview_lock:
+        _replan_previews[preview_id] = record
+        for key, item in list(_replan_previews.items()):
+            if item["expires_at"] <= time.monotonic(): del _replan_previews[key]
+    supply = job.instance.supply[disruption.location_id]
+    return {"preview_id": preview_id, "expires_in_seconds": PREVIEW_TTL_SECONDS,
+            "scenario": scenario.value, "baseline_revision": run.solution.solution_revision,
+            "disruption": asdict(disruption), "nominal_capacity": supply.supply_capacity,
+            "note": "This preview has not changed the schedule. Run validated re-plan to start CP-SAT and independent validation."}
+
+
+@router.post("/jobs/{job_id}/scenarios/{scenario}/replans/execute", status_code=202)
+def execute_replan_preview(job_id: str, scenario: Scenario, request: ReplanPreviewExecuteRequest) -> dict:
+    """Consume one fresh preview and start the existing validated replan workflow."""
+    job = _require_job(job_id)
+    with _preview_lock:
+        preview = _replan_previews.get(request.preview_id)
+    if not preview or preview["expires_at"] <= time.monotonic():
+        raise HTTPException(status_code=409, detail="This re-plan preview has expired. Prepare a new preview.")
+    if preview["job_id"] != job_id or preview["scenario"] != scenario.value:
+        raise HTTPException(status_code=409, detail="This preview belongs to a different job or scenario.")
+    if preview["baseline_token"] != _baseline_token(job, scenario):
+        raise HTTPException(status_code=409, detail="The baseline changed after preview. Prepare a new preview.")
+    with _preview_lock:
+        # Consume only after job/scenario and baseline checks pass.
+        if _replan_previews.pop(request.preview_id, None) is None:
+            raise HTTPException(status_code=409, detail="This re-plan preview was already used. Prepare a new preview.")
+    disruption = _validated_disruption(job, ReplanRequest(**preview["disruption"]))
+    try:
+        replan = job_manager.create_replan(job_id, scenario, disruption)
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     if not replan:
@@ -146,7 +224,9 @@ def download_replan_file(job_id: str, scenario: Scenario, replan_id: str, filena
     if not replan or replan.scenario != scenario:
         raise HTTPException(status_code=404, detail="Re-plan not found or expired.")
     if (replan.status != JobStatus.COMPLETED or not replan.solution
-            or not replan.solution.validation.feasible or not replan.disruption_audit.get("feasible")):
+            or not replan.solution.validation.feasible
+            or replan.solution.validation.detail.get("safety_status") != "verified"
+            or not replan.disruption_audit.get("feasible")):
         raise HTTPException(status_code=409, detail="A fully validated revised output is not available.")
     files = scenario_csvs(replan.solution)
     if filename not in files: raise HTTPException(status_code=404, detail="Unknown scenario output file.")
@@ -159,15 +239,35 @@ def schedule_query(job_id: str, request: AssistantRequest) -> dict:
     job = _require_job(job_id)
     if not enforce_query_rate(job_id): raise HTTPException(status_code=429, detail="Schedule Assistant rate limit exceeded.")
     diff = None
+    scenario = request.scenario
+    solution = None
     if request.replan_id:
         replan = job.replans.get(request.replan_id)
-        if not replan or replan.scenario != request.scenario or not replan.solution:
+        if (not replan or (scenario and replan.scenario != scenario) or not replan.solution
+                or replan.status != JobStatus.COMPLETED or not replan.disruption_audit.get("feasible")):
             raise HTTPException(status_code=409, detail="The requested revised schedule is not available.")
-        solution = replan.solution; diff = replan.diff
-    else:
-        solution = job.scenarios[request.scenario].solution
+        solution = replan.solution; diff = replan.diff; scenario = replan.scenario
+    elif scenario:
+        run = job.scenarios.get(scenario)
+        solution = run.solution if run else None
         if not solution: raise HTTPException(status_code=409, detail="The requested baseline schedule is not available.")
-    return answer_question(job.instance, solution, request.question.strip(), diff)
+    from app.ps1.copilot import chat
+    if solution and (not solution.validation.feasible or solution.validation.detail.get("safety_status") != "verified"):
+        raise HTTPException(409, "A validated schedule is required.")
+    context = {}
+    if request.pending_preview_id:
+        with _preview_lock:
+            pending = _replan_previews.get(request.pending_preview_id)
+            if (not pending or pending["expires_at"] <= time.monotonic()
+                    or pending["job_id"] != job_id
+                    or (request.scenario and pending["scenario"] != request.scenario.value)
+                    or pending["baseline_token"] != _baseline_token(job, Scenario(pending["scenario"]))):
+                raise HTTPException(409, "This preview is stale or unavailable. Cancel it and prepare a new preview.")
+            context["pending_preview"] = {"preview_id": request.pending_preview_id,
+                                          "scenario": pending["scenario"],
+                                          "disruption": dict(pending["disruption"])}
+    return chat(job, scenario, solution, request.question.strip(),
+                [item.model_dump() for item in request.history], diff, **context)
 
 
 @router.get("/jobs/{job_id}/diagnostics")
@@ -254,10 +354,21 @@ def _job_payload(job: SolveJob) -> dict:
     }
 
 
+def _replan_progress(replan) -> tuple[int, float | None]:
+    """Stage floor, interpolated over elapsed time while the solver is searching."""
+    elapsed = None if replan.started_at is None else round(time.monotonic() - replan.started_at, 1)
+    if replan.phase != "searching" or elapsed is None or not replan.budget_seconds:
+        return replan.progress, elapsed
+    return min(65, max(10, int(65 * elapsed / replan.budget_seconds))), elapsed
+
+
 def _replan_payload(job, replan, include_solution):
+    progress, elapsed = _replan_progress(replan)
     payload = {"replan_id": replan.replan_id, "scenario": replan.scenario.value,
                "baseline_revision": replan.baseline_revision, "status": replan.status.value,
                "message": replan.message, "error": replan.error,
+               "phase": replan.phase, "progress": progress,
+               "elapsed_seconds": elapsed, "budget_seconds": replan.budget_seconds,
                "disruption": asdict(replan.disruption), "expires_at": job.expires_at,
                "disruption_audit": replan.disruption_audit, "diff": replan.diff}
     if include_solution and replan.solution:

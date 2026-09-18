@@ -145,9 +145,23 @@ class JobManager:
             if not job or replan_id not in job.replans: return
             replan = job.replans[replan_id]
             replan.status = JobStatus.RUNNING; replan.message = "Re-planning around the disruption."
+            replan.phase = "searching"; replan.progress = 10
+            replan.started_at = time.monotonic(); replan.budget_seconds = self.first_seconds
         try:
             solution = solve_scenario(job.instance, replan.scenario, self.first_seconds,
                                       incumbent=replan.baseline_solution, disruption=replan.disruption)
+            # Re-read the exported artifact before a revision is exposed, rather
+            # than trusting solver-side state alone.
+            with self._lock:
+                replan.phase = "validating"; replan.progress = 70
+                replan.message = "Re-reading the exported CSVs for independent validation."
+            report = validate_exported_csvs(job.instance, replan.scenario, scenario_csvs(solution))
+            if not report.feasible or report.detail.get("safety_status") != "verified":
+                raise SolveFailure("validation_failed", str(report.hard_violations[:3]))
+            solution.validation = report
+            with self._lock:
+                replan.phase = "auditing"; replan.progress = 85
+                replan.message = "Auditing the disruption and comparing against the baseline."
             audit = audit_disruption(job.instance, solution, replan.disruption)
             if not audit["feasible"]:
                 raise SolveFailure("disruption_validation_failed", str(audit["hard_violations"][:3]))
@@ -156,12 +170,15 @@ class JobManager:
                 if job_id not in self._jobs: return
                 replan.solution = solution; replan.disruption_audit = audit; replan.diff = diff
                 replan.status = JobStatus.COMPLETED; replan.message = "Validated revised schedule available."
+                replan.phase = "finished"; replan.progress = 100
         except SolveFailure as error:
             with self._lock:
                 replan.status = JobStatus.FAILED; replan.error = str(error); replan.message = "No revised schedule was found."
+                replan.phase = "finished"; replan.progress = 100
         except Exception as error:
             with self._lock:
                 replan.status = JobStatus.FAILED; replan.error = f"{type(error).__name__}: re-planning failed."
+                replan.phase = "finished"; replan.progress = 100
 
 
     def _run_strategies(self, job: SolveJob) -> None:

@@ -10,6 +10,7 @@ RailFlowAI is a validator-first railway possession planner for NebulaX 2026 PS1.
 4. Re-read and validate the exact exported CSV bytes before enabling downloads.
 
 The planner supports the existing CP-SAT solver plus integrated CP-SAT, random LNS, and adaptive LNS comparison runs on the same actual input. The Operations tab retains disruption re-planning and the grounded Schedule Assistant.
+The AI Agent Copilot supports evidence-grounded schedule Q&A and an explicit preview → re-plan → validation workflow. See [Copilot design](docs/ps1-schedule-copilot.md).
 
 ## Submission artifacts
 
@@ -50,3 +51,4 @@ Open `http://127.0.0.1:3000`. FastAPI runs at `http://127.0.0.1:8000`.
 - [Solution write-up](docs/solution-writeup.md)
 - [Submission short answers](docs/submission-short-answers.md)
 - [Demo script](docs/video-pitch.md)
+- [Copilot design](docs/ps1-schedule-copilot.md)
