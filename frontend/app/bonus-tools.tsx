@@ -425,11 +425,11 @@ export function BonusTools({
             Ask the Assistant to explain score drivers, milestone risk, co-sharing, capacity, or prepare a validated disruption re-plan.
           </p>
         </section>
-        <section className="agent-chat" aria-label="PS1 Schedule Assistant">
+        <section className="agent-chat" aria-label="RailFlow AI Assistant">
           <header className="agent-chat-header">
             <div>
               <span className="eyebrow">RailFlowAI · A/B/C</span>
-              <h2>PS1 Schedule Assistant</h2>
+              <h2>RailFlow AI Assistant</h2>
             </div>
             <span className="agent-live">{answer?.mode ?? "Gemini ready"}</span>
           </header>
@@ -592,7 +592,7 @@ export function AIAssistantPanel({
       });
       setConversation((current) => [...current, { question: query, answer: next }]);
     } catch (err) {
-      setAssistantError(err instanceof Error ? err.message : "Schedule Assistant could not answer.");
+      setAssistantError(err instanceof Error ? err.message : "RailFlow AI Assistant could not answer.");
     } finally {
       setAsking(false);
       askingRef.current = false;
@@ -606,12 +606,12 @@ export function AIAssistantPanel({
   }, [conversation, asking]);
 
   return (
-    <aside className="permanent-ai-sidebar" aria-label="AI Schedule Assistant">
+    <aside className="permanent-ai-sidebar" aria-label="RailFlow AI Assistant">
       <div className="ai-sidebar-header">
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div className="bot-status-dot" />
           <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "#ffffff" }}>
-            RailFlow Assistant
+            RailFlow AI Assistant
           </h3>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -693,7 +693,7 @@ export function AIAssistantPanel({
               <div className="empty-avatar">
                 <Sparkles size={22} color="var(--cyan)" />
               </div>
-              <h4>AI Schedule Assistant</h4>
+              <h4>RailFlow AI Assistant</h4>
               <p>
                 Ask evidence-grounded questions about schedules, capacity, delay risks, or request validated disruption re-plans.
               </p>
@@ -772,7 +772,7 @@ export function AIAssistantPanel({
                     <Sparkles size={13} color="var(--cyan)" />
                   </div>
                   <div className="chat-bubble bot">
-                    <span className="bot-sender-title">RailFlow Assistant</span>
+                    <span className="bot-sender-title">RailFlow AI Assistant</span>
                     <AnswerBody text={entry.answer.answer} />
                     {entry.answer.evidence && entry.answer.evidence.length > 0 && (
                       <div className="bubble-evidence-wrap">
@@ -795,7 +795,7 @@ export function AIAssistantPanel({
                 <Sparkles size={13} color="var(--cyan)" />
               </div>
               <div className="chat-bubble bot thinking">
-                <span className="bot-sender-title">RailFlow Assistant</span>
+                <span className="bot-sender-title">RailFlow AI Assistant</span>
                 <div className="typing-indicator">
                   <LoaderCircle size={13} className="spin" />
                   <span>Analyzing schedule data…</span>
