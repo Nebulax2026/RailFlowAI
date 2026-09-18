@@ -1,8 +1,8 @@
 # Synthetic common A/B/C dataset suite
 
 30 common datasets. Each input directory contains eight official-schema CSVs and is evaluated under A, B and C.
-Each witness is a verified feasible example, not an optimal answer. Do not pass witnesses as hints when measuring a solver.
-Every input has A, B and C feasible witnesses under readme-physical-night-v3. A witnesses pass both current internal validators; B/C witnesses pass main's validator. Official validator unavailable.
+Witnesses are historical examples generated under `readme-physical-night-v3`, not current feasibility certificates or optimal answers. Do not pass witnesses as hints when measuring a solver.
+The stricter `observed-weekly-closures-v4` policy rejects some historical witnesses. See `benchmarks/dataset-suite/current-validation.json` for all 90 current results; failed witnesses have no valid objective score. This does not prove their input instances infeasible. Official validator unavailable.
 All datasets are synthetic, built on the bundled network; these are not organizer hidden datasets or a guarantee of hidden-set performance.
 
 ## Use

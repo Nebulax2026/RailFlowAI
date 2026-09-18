@@ -67,7 +67,7 @@ cd backend
   --seconds 15 --workers auto --seed 42 --output ../submission/my-b-run
 ```
 
-`algorithm=legacy` (also the default) keeps main's two-pass A/B/C planner.
+`algorithm=legacy` (also the default) runs A, B and C sequentially. Each gets one uninterrupted search of up to 120 seconds, publishes validated incumbents immediately, and finishes when the primary optimum is proved. It skips the optional earlier-placement tie-break search so a proven score can advance to the next scenario promptly.
 `algorithm=scenario_a` remains the backwards-compatible A-only API.
 
 ## Reproduce the public smoke benchmark
@@ -98,8 +98,8 @@ runs** and **Compare all 5 methods · 450 runs**. Both run serially with the
 same configured time and eight CP-SAT workers per run. Greedy uses no CP-SAT
 workers. The old Existing planner
 uses one bounded pass per dataset, matching the time budget used for the other
-methods. A single-input Existing planner run retains its original 30+90 second
-search workflow. The average uses validated finished runs only and displays
+methods. A single-input Existing planner run uses one uninterrupted search of up to
+120 seconds per scenario, in A/B/C order. The average uses validated finished runs only and displays
 the valid, finished and total counts. Failed or cancelled cases never
 contribute zero to a mean. The JSON download contains each individual result.
 

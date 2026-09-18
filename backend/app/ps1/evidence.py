@@ -8,11 +8,19 @@ def activity_details(instance, solution):
     groups = defaultdict(set)
     for row in solution.occupancy: groups[row.location_id, row.week, row.co_share_group].add(row.activity_id)
     nights = {(r["activity_id"], r["week"]): r["physical_night"] for r in solution.validation.detail.get("physical_night_assignment", [])}
+    contract_completion = {}
+    for cid in instance.contracts:
+        weeks = [r.week for r in solution.accesses
+                 if instance.activities[r.activity_id].contract_number == cid]
+        if weeks:
+            contract_completion[cid] = week_end(instance, max(weeks))
     output = []
     for aid, activity in instance.activities.items():
         rows = [r for r in solution.accesses if r.activity_id == aid]
         contract = instance.contracts[activity.contract_number]
         end = week_end(instance, max(r.week for r in rows))
+        contract_end = contract_completion[activity.contract_number]
+        contract_overrun = max(0, (contract_end - contract.planned_completion_date).days)
         peers = sorted({peer for row in solution.occupancy if row.activity_id == aid
                         for peer in groups[row.location_id, row.week, row.co_share_group] if peer != aid})
         predecessor_rows = [r for r in solution.accesses if r.activity_id == activity.predecessor_activity_id]
@@ -22,7 +30,8 @@ def activity_details(instance, solution):
                        "delivered_workload": sum(2 + r.eclo for r in rows) / 2,
                        "planned_start_date": str(activity.planned_start_date), "planned_completion_date": str(contract.planned_completion_date),
                        "completion_date": str(end), "overrun_days": max(0, (end - contract.planned_completion_date).days),
-                       "delay_cost": max(0, (end - contract.planned_completion_date).days) * delay_coefficient(contract, activity) / 10,
+                       "contract_completion_date": str(contract_end), "contract_overrun_days": contract_overrun,
+                       "delay_cost": contract_overrun * delay_coefficient(contract, activity) / 10,
                        "predecessor": activity.predecessor_activity_id,
                        "predecessor_finish_week": max((r.week for r in predecessor_rows), default=None),
                        "accesses": [{**asdict(r), "physical_night": nights.get((aid, r.week))} for r in rows], "co_workers": peers,

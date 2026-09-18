@@ -36,6 +36,7 @@ function runLabel(run: RunState) {
   if (run.phase === "improving") return "Improving";
   if (run.phase === "first_search") return "Searching";
   if (run.feasible) return "Validated result available";
+  if (run.phase === "waiting_improvement") return "Waiting for extended search";
   if (run.termination_reason === "infeasible") return "Infeasible under documented policy";
   if (["time_limit", "no_solution_within_budget"].includes(run.termination_reason ?? "")) return "No solution within time limit";
   return run.status;
@@ -122,7 +123,7 @@ function ScenarioView({ detail, run, scenario, jobId, job, details, tab, onTabCh
         <p>Cost: delay {detail.score_breakdown.delay}, excess supply {detail.score_breakdown.excess_supply}, ECLO {detail.score_breakdown.eclo}.</p>
         {detail.explanations.map(item => <p key={item}>{item}</p>)}
         {detail.validation.hard_violations.map((item, index) => <p key={index}><strong>{item.rule} ({item.severity})</strong>: {item.detail}</p>)}
-        <p className="muted">{job.algorithm === "legacy" ? "First validated result target: 30 seconds per policy, with up to 90 seconds of improvement." : `Search budget: ${job.solver_config?.time_limit_seconds ?? "configured"} seconds per policy.`} The ZIP manifest records included revisions.</p>
+        <p className="muted">{job.algorithm === "legacy" ? "Policies run sequentially: A, then B, then C, with up to 120 seconds each. Validated results appear during search; proven optimal results finish early." : `Search budget: ${job.solver_config?.time_limit_seconds ?? "configured"} seconds per policy.`} The ZIP manifest records included revisions.</p>
       </>}</div>
     </dialog>
   </>;

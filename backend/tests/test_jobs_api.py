@@ -33,24 +33,48 @@ def fake_solution(tiny,scenario,week=2):
     return i,s
 
 
-def test_two_pass_order_and_revision(manager,tiny,monkeypatch):
+def test_sequential_search_streams_revisions_without_restarting(manager,tiny,monkeypatch):
     i,_=fake_solution(tiny,Scenario.A)
     monkeypatch.setattr(jobs,'parse_instance',lambda _:i)
     calls=[]
     def solve(inst,scenario,budget,**kwargs):
         calls.append((scenario.value,budget))
-        # First A/C delay until week 3, then improve. B is always on time.
-        week=3 if len(calls)<=3 and scenario!=Scenario.B else 1
-        _,s=fake_solution(tiny,scenario,week)
+        assert budget == 2
+        assert kwargs['optimize_early_placement'] is False
+        # Multiple revisions arrive during one uninterrupted solve.
+        if scenario != Scenario.B:
+            _,initial=fake_solution(tiny,scenario,3)
+            kwargs['on_solution'](initial)
+            assert job.scenarios[scenario].phase == 'improving'
+        _,s=fake_solution(tiny,scenario,1)
         kwargs['on_solution'](s)
         return s
     monkeypatch.setattr(jobs,'solve_scenario',solve)
     job=manager.create({},'upload');manager._run(job.job_id)
-    assert [s for s,b in calls]==['A','B','C','A','B','C']
+    assert [s for s,b in calls]==['A','B','C']
     assert job.status==JobStatus.COMPLETED
     assert job.scenarios[Scenario.A].solution.solution_revision==2
     assert job.scenarios[Scenario.B].solution.solution_revision==1
     for run in job.scenarios.values():assert run.solution.validation.feasible
+
+
+def test_timeout_moves_to_next_scenario_without_restart(manager,tiny,monkeypatch):
+    i,_=fake_solution(tiny,Scenario.A)
+    monkeypatch.setattr(jobs,'parse_instance',lambda _:i)
+    calls=[]
+    def solve(inst,scenario,budget,**kwargs):
+        calls.append(scenario)
+        if scenario == Scenario.A:
+            assert job.scenarios[Scenario.B].status == JobStatus.QUEUED
+            raise SolveFailure('time_limit', 'No complete schedule within budget')
+        _,s=fake_solution(tiny,scenario,1)
+        return s
+    monkeypatch.setattr(jobs,'solve_scenario',solve)
+    job=manager.create({},'upload');manager._run(job.job_id)
+    assert calls == list(Scenario)
+    assert job.scenarios[Scenario.A].phase == 'finished'
+    assert job.scenarios[Scenario.A].termination_reason == 'time_limit'
+    assert job.scenarios[Scenario.B].solution and job.scenarios[Scenario.C].solution
 
 
 def test_partial_failure_and_expiry(manager,tiny,monkeypatch):

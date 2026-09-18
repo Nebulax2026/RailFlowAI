@@ -7,7 +7,7 @@ import time
 from collections import defaultdict, deque
 from ortools.sat.python import cp_model
 from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ScenarioSolution
-from app.ps1.scoring import delay_coefficient, week_end
+from app.ps1.scoring import contract_delay_coefficient, week_end
 from app.ps1.topology import activity_locations, closure_locations, affected_lines
 from app.ps1.safety import legal_mix
 from app.ps1.validator import validate_exported_csvs
@@ -109,12 +109,19 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
         starts[aid] = model.NewIntVar(low, high, f"start_{aid}")
         finishes[aid] = model.NewIntVar(low, high, f"finish_{aid}")
         model.AddMinEquality(starts[aid], start_terms); model.AddMaxEquality(finishes[aid], end_terms)
-        if scenario != Scenario.B:
-            late = model.NewIntVar(0, max(0, (week_end(instance, horizon) - contract.planned_completion_date).days), f"late_{aid}")
-            model.AddMaxEquality(late, [0, finishes[aid] * 7 - 1 + (instance.horizon_start - contract.planned_completion_date).days])
-            objective.append(late * delay_coefficient(contract, activity))
     for aid, activity in instance.activities.items():
         if activity.predecessor_activity_id: model.Add(finishes[activity.predecessor_activity_id] < starts[aid])
+    if scenario != Scenario.B:
+        for cid, contract in instance.contracts.items():
+            contract_finish = model.NewIntVar(1, horizon, f"finish_contract_{cid}")
+            model.AddMaxEquality(contract_finish,
+                                 [finishes[aid] for aid, activity in instance.activities.items()
+                                  if activity.contract_number == cid])
+            late = model.NewIntVar(0, max(0, (week_end(instance, horizon) - contract.planned_completion_date).days),
+                                   f"late_contract_{cid}")
+            model.AddMaxEquality(late, [0, contract_finish * 7 - 1
+                                        + (instance.horizon_start - contract.planned_completion_date).days])
+            objective.append(late * contract_delay_coefficient(instance, cid))
     for (cid, activity_type, week, night), terms in by_contract_night.items():
         model.Add(sum(terms) <= instance.contracts[cid].number_of_workfronts)
 
@@ -172,6 +179,7 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
         check_budget()
         common = work[left] & work[right]
         protection_hits = (footprint[left] & footprint[right]) - common
+        weekly_hits = (work[left] & footprint[right]) | (work[right] & footprint[left])
         if not common and not protection_hits: continue
         for week in range(max(windows[left][0], windows[right][0]), min(windows[left][1], windows[right][1]) + 1):
             active = [x[left, week], x[right, week]]
@@ -180,10 +188,15 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
                 model.Add(physical[left, week] == physical[right, week]).OnlyEnforceIf([*active, same])
                 model.Add(physical[left, week] != physical[right, week]).OnlyEnforceIf([*active, same.Not()])
                 model.Add(same <= x[left, week]); model.Add(same <= x[right, week])
+                # The official rejection log does not accept different local
+                # nights as an exemption from another group's weekly closure.
+                model.Add(same >= x[left, week] + x[right, week] - 1)
                 # Shared at one work location implies shared at all overlapping
                 # work locations. Labels themselves need not match across sites.
                 for loc in common: model.Add(sum(shared_terms[left, right, week, loc]) == same)
             else:
+                if weekly_hits:
+                    model.Add(sum(active) <= 1)
                 # No direct co-sharing exemption, including buffer/buffer hits.
                 model.Add(physical[left, week] != physical[right, week]).OnlyEnforceIf(active)
     primary = sum(objective)
@@ -247,7 +260,7 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
             solution.solver_stats["churn_score"] = reader.Value(churn)
         solution.explanations = [f"All {len(instance.activities)} activities meet their required workload.",
                                  f"{solution.validation.soft_scores['contracts_overrunning']} contracts finish after their planned date.",
-                                 "Supply counts work groups only. CSV validation reconstructs a consistent seven-night assignment across contracts; exact maintenance dates are not provided by the input."]
+                                 "Weekly closure compatibility and cross-contract night consistency are checked from exported CSVs. Official-validator parity requires an external rerun."]
         return solution
 
     from types import SimpleNamespace
@@ -258,7 +271,8 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
 
 
 def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None,
-                   cancel_event=None, disruption=None, workers="auto", seed=42):
+                   cancel_event=None, disruption=None, workers="auto", seed=42,
+                   optimize_early_placement=True):
     from app.ps1.cpu_budget import resolve_workers
     started = time.monotonic()
     workers = resolve_workers(workers)
@@ -306,7 +320,7 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
         if first_time[0] is None: first_time[0] = time.monotonic() - started
     # Lexicographic second pass only after proving the primary optimum.
     remaining = time_limit_seconds - (time.monotonic() - started)
-    if not disruption and status == cp_model.OPTIMAL and remaining > 0.1 and not cancel_event.is_set():
+    if optimize_early_placement and not disruption and status == cp_model.OPTIMAL and remaining > 0.1 and not cancel_event.is_set():
         model.Add(primary == round(solver.ObjectiveValue()))
         model.Minimize(sum(week * var for (aid, week), var in x.items()))
         early_solver = cp_model.CpSolver()

@@ -1,3 +1,7 @@
+# Historical policy
+
+This document describes the retired independent Scenario A model. Current A/B/C methods share `observed-weekly-closures-v4`; see [the current validation contract](validator-spec.md) and [official rejection fix](official-closure-fix.md).
+
 # Scenario A rules and model evidence
 
 Source: [organizer PS1 brief](https://github.com/aochinwen/NebulaX-Hackathon-ProblemStatement/blob/966c976005db2e3e40a691cff268fdb8f396a5df/PS1/PS1_README.md), revision `966c976005db2e3e40a691cff268fdb8f396a5df`, inspected 2026-09-18. All eight input CSVs, the brief, drawio/SVG diagrams and the three submission sample files have Git blob hashes identical to the local `PS1/` copies. The recursive official repository tree was not truncated. It contains **no executable PS1 validator, scorer or occupancy expander**, despite mentioning `python3 -m trackaccess expand`.

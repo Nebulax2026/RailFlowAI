@@ -69,10 +69,6 @@ def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.
                                 best, diagnostics = candidate, saved["diagnostics"]
                                 accepted_trajectory.append({"seconds": time.monotonic() - started, "objective": best.validation.soft_scores["objective_score"]})
                                 diagnostics = {**diagnostics, "objective": best.validation.soft_scores["objective_score"], "trajectory": list(accepted_trajectory), "time_to_first_feasible": accepted_trajectory[0]["seconds"]}
-                                if scenario == Scenario.A and not legacy:
-                                    diagnostics["global_lower_bound"] = None
-                                    diagnostics["absolute_gap"] = None
-                                    if diagnostics.get("status") == "optimal_for_policy": diagnostics["status"] = "feasible"
                                 on_update(best, diagnostics)
                     if not alive:
                         break
@@ -96,11 +92,6 @@ def run_worker(instance, files, config, cancelled, on_update, scenario=Scenario.
                 diagnostics["objective"] = best.validation.soft_scores["objective_score"] if best else None
                 diagnostics["trajectory"] = accepted_trajectory
                 diagnostics["time_to_first_feasible"] = accepted_trajectory[0]["seconds"] if accepted_trajectory else None
-                if scenario == Scenario.A and not legacy:
-                    diagnostics["strategy_policy_lower_bound"] = diagnostics.get("global_lower_bound")
-                    diagnostics["global_lower_bound"] = None
-                    diagnostics["absolute_gap"] = None
-                    if diagnostics.get("status") == "optimal_for_policy": diagnostics["status"] = "feasible"
                 diagnostics["worker_elapsed_seconds"] = time.monotonic() - started
                 return SearchResult(best, diagnostics)
             finally:

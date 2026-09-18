@@ -5,8 +5,8 @@ from collections import Counter, defaultdict
 from datetime import date
 from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ValidationReport
 from app.ps1.topology import activity_locations, affected_lines
-from app.ps1.safety import legal_mix, possession_usage, safety_assignment
-from app.ps1.scoring import FORMULA_VERSION, delay_coefficient, week_end
+from app.ps1.safety import POLICY_VERSION, legal_mix, possession_usage, safety_assignment, weekly_closure_errors
+from app.ps1.scoring import FORMULA_VERSION, contract_delay_coefficient, week_end
 
 OUTPUT_HEADERS = {
     "SCHEDULE_ACCESS.csv": ("activity_id", "access_seq", "week", "eclo", "access_night"),
@@ -50,7 +50,7 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
         if not 1 <= row.access_night <= contract.number_of_maximum_access_per_week: fail("weekly_allocation", f"{row.activity_id}: night {row.access_night}.")
         key = (activity.contract_number, activity.activity_type, row.week)
         nights[key].add(row.access_night); fronts[(*key, row.access_night)].add(row.activity_id)
-    completion = {}; weighted_tenths = 0; delivered = 0
+    completion = {}; delivered = 0
     for aid, activity in instance.activities.items():
         rows = by_activity[aid]; units = sum(2 + r.eclo for r in rows if r.eclo in (0, 1))
         delivered += min(units, 2 * activity.total_accesses)
@@ -65,7 +65,6 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
         if rows:
             end = week_end(instance, max(r.week for r in rows)); contract = instance.contracts[activity.contract_number]
             completion[activity.contract_number] = max(end, completion.get(activity.contract_number, end))
-            weighted_tenths += delay_coefficient(contract, activity) * max(0, (end - contract.planned_completion_date).days)
     for key, members in fronts.items():
         if len(members) > instance.contracts[key[0]].number_of_workfronts: fail("workfront", f"{key}: {sorted(members)} exceed workfronts.")
     for key, values in nights.items():
@@ -90,6 +89,9 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
         if scenario != Scenario.B and work_over > allowance:
             fail("capacity", f"{item['location_id']} week {item['week']}: {item['work_possessions']} work possessions exceed supply {item['capacity']} and allowance {allowance}.")
     safety_errors, night_witness = safety_assignment(instance, accesses, occupancy)
+    safety_errors = weekly_closure_errors(instance, accesses, occupancy) + safety_errors
+    if safety_errors:
+        night_witness = []
     for item in safety_errors: fail(item['rule'], item['detail'])
     eclo_weeks = defaultdict(list)
     for aid, rows in by_activity.items():
@@ -114,6 +116,8 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
             overruns[cid] = max(0, (completion[cid] - contract.planned_completion_date).days)
             priority[str(contract.contract_priority)] += overruns[cid]
             if scenario == Scenario.B and overruns[cid]: fail("planned_date", f"{cid}: actual completion overruns by {overruns[cid]} days.")
+    weighted_tenths = sum(contract_delay_coefficient(instance, cid) * days
+                          for cid, days in overruns.items())
     eclo = sum(r.eclo == 1 for r in accesses)
     breakdown = {"delay": 0 if scenario == Scenario.B else weighted_tenths / 10, "excess_supply": 0 if scenario == Scenario.A else 7 * excess, "eclo": 0 if scenario == Scenario.A else 5 * eclo}
     scores = {"overrun_days_total": sum(overruns.values()), "contracts_overrunning": sum(v > 0 for v in overruns.values()),
@@ -123,7 +127,8 @@ def validate_solution(instance, scenario, accesses, occupancy, results):
     if not violations: scores.update(objective_score=sum(breakdown.values()), formula_version=FORMULA_VERSION)
     return ValidationReport(scenario.value, not violations, violations, scores,
                             {"capacity_hotspots": [u for u in usage if u['used'] >= u['capacity']], "location_usage": usage,
-                             "nights_scheduled": len(accesses), "eclo_nights": eclo, "score_breakdown": breakdown, "safety_policy": "readme-physical-night-v3",
-                             "safety_coverage": "Cross-contract seven-night assignment reconstructed from CSV; dated maintenance availability is not provided.",
+                             "nights_scheduled": len(accesses), "eclo_nights": eclo, "score_breakdown": breakdown, "safety_policy": POLICY_VERSION,
+                             "safety_coverage": "Weekly closure compatibility inferred from official rejection evidence, plus a reconstructed cross-contract seven-night assignment. Official parity and dated maintenance availability are unconfirmed.",
+                             "official_validator_available": False,
                              "unresolved_safety_pairs": [], "physical_night_assignment": night_witness,
                              "safety_status": "unknown" if any(e["rule"] == "safety_unknown" for e in safety_errors) else "failed" if safety_errors else "verified"})

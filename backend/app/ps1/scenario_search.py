@@ -1,6 +1,6 @@
-"""Four search strategies for B/C using main's possession model and validator.
+"""Four search strategies for A/B/C using one possession model and validator.
 
-A keeps its existing solver and documented policy. LNS fixes activity/week/ECLO
+LNS fixes activity/week/ECLO
 decisions outside the neighborhood; all group and local-night decisions stay free.
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ from ortools.sat.python import cp_model
 
 from app.ps1.exporter import scenario_csvs
 from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ScenarioSolution
-from app.ps1.safety import legal_mix
+from app.ps1.safety import POLICY_VERSION, legal_mix
 from app.ps1.scenario_a.search import OPERATORS, SearchResult
 from app.ps1.scoring import delay_coefficient, week_end
 from app.ps1.solver import SolveFailure, build_scenario_model
@@ -71,15 +71,19 @@ def constructive(instance, scenario, deadline, cancelled, seed=42):
                     trial = [set(m) for m in groups[week]]
                     if index == len(trial): trial.append({aid})
                     else: trial[index].add(aid)
-                    used = Counter(loc for members in trial for loc in set.union(*(footprint[m] for m in members)))
-                    if scenario == Scenario.B or all(count <= instance.supply[loc].supply_capacity + 1 for loc, count in used.items()):
+                    # Separate groups cannot enter each other's weekly closure.
+                    if any((work[aid] & footprint[m]) or (work[m] & footprint[aid])
+                           for j, members in enumerate(trial) if j != index for m in members):
+                        continue
+                    used = Counter(loc for members in trial for loc in set.union(*(work[m] for m in members)))
+                    if scenario == Scenario.B or all(count <= instance.supply[loc].supply_capacity + int(scenario == Scenario.C) for loc, count in used.items()):
                         chosen = trial
                         break
                 if chosen is None:
                     continue
                 # Prefer standard yield; B accelerates when its hard deadline
                 # requires it. Retry with early acceleration for resource chains.
-                extra = int(remaining > 2 and (attempt % 2 == 1 or (scenario == Scenario.B and remaining > 2 * (high - week + 1))))
+                extra = int(scenario != Scenario.A and remaining > 2 and (attempt % 2 == 1 or (scenario == Scenario.B and remaining > 2 * (high - week + 1))))
                 lines = affected_lines(instance, a)
                 if extra and scenario == Scenario.C and any(max(ecweeks[line] | {week}) - min(ecweeks[line] | {week}) > 1 for line in lines):
                     extra = 0
@@ -173,8 +177,6 @@ def neighborhood(instance, built, solution, operator, fraction, rng):
 
 
 def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
-    if scenario not in (Scenario.B, Scenario.C):
-        raise ValueError("Use the existing Scenario A solver for A.")
     started = time.monotonic()
     config = config.resolved()
     deadline = started + config.time_limit_seconds
@@ -193,7 +195,7 @@ def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
                     global_lower_bound=bound, absolute_gap=None if score is None else max(0, score-bound),
                     time_to_first_feasible=first, elapsed_seconds=time.monotonic()-started,
                     trajectory=list(trajectory), phases=list(phases), operators={op: dict(v) for op, v in operators.items()},
-                    policy="local-protection-reservations-v1", official_validator_available=False,
+                    policy=POLICY_VERSION, official_validator_available=False,
                     bound_scope="Full possession model only; restricted repairs never supply global bounds")
 
     def accept(candidate):

@@ -6,6 +6,7 @@ export type EvidenceActivity = {
   activity_id: string; contract_number: string; line: string; access_type: string;
   required_workload: number; delivered_workload: number; completion_date: string;
   planned_start_date: string; planned_completion_date: string; overrun_days: number; delay_cost: number;
+  contract_completion_date: string; contract_overrun_days: number;
   predecessor: string | null; predecessor_finish_week: number | null; co_workers: string[];
   accesses: { week: number; eclo: number; access_night: number; physical_night?: number | null }[];
   protection: Record<string, string[]>;
@@ -35,10 +36,10 @@ export function Inspection({ activities, usage, view }: { activities: EvidenceAc
         <label>Activity<input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search activity ID" /></label>
       </div>
       <div className="activity-browser">
-        <div className="activity-list" aria-label="Activities">{filtered.map(a => <button aria-pressed={selected?.activity_id === a.activity_id} key={a.activity_id} onClick={() => setSelectedId(a.activity_id)}><strong>{a.activity_id}</strong><span>{a.contract_number} · {a.line}</span><small>{a.delivered_workload}/{a.required_workload} work units · {a.overrun_days ? `${a.overrun_days} days late` : "On plan"}</small></button>)}{!filtered.length && <p>No matching activities.</p>}</div>
+        <div className="activity-list" aria-label="Activities">{filtered.map(a => <button aria-pressed={selected?.activity_id === a.activity_id} key={a.activity_id} onClick={() => setSelectedId(a.activity_id)}><strong>{a.activity_id}</strong><span>{a.contract_number} · {a.line}</span><small>{a.delivered_workload}/{a.required_workload} work units · {a.contract_overrun_days ? `contract ${a.contract_overrun_days} days late` : "Contract on plan"}</small></button>)}{!filtered.length && <p>No matching activities.</p>}</div>
         {selected && <article className="activity-evidence" aria-label={`Evidence for ${selected.activity_id}`}>
           <h4>{selected.activity_id} · {selected.access_type}</h4>
-          <p>Planned start {selected.planned_start_date}; planned completion {selected.planned_completion_date}. Scheduled completion {selected.completion_date}. Weighted delay cost: {selected.delay_cost}.</p>
+          <p>Planned start {selected.planned_start_date}; planned completion {selected.planned_completion_date}. Activity completion {selected.completion_date}; contract completion {selected.contract_completion_date}. Official weighted contract-overrun allocation: {selected.delay_cost}.</p>
           {table ? <div className="table-wrap"><table><thead><tr><th>Week</th><th>Local access night</th><th>Verified physical night</th><th>Yield</th></tr></thead><tbody>{selected.accesses.map(a => <tr key={a.week}><td>{a.week}</td><td>{a.access_night}</td><td>{a.physical_night ?? "Unavailable"}</td><td>{a.eclo ? "1.5 · ECLO" : "1 · Standard"}</td></tr>)}</tbody></table></div> : <ol className="access-timeline" aria-label="Scheduled access weeks">{selected.accesses.map(a => <li key={a.week} className={a.eclo ? "eclo" : ""}><strong>Week {a.week}</strong><span>Local night {a.access_night}; physical night {a.physical_night ?? "unavailable"}</span><small>{a.eclo ? "ECLO · 1.5 units" : "Standard · 1 unit"}</small></li>)}</ol>}
           <p>Predecessor: {selected.predecessor ? `${selected.predecessor}, completes in week ${selected.predecessor_finish_week}` : "None"}. Co-sharing activities: {selected.co_workers.join(", ") || "None"}.</p>
           <p className="muted">Access-night numbers are local to the contract and week. Verified physical nights 1?7 form one consistent weekly assignment across contracts; they are not confirmed maintenance dates. Group labels remain local to each location and week.</p>

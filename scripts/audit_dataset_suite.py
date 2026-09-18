@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 
 from app.ps1.benchmark import SUITE, catalog
 from app.ps1.models import Scenario
+from app.ps1.safety import POLICY_VERSION
 from app.ps1.parser import EXPECTED_FILES, parse_instance
 from app.ps1.scenario_a.validation import validate_csvs
 from app.ps1.validator import OUTPUT_HEADERS, validate_exported_csvs
@@ -25,16 +27,17 @@ def main():
             witness = folder.parent / "witness" / scenario.value
             files = {name: (witness / name).read_bytes() for name in OUTPUT_HEADERS}
             report = validate_exported_csvs(instance, scenario, files)
-            row = {"feasible": report.feasible, "hard_violations": report.hard_violations,
+            row = {"feasible": report.feasible, "hard_violation_count": len(report.hard_violations),
+                   "violation_sample": report.hard_violations[:3],
+                   "violations_sha256": hashlib.sha256(json.dumps(report.hard_violations, sort_keys=True).encode()).hexdigest(),
                    "objective_score": report.soft_scores.get("objective_score")}
             if scenario == Scenario.A:
                 independent = validate_csvs(instance, files)
                 row["independent_a_feasible"] = independent.feasible
-                row["independent_a_hard_violations"] = independent.hard_violations
             scenarios[scenario.value] = row
         cases[entry["case_id"]] = scenarios
     passed = sum(row["feasible"] for scenarios in cases.values() for row in scenarios.values())
-    output = {"policy": "readme-physical-night-v3", "dataset_count": len(cases),
+    output = {"policy": POLICY_VERSION, "dataset_count": len(cases),
               "scenario_checks": len(cases) * len(Scenario), "feasible_checks": passed,
               "cases": cases}
     destination = ROOT / "benchmarks/dataset-suite/current-validation.json"

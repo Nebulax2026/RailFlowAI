@@ -221,7 +221,7 @@ export default function LabWorkspace() {
               <label>Time per scenario<select value={seconds} onChange={(event) => setSeconds(Number(event.target.value))}>{[15, 30, 60, 120].map((value) => <option key={value} value={value}>{value} seconds</option>)}</select></label>
               <label>Seed<input type="number" min={0} max={2147483647} step={1} value={seed} onChange={(event) => setSeed(Math.max(0, Math.min(2147483647, Math.trunc(Number(event.target.value)))))} /></label>
             </div>
-            <p className="solver-note">CP-SAT runs use the server worker configuration; Greedy does not use CP-SAT. Existing planner uses a 30-second first pass and 90-second improvement pass; other methods use the selected time per scenario. Dataset runs are serial; the current server configures eight CP-SAT workers per run. Scenario A safety policies differ; official validator parity is unconfirmed.</p>
+            <p className="solver-note">CP-SAT runs use the server worker configuration; Greedy does not use CP-SAT. Existing planner runs A, B and C sequentially, with one uninterrupted search of up to 120 seconds each; other methods use the selected time per scenario. Dataset runs are serial; the current server configures eight CP-SAT workers per run. Scenario A safety policies differ; official validator parity is unconfirmed.</p>
           </fieldset>
       </div>
       {labTab === "single" && error && <div className="alert error" role="alert"><AlertTriangle size={18} /><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError("")}><X size={16} /></button></div>}

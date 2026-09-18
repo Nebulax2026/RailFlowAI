@@ -1,0 +1,1012 @@
+{
+  "schedule_directory": "submission/railflow-98b06b7e-results/scenario_A",
+  "input_directory": "PS1/01_data",
+  "input_assumption": "Repository public input; confirm this is the instance supplied to the official validator.",
+  "csv_sha256": {
+    "SCHEDULE_ACCESS.csv": "79f8905a52f26afdf3a73b118f3dafea2a50789e31420496878acb55f7846b7c",
+    "SCHEDULE_OCCUPANCY.csv": "3404431038b28dd6b962c95127f3d3be5c672e85b8881a077a319083087171f8",
+    "RESULTS.csv": "70bc971cdea18a199bb3904fdb3532765633a19d501da6202d0243f08df41942"
+  },
+  "official_log_sha256": "54985998641bb351135104eff598c34bb6b22a53b413a7e470813d16547f2f7e",
+  "official_validator_executed_locally": false,
+  "official_reported_feasible": false,
+  "local_feasible": true,
+  "local_policy": "readme-physical-night-v3",
+  "local_objective_score": 25.2,
+  "reported_violations": 64,
+  "matching_scheduled_combinations": 64,
+  "messages_with_footprint_differences": 5,
+  "checks": [
+    {
+      "official_message": "[Activity inside another group's closure zone] wk9: A028 inside closure of ['A025'] at ['PLAT:ALP:S03:EB', 'SEC:ALP:S03_S04:EB']",
+      "week": 9,
+      "activity_id": "A028",
+      "closure_group_members": [
+        "A025"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A028": 1,
+        "A025": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk9: A025 inside closure of ['A028'] at ['PLAT:ALP:S03:EB', 'SEC:ALP:S02_S03:EB']",
+      "week": 9,
+      "activity_id": "A025",
+      "closure_group_members": [
+        "A028"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A025": 2,
+        "A028": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk16: A003 inside closure of ['A041'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 16,
+      "activity_id": "A003",
+      "closure_group_members": [
+        "A041"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A003": 1,
+        "A041": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk16: A060 inside closure of ['A041'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 16,
+      "activity_id": "A060",
+      "closure_group_members": [
+        "A041"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A060": 1,
+        "A041": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk16: A019 inside closure of ['A041'] at ['PLAT:BET:S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 16,
+      "activity_id": "A019",
+      "closure_group_members": [
+        "A041"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A019": 1,
+        "A041": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk16: A041 inside closure of ['A003', 'A007', 'A019'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 16,
+      "activity_id": "A041",
+      "closure_group_members": [
+        "A003",
+        "A007",
+        "A019"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A041": 2,
+        "A003": 1,
+        "A007": 1,
+        "A019": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk17: A059 inside closure of ['A046'] at ['PLAT:ALP:S06:WB', 'SEC:ALP:S06_S07:WB']",
+      "week": 17,
+      "activity_id": "A059",
+      "closure_group_members": [
+        "A046"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A059": 2,
+        "A046": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk17: A046 inside closure of ['A059'] at ['PLAT:ALP:S06:WB']",
+      "week": 17,
+      "activity_id": "A046",
+      "closure_group_members": [
+        "A059"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A046": 1,
+        "A059": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk18: A011 inside closure of ['A017', 'A040'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 18,
+      "activity_id": "A011",
+      "closure_group_members": [
+        "A017",
+        "A040"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A011": 2,
+        "A017": 1,
+        "A040": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk18: A037 inside closure of ['A017', 'A040'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 18,
+      "activity_id": "A037",
+      "closure_group_members": [
+        "A017",
+        "A040"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A037": 2,
+        "A017": 1,
+        "A040": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk18: A017 inside closure of ['A011', 'A037'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 18,
+      "activity_id": "A017",
+      "closure_group_members": [
+        "A011",
+        "A037"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A017": 1,
+        "A011": 2,
+        "A037": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk18: A040 inside closure of ['A011', 'A037'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 18,
+      "activity_id": "A040",
+      "closure_group_members": [
+        "A011",
+        "A037"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A040": 1,
+        "A011": 2,
+        "A037": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk19: A059 inside closure of ['A046'] at ['PLAT:ALP:S06:WB', 'SEC:ALP:S06_S07:WB']",
+      "week": 19,
+      "activity_id": "A059",
+      "closure_group_members": [
+        "A046"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A059": 1,
+        "A046": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk19: A046 inside closure of ['A059'] at ['PLAT:ALP:S06:WB']",
+      "week": 19,
+      "activity_id": "A046",
+      "closure_group_members": [
+        "A059"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A046": 2,
+        "A059": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A056 inside closure of ['A074'] at ['PLAT:ALP:H02:WB', 'PLAT:ALP:S05:WB', 'PLAT:ALP:S06:WB', 'SEC:ALP:H02_S05:WB']",
+      "week": 20,
+      "activity_id": "A056",
+      "closure_group_members": [
+        "A074"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A056": 3,
+        "A074": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A059 inside closure of ['A074'] at ['PLAT:ALP:S06:WB']",
+      "week": 20,
+      "activity_id": "A059",
+      "closure_group_members": [
+        "A074"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A059": 1,
+        "A074": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A007 inside closure of ['A074'] at ['PLAT:BET:H01:EB', 'PLAT:BET:H02:EB', 'SEC:BET:H01_H02:EB']",
+      "week": 20,
+      "activity_id": "A007",
+      "closure_group_members": [
+        "A074"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A007": 1,
+        "A074": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A017 inside closure of ['A074'] at ['PLAT:BET:H01:EB', 'PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'PLAT:BET:S16:EB']",
+      "week": 20,
+      "activity_id": "A017",
+      "closure_group_members": [
+        "A074"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [
+        "PLAT:BET:S15:EB",
+        "PLAT:BET:S16:EB"
+      ],
+      "local_physical_nights": {
+        "A017": 1,
+        "A074": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A043 inside closure of ['A074'] at ['PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB']",
+      "week": 20,
+      "activity_id": "A043",
+      "closure_group_members": [
+        "A074"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [
+        "PLAT:BET:S15:EB",
+        "PLAT:BET:S16:EB",
+        "SEC:BET:H02_S15:EB"
+      ],
+      "local_physical_nights": {
+        "A043": 1,
+        "A074": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A057 inside closure of ['A074'] at ['PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB']",
+      "week": 20,
+      "activity_id": "A057",
+      "closure_group_members": [
+        "A074"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [
+        "PLAT:BET:S15:EB",
+        "PLAT:BET:S16:EB",
+        "SEC:BET:H02_S15:EB"
+      ],
+      "local_physical_nights": {
+        "A057": 1,
+        "A074": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A059 inside closure of ['A056'] at ['PLAT:ALP:S06:WB', 'PLAT:ALP:S07:WB', 'SEC:ALP:S06_S07:WB']",
+      "week": 20,
+      "activity_id": "A059",
+      "closure_group_members": [
+        "A056"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A059": 1,
+        "A056": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A056 inside closure of ['A059'] at ['PLAT:ALP:S06:WB', 'PLAT:ALP:S07:WB', 'SEC:ALP:S06_S07:WB']",
+      "week": 20,
+      "activity_id": "A056",
+      "closure_group_members": [
+        "A059"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A056": 3,
+        "A059": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A008 inside closure of ['A007', 'A017', 'A043'] at ['PLAT:BET:S17:EB', 'SEC:BET:S17_S18:EB']",
+      "week": 20,
+      "activity_id": "A008",
+      "closure_group_members": [
+        "A007",
+        "A017",
+        "A043"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A008": 2,
+        "A007": 1,
+        "A017": 1,
+        "A043": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A038 inside closure of ['A007', 'A017', 'A043'] at ['PLAT:BET:S17:EB', 'SEC:BET:S17_S18:EB']",
+      "week": 20,
+      "activity_id": "A038",
+      "closure_group_members": [
+        "A007",
+        "A017",
+        "A043"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A038": 2,
+        "A007": 1,
+        "A017": 1,
+        "A043": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk20: A043 inside closure of ['A008', 'A038'] at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 20,
+      "activity_id": "A043",
+      "closure_group_members": [
+        "A008",
+        "A038"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A043": 1,
+        "A008": 2,
+        "A038": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk21: A011 inside closure of ['A007', 'A040', 'A057'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 21,
+      "activity_id": "A011",
+      "closure_group_members": [
+        "A007",
+        "A040",
+        "A057"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A011": 2,
+        "A007": 1,
+        "A040": 1,
+        "A057": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk21: A040 inside closure of ['A011'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 21,
+      "activity_id": "A040",
+      "closure_group_members": [
+        "A011"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A040": 1,
+        "A011": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk21: A057 inside closure of ['A011'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 21,
+      "activity_id": "A057",
+      "closure_group_members": [
+        "A011"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A057": 1,
+        "A011": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk22: A001 inside closure of ['A007', 'A017', 'A036'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 22,
+      "activity_id": "A001",
+      "closure_group_members": [
+        "A007",
+        "A017",
+        "A036"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A001": 3,
+        "A007": 1,
+        "A017": 1,
+        "A036": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk22: A017 inside closure of ['A001'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 22,
+      "activity_id": "A017",
+      "closure_group_members": [
+        "A001"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A017": 1,
+        "A001": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk22: A057 inside closure of ['A001'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 22,
+      "activity_id": "A057",
+      "closure_group_members": [
+        "A001"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A057": 1,
+        "A001": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk22: A008 inside closure of ['A001'] at ['PLAT:BET:S17:EB', 'SEC:BET:S17_S18:EB']",
+      "week": 22,
+      "activity_id": "A008",
+      "closure_group_members": [
+        "A001"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A008": 2,
+        "A001": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk22: A001 inside closure of ['A008'] at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 22,
+      "activity_id": "A001",
+      "closure_group_members": [
+        "A008"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A001": 3,
+        "A008": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A020 inside closure of ['A023'] at ['PLAT:ALP:S04:WB', 'SEC:ALP:S04_H01:WB']",
+      "week": 23,
+      "activity_id": "A020",
+      "closure_group_members": [
+        "A023"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A020": 1,
+        "A023": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A050 inside closure of ['A023'] at ['PLAT:ALP:S03:WB', 'PLAT:ALP:S04:WB', 'SEC:ALP:S03_S04:WB', 'SEC:ALP:S04_H01:WB']",
+      "week": 23,
+      "activity_id": "A050",
+      "closure_group_members": [
+        "A023"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A050": 1,
+        "A023": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A070 inside closure of ['A023'] at ['PLAT:ALP:S03:WB', 'PLAT:ALP:S04:WB', 'SEC:ALP:S03_S04:WB', 'SEC:ALP:S04_H01:WB']",
+      "week": 23,
+      "activity_id": "A070",
+      "closure_group_members": [
+        "A023"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A070": 1,
+        "A023": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A023 inside closure of ['A020', 'A050', 'A070'] at ['PLAT:ALP:S03:WB', 'PLAT:ALP:S04:WB', 'SEC:ALP:S03_S04:WB']",
+      "week": 23,
+      "activity_id": "A023",
+      "closure_group_members": [
+        "A020",
+        "A050",
+        "A070"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A023": 2,
+        "A020": 1,
+        "A050": 1,
+        "A070": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A013 inside closure of ['A020', 'A050', 'A070'] at ['PLAT:ALP:S05:WB']",
+      "week": 23,
+      "activity_id": "A013",
+      "closure_group_members": [
+        "A020",
+        "A050",
+        "A070"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A013": 2,
+        "A020": 1,
+        "A050": 1,
+        "A070": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A020 inside closure of ['A013'] at ['PLAT:ALP:S05:WB', 'SEC:ALP:H02_S05:WB']",
+      "week": 23,
+      "activity_id": "A020",
+      "closure_group_members": [
+        "A013"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A020": 1,
+        "A013": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A001 inside closure of ['A007', 'A017', 'A036'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 23,
+      "activity_id": "A001",
+      "closure_group_members": [
+        "A007",
+        "A017",
+        "A036"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A001": 1,
+        "A007": 2,
+        "A017": 2,
+        "A036": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A042 inside closure of ['A007', 'A017', 'A036'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 23,
+      "activity_id": "A042",
+      "closure_group_members": [
+        "A007",
+        "A017",
+        "A036"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A042": 1,
+        "A007": 2,
+        "A017": 2,
+        "A036": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A017 inside closure of ['A001', 'A042'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 23,
+      "activity_id": "A017",
+      "closure_group_members": [
+        "A001",
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A017": 2,
+        "A001": 1,
+        "A042": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk23: A057 inside closure of ['A001', 'A042'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 23,
+      "activity_id": "A057",
+      "closure_group_members": [
+        "A001",
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A057": 2,
+        "A001": 1,
+        "A042": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk24: A008 inside closure of ['A017', 'A036', 'A071'] at ['PLAT:BET:S17:EB', 'SEC:BET:S17_S18:EB']",
+      "week": 24,
+      "activity_id": "A008",
+      "closure_group_members": [
+        "A017",
+        "A036",
+        "A071"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A008": 2,
+        "A017": 1,
+        "A036": 1,
+        "A071": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk24: A071 inside closure of ['A008'] at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 24,
+      "activity_id": "A071",
+      "closure_group_members": [
+        "A008"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A071": 1,
+        "A008": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A023 inside closure of ['A075'] at ['PLAT:ALP:S03:WB', 'PLAT:ALP:S04:WB', 'SEC:ALP:S03_S04:WB']",
+      "week": 25,
+      "activity_id": "A023",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [
+        "PLAT:ALP:S03:WB",
+        "PLAT:ALP:S04:WB",
+        "SEC:ALP:S03_S04:WB"
+      ],
+      "local_physical_nights": {
+        "A023": 2,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A013 inside closure of ['A075'] at ['PLAT:ALP:S05:WB', 'PLAT:ALP:S06:WB', 'SEC:ALP:S05_S06:WB']",
+      "week": 25,
+      "activity_id": "A013",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [
+        "PLAT:ALP:S05:WB",
+        "PLAT:ALP:S06:WB",
+        "SEC:ALP:S05_S06:WB"
+      ],
+      "local_physical_nights": {
+        "A013": 2,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A036 inside closure of ['A075'] at ['PLAT:BET:H01:EB', 'PLAT:BET:S14:EB', 'SEC:BET:S14_H01:EB']",
+      "week": 25,
+      "activity_id": "A036",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A036": 2,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A040 inside closure of ['A075'] at ['PLAT:BET:H01:EB', 'PLAT:BET:H02:EB', 'PLAT:BET:S15:EB', 'PLAT:BET:S16:EB']",
+      "week": 25,
+      "activity_id": "A040",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A040": 2,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A055 inside closure of ['A075'] at ['PLAT:BET:H01:EB', 'PLAT:BET:H02:EB', 'PLAT:BET:S13:EB', 'PLAT:BET:S14:EB']",
+      "week": 25,
+      "activity_id": "A055",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A055": 2,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A039 inside closure of ['A075'] at ['PLAT:BET:S13:WB', 'PLAT:BET:S14:WB', 'SEC:BET:S13_S14:WB']",
+      "week": 25,
+      "activity_id": "A039",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A039": 3,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A041 inside closure of ['A075'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 25,
+      "activity_id": "A041",
+      "closure_group_members": [
+        "A075"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A041": 3,
+        "A075": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A041 inside closure of ['A036', 'A040', 'A055'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 25,
+      "activity_id": "A041",
+      "closure_group_members": [
+        "A036",
+        "A040",
+        "A055"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A041": 3,
+        "A036": 2,
+        "A040": 2,
+        "A055": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk25: A040 inside closure of ['A041'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 25,
+      "activity_id": "A040",
+      "closure_group_members": [
+        "A041"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A040": 2,
+        "A041": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A042 inside closure of ['A017', 'A036', 'A040'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 26,
+      "activity_id": "A042",
+      "closure_group_members": [
+        "A017",
+        "A036",
+        "A040"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A042": 3,
+        "A017": 1,
+        "A036": 1,
+        "A040": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A019 inside closure of ['A017', 'A036', 'A040'] at ['PLAT:BET:S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 26,
+      "activity_id": "A019",
+      "closure_group_members": [
+        "A017",
+        "A036",
+        "A040"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A019": 3,
+        "A017": 1,
+        "A036": 1,
+        "A040": 1
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A042 inside closure of ['A008'] at ['PLAT:BET:S17:EB', 'PLAT:BET:S18:EB', 'SEC:BET:S16_S17:EB', 'SEC:BET:S17_S18:EB']",
+      "week": 26,
+      "activity_id": "A042",
+      "closure_group_members": [
+        "A008"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A042": 3,
+        "A008": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A019 inside closure of ['A008'] at ['PLAT:BET:S17:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 26,
+      "activity_id": "A019",
+      "closure_group_members": [
+        "A008"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A019": 3,
+        "A008": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A017 inside closure of ['A019', 'A042'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 26,
+      "activity_id": "A017",
+      "closure_group_members": [
+        "A019",
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A017": 1,
+        "A019": 3,
+        "A042": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A040 inside closure of ['A019', 'A042'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 26,
+      "activity_id": "A040",
+      "closure_group_members": [
+        "A019",
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A040": 1,
+        "A019": 3,
+        "A042": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A073 inside closure of ['A019', 'A042'] at ['PLAT:BET:S15:EB', 'SEC:BET:H02_S15:EB']",
+      "week": 26,
+      "activity_id": "A073",
+      "closure_group_members": [
+        "A019",
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A073": 1,
+        "A019": 3,
+        "A042": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk26: A008 inside closure of ['A019', 'A042'] at ['PLAT:BET:S17:EB', 'PLAT:BET:S18:EB', 'SEC:BET:S17_S18:EB']",
+      "week": 26,
+      "activity_id": "A008",
+      "closure_group_members": [
+        "A019",
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A008": 2,
+        "A019": 3,
+        "A042": 3
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk27: A042 inside closure of ['A036', 'A040'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:S15_S16:EB', 'SEC:BET:S16_S17:EB']",
+      "week": 27,
+      "activity_id": "A042",
+      "closure_group_members": [
+        "A036",
+        "A040"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A042": 1,
+        "A036": 2,
+        "A040": 2
+      }
+    },
+    {
+      "official_message": "[Activity inside another group's closure zone] wk27: A040 inside closure of ['A042'] at ['PLAT:BET:S15:EB', 'PLAT:BET:S16:EB', 'SEC:BET:H02_S15:EB', 'SEC:BET:S15_S16:EB']",
+      "week": 27,
+      "activity_id": "A040",
+      "closure_group_members": [
+        "A042"
+      ],
+      "all_members_scheduled": true,
+      "reported_locations_outside_local_footprint": [],
+      "local_physical_nights": {
+        "A040": 2,
+        "A042": 1
+      }
+    }
+  ]
+}

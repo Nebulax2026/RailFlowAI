@@ -1,0 +1,73 @@
+{
+  "official_validator_executed_locally": false,
+  "official_validator_result_recorded": true,
+  "policy": "observed-weekly-closures-v4",
+  "scenarios": {
+    "A": {
+      "original": {
+        "feasible": false,
+        "hard_violation_count": 70,
+        "objective_score": null,
+        "csv_sha256": {
+          "SCHEDULE_ACCESS.csv": "79f8905a52f26afdf3a73b118f3dafea2a50789e31420496878acb55f7846b7c",
+          "SCHEDULE_OCCUPANCY.csv": "3404431038b28dd6b962c95127f3d3be5c672e85b8881a077a319083087171f8",
+          "RESULTS.csv": "70bc971cdea18a199bb3904fdb3532765633a19d501da6202d0243f08df41942"
+        }
+      },
+      "replacement": {
+        "feasible": true,
+        "hard_violation_count": 0,
+        "objective_score": 608.3,
+        "csv_sha256": {
+          "SCHEDULE_ACCESS.csv": "cd0313af6fb2c8a94e40b8e6cbd0eedb1f62fab8834a5869ade290e8536cb5b7",
+          "SCHEDULE_OCCUPANCY.csv": "6a8d0ec3dc25005c31f5375db83aa41a564f384ef7027b0653950bf797bbd5d2",
+          "RESULTS.csv": "e725b7c923a1c1456b587455abc58200495a6cf3c039d2919c46e731f90f4ae7"
+        }
+      }
+    },
+    "B": {
+      "original": {
+        "feasible": false,
+        "hard_violation_count": 63,
+        "objective_score": null,
+        "csv_sha256": {
+          "SCHEDULE_ACCESS.csv": "515fadf0a5cb22864aed8ebcab53a515706cf610c640d5cc796cd308ddee9983",
+          "SCHEDULE_OCCUPANCY.csv": "4586d83ae314f9068d3038ae0376ec62645da6b498779585ab66fa8e3f6937e7",
+          "RESULTS.csv": "a2cfd8533efc2198c4ab2cec682772b2f1894384c33683f961b5e874ed8dedf2"
+        }
+      },
+      "replacement": {
+        "feasible": true,
+        "hard_violation_count": 0,
+        "objective_score": 50,
+        "csv_sha256": {
+          "SCHEDULE_ACCESS.csv": "4d3132efcf9ce39f0044d8681682d79d8e2457739f24f8491743d65c76ef6700",
+          "SCHEDULE_OCCUPANCY.csv": "2670c3de4ed4f78a077bb786796c73c0dfbd981d62a015602f87fe8f904bac75",
+          "RESULTS.csv": "c3cfd68d4c3d933b4175d2642a8e0ab4dee1cac27f4e6e8a7930b4ba0588534d"
+        }
+      }
+    },
+    "C": {
+      "original": {
+        "feasible": false,
+        "hard_violation_count": 50,
+        "objective_score": null,
+        "csv_sha256": {
+          "SCHEDULE_ACCESS.csv": "1328dc61a164d1145ca0ff59ea7c466001eb9b3ae2aa1fcadf37db6fcee1654a",
+          "SCHEDULE_OCCUPANCY.csv": "19b750716ebfb724e7f7b96f033b0e540e1dbb34112070c8711c9a971c5b2630",
+          "RESULTS.csv": "741e02d627a283d438b354ac9cb81db23445dc6169f68bf59e124b85d2ea0fba"
+        }
+      },
+      "replacement": {
+        "feasible": true,
+        "hard_violation_count": 0,
+        "objective_score": 173.5,
+        "csv_sha256": {
+          "SCHEDULE_ACCESS.csv": "6bcb37c4421e71ae91b0c75d911c3df2f15c325f707153852d93b46a65814aaf",
+          "SCHEDULE_OCCUPANCY.csv": "5d528ec22babc0650b81419d9b8043348d58491f59513119371adfc236df7704",
+          "RESULTS.csv": "0bae9c717b67fc594af1637c14c197b62e5efddfe64c14aef135873f417df15a"
+        }
+      }
+    }
+  }
+}

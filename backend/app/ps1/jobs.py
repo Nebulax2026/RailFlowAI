@@ -1,5 +1,6 @@
 from __future__ import annotations
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -97,6 +98,7 @@ class JobManager:
             solution.validation = report
             solution.solution_revision = (run.solution.solution_revision if run.solution else 0) + 1
             run.solution = solution; run.solver_stats = dict(solution.solver_stats)
+            run.phase = "improving"; run.progress = 50
             run.message = "Validated schedule available; searching for improvements."
 
     def _run(self, job_id):
@@ -107,38 +109,32 @@ class JobManager:
         if job.algorithm != "legacy":
             self._run_scenario_a(job)
             return
-        for phase, budget in (("first_search", self.first_seconds), ("improving", self.improve_seconds)):
-            for scenario in Scenario:
+        budget = self.first_seconds + self.improve_seconds
+        for scenario in Scenario:
+            with self._lock:
+                if event.is_set(): self._finish_cancel(job); return
+                run = job.scenarios[scenario]
+                run.status = JobStatus.RUNNING; run.phase = "first_search"; run.progress = 10
+                run.message = "Searching for a complete schedule."
+            started = time.monotonic()
+            try:
+                solution = solve_scenario(job.instance, scenario, budget,
+                                          on_solution=lambda s, sc=scenario: self._publish(job, sc, s),
+                                          cancel_event=event, optimize_early_placement=False)
+                self._publish(job, scenario, solution)
                 with self._lock:
-                    if event.is_set(): self._finish_cancel(job); return
-                    run = job.scenarios[scenario]
-                    if run.termination_reason in {"optimal", "infeasible", "validation_failed", "error"}: continue
-                    run.status = JobStatus.RUNNING; run.phase = phase; run.progress = 10 if phase == "first_search" else 50
-                    run.message = "Searching for a complete schedule." if not run.solution else "Improving validated schedule."
-                    previous_elapsed = run.solver_stats.get('elapsed_seconds', 0)
-                    previous_first = run.solver_stats.get('first_feasible_seconds')
-                try:
-                    solution = solve_scenario(job.instance, scenario, budget, incumbent=run.solution,
-                                              on_solution=lambda s, sc=scenario: self._publish(job, sc, s), cancel_event=event)
-                    self._publish(job, scenario, solution)
-                    with self._lock:
-                        run.solver_stats = dict(solution.solver_stats)
-                        run.solver_stats['elapsed_seconds'] += previous_elapsed
-                        if previous_first is not None: run.solver_stats['first_feasible_seconds'] = previous_first
-                        elif run.solver_stats.get('first_feasible_seconds') is not None: run.solver_stats['first_feasible_seconds'] += previous_elapsed
-                        run.termination_reason = solution.solver_stats['termination_reason']; run.error = None
-                except SolveFailure as error:
-                    run.termination_reason = error.reason; run.error = str(error)
-                    run.solver_stats = {**run.solver_stats, 'elapsed_seconds': previous_elapsed + budget}
-                except Exception as error:
-                    run.termination_reason = "error"; run.error = f"{type(error).__name__}: scheduling failed."
-                with self._lock:
-                    if event.is_set(): self._finish_cancel(job); return
-                    final = phase == "improving" or run.termination_reason in {"optimal", "infeasible", "validation_failed", "error"}
-                    run.phase = "finished" if final else "waiting_improvement"
-                    run.progress = 100 if final else 35
-                    run.status = (JobStatus.COMPLETED if run.solution else JobStatus.FAILED) if final else JobStatus.QUEUED
-                    run.message = ("Optimality proved." if run.termination_reason == "optimal" else "Validated schedule retained; optimum not proved.") if run.solution else (run.error or "No validated schedule found.")
+                    run.solver_stats = dict(solution.solver_stats)
+                    run.termination_reason = solution.solver_stats['termination_reason']; run.error = None
+            except SolveFailure as error:
+                run.termination_reason = error.reason; run.error = str(error)
+                run.solver_stats = {**run.solver_stats, 'elapsed_seconds': time.monotonic() - started}
+            except Exception as error:
+                run.termination_reason = "error"; run.error = f"{type(error).__name__}: scheduling failed."
+            with self._lock:
+                if event.is_set(): self._finish_cancel(job); return
+                run.phase = "finished"; run.progress = 100
+                run.status = JobStatus.COMPLETED if run.solution else JobStatus.FAILED
+                run.message = ("Optimality proved." if run.termination_reason == "optimal" else "Validated schedule retained; optimum not proved.") if run.solution else (run.error or "No validated schedule found.")
         with self._lock:
             job.status = JobStatus.COMPLETED if all(r.solution for r in job.scenarios.values()) else JobStatus.FAILED
             if job.status == JobStatus.FAILED: job.error = "Some scenarios have no validated output; available scenarios remain downloadable."

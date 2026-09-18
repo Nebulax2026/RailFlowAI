@@ -2,6 +2,8 @@
 
 RailFlowAI is a validator-first railway possession planner for NebulaX 2026 Problem Statement 1. It accepts the official eight-file demand book, searches for complete schedules under Scenarios A, B, and C, explains the trade-offs, and exports the exact three CSV files required for each validated scenario.
 
+Closure compatibility was tightened after an official rejection of run `98b06b7e`. All methods now use `observed-weekly-closures-v4`; earlier local feasibility reports are historical. The replacement A/B/C schedules all passed the official validator. That run also confirmed the contract-completion scoring formula now used locally. See [the fix and official results](docs/official-closure-fix.md).
+
 ## What It Does
 
 - Validates all eight PS1 files and their cross-file references before solving.

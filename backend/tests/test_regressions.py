@@ -119,6 +119,20 @@ def test_c_duration_respects_two_week_eclo_limit(tiny):
     assert sum(r.eclo for r in solution.accesses) == 2
 
 
+def test_planner_can_return_primary_optimum_without_timing_pass(tiny, monkeypatch):
+    from ortools.sat.python import cp_model
+    original = cp_model.CpSolver.Solve
+    calls = []
+    def solve(self, *args, **kwargs):
+        calls.append(self)
+        return original(self, *args, **kwargs)
+    monkeypatch.setattr(cp_model.CpSolver, 'Solve', solve)
+    result = solve_scenario(tiny, Scenario.A, 3, optimize_early_placement=False)
+    assert result.validation.feasible
+    assert result.solver_stats['optimal']
+    assert len(calls) == 1
+
+
 @pytest.mark.parametrize('scenario',list(Scenario))
 def test_small_optimum_matches_independent_enumeration(tiny,scenario):
     # Enumerate no access / standard / ECLO for four weeks; single activity,
@@ -212,7 +226,7 @@ def test_live_cross_line_eclo_windows(tiny):
     assert any(v['rule']=='eclo_continuity' and 'BET' in v['detail'] for v in r.hard_violations)
 
 
-def test_buffer_work_collision_and_separate_local_possessions(tiny):
+def test_buffer_work_collision_is_not_exempt_on_separate_local_nights(tiny):
     a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
     a=replace(a,activity_id='LEFT',total_accesses=1,start_location_id='SEC:ALP:S01_S02:EB',end_location_id='SEC:ALP:S01_S02:EB')
     b=replace(a,activity_id='RIGHT',start_location_id='SEC:ALP:S03_S04:EB',end_location_id='SEC:ALP:S03_S04:EB')
@@ -225,13 +239,14 @@ def test_buffer_work_collision_and_separate_local_possessions(tiny):
     assert any(v['rule']=='closure' for v in same.validation.hard_violations)
     same.accesses[1]=replace(same.accesses[1],access_night=2)
     report=validate_exported_csvs(i,Scenario.A,scenario_csvs(same))
-    assert report.feasible
+    assert not report.feasible
+    assert any('weekly closure' in v['detail'] for v in report.hard_violations)
     assert all(u['used']==u['work_possessions'] for u in report.detail['location_usage'])
 
 
 def test_workfront_is_independent_of_location(tiny):
     a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
-    a=replace(a,total_accesses=1);b=replace(a,activity_id='B')
+    a=replace(a,total_accesses=1);b=replace(a,activity_id='B',start_location_id='SEC:ALP:S01_S02:EB',end_location_id='SEC:ALP:S01_S02:EB')
     i=replace(tiny,activities={a.activity_id:a,'B':b},contracts={c.contract_number:replace(c,number_of_workfronts=1)})
     s=manual(i,Scenario.A,[(a.activity_id,1,0),('B',1,0)])
     assert 'workfront' in {v['rule'] for v in s.validation.hard_violations}
@@ -263,7 +278,7 @@ def test_safety_independent_of_supply_and_scenario(tiny, scenario):
 def test_cross_contract_night_numbers_are_not_global(tiny):
     a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
     a=replace(a,total_accesses=1,start_location_id='SEC:ALP:S01_S02:EB',end_location_id='SEC:ALP:S01_S02:EB')
-    b=replace(a,activity_id='OTHER',contract_number='OTHER',start_location_id='SEC:ALP:S03_S04:EB',end_location_id='SEC:ALP:S03_S04:EB')
+    b=replace(a,activity_id='OTHER',contract_number='OTHER',start_location_id='SEC:ALP:S04_H01:EB',end_location_id='SEC:ALP:S04_H01:EB')
     c=replace(c,nature_of_activity='Non-live (Consist)')
     i=replace(tiny,activities={a.activity_id:a,'OTHER':b},contracts={c.contract_number:c,'OTHER':replace(c,contract_number='OTHER')})
     report=manual(i,Scenario.A,[(a.activity_id,1,0),('OTHER',1,0)]).validation
@@ -312,18 +327,21 @@ def test_live_closure_conflict_at_handwritten_locations(tiny, location):
 
 @pytest.mark.parametrize('count,feasible', [(7, True), (8, False)])
 def test_independent_contracts_must_fit_seven_nights(tiny,count,feasible):
+    from app.ps1.safety import safety_assignment
     a=next(iter(tiny.activities.values()));c=next(iter(tiny.contracts.values()))
     contracts={str(n):replace(c,contract_number=str(n),access_type='PM') for n in range(count)}
     activities={str(n):replace(a,activity_id=str(n),contract_number=str(n),total_accesses=1) for n in range(count)}
     i=replace(tiny,contracts=contracts,activities=activities,supply={k:replace(v,supply_capacity=8) for k,v in tiny.supply.items()})
     s=manual(i,Scenario.B,[(aid,1,0) for aid in activities])
     s.occupancy=[replace(r,co_share_group=r.activity_id) for r in s.occupancy]
-    report=validate_exported_csvs(i,Scenario.B,scenario_csvs(s))
-    assert report.feasible==feasible
+    # Exercise the independent physical-night gate. The stricter weekly
+    # closure gate now also rejects these overlapping PM work spans.
+    errors, witness=safety_assignment(i,s.accesses,s.occupancy)
+    assert (not errors)==feasible
     if feasible:
-        assert len({r['physical_night'] for r in report.detail['physical_night_assignment']})==7
+        assert len({r['physical_night'] for r in witness})==7
     else:
-        assert any('seven physical nights' in v['detail'] for v in report.hard_violations)
+        assert any('seven physical nights' in v['detail'] for v in errors)
 
 
 def test_safety_timeout_is_not_infeasibility(tiny,monkeypatch):
@@ -367,12 +385,13 @@ def test_cross_contract_global_safety_is_in_solver(tiny):
               supply={k:replace(v,supply_capacity=1) for k,v in tiny.supply.items()})
     with pytest.raises(SolveFailure) as caught: solve_scenario(i,Scenario.A,3)
     assert caught.value.reason=='infeasible'
-    # More work supply permits a second physical night, not extra protection slots.
+    # More supply cannot waive the weekly work/closure intersections.
     roomy=replace(i,supply={k:replace(v,supply_capacity=2) for k,v in i.supply.items()})
-    solution=solve_scenario(roomy,Scenario.A,3)
+    with pytest.raises(SolveFailure) as caught: solve_scenario(roomy,Scenario.A,3)
+    assert caught.value.reason=='infeasible'
+    solution=solve_scenario(replace(roomy,horizon_weeks=3),Scenario.A,3)
     assert solution.validation.feasible
-    nights={r['activity_id']:r['physical_night'] for r in solution.validation.detail['physical_night_assignment']}
-    assert nights['LEFT'] != nights['RIGHT']
+    assert len({r.week for r in solution.accesses}) > 1
 
 
 def test_stale_unsafe_incumbent_cannot_escape_revalidation(tiny):

@@ -1,8 +1,6 @@
-"""Explicit, conservative interpretation of rules not resolved by public tooling.
+"""Prepared activity relationships for diagnostics and search neighborhoods.
 
-Slots are local to a location/week. A buffer/closure may share a local slot
-only with direct partners witnessed in an actual shared work possession in
-that week. No transitive exemption to external jobs. See the rules document.
+Production A/B/C searches share the observed weekly-closure policy.
 """
 from __future__ import annotations
 
@@ -10,7 +8,7 @@ from dataclasses import dataclass
 
 from app.ps1.models import Instance
 
-POLICY_VERSION = "local-witnessed-sharing-v1"
+from app.ps1.safety import POLICY_VERSION
 SOURCE_REVISION = "966c976005db2e3e40a691cff268fdb8f396a5df"
 
 
@@ -58,17 +56,8 @@ def prepare(instance: Instance) -> Prepared:
                     | {f"{s.sector_id}:{bound}" for s in sectors[left:right]})
 
         actual = span(low, high)
-        rule = instance.buffer_rules[c.nature_of_activity]
-        footprint = span(max(0, low - rule.up_to_buffer_sectors), min(len(sectors), high + rule.up_to_buffer_sectors))
-        if rule.opposite_bound_required:
-            other = "WB" if bound == "EB" else "EB"
-            footprint |= {loc.rsplit(":", 1)[0] + ":" + other for loc in footprint}
-        # Conservative: a Live buffer reaching the interchange also cuts power.
-        if c.nature_of_activity == "Live" and any(":H01_H02:" in loc for loc in footprint):
-            for other_line in instance.lines:
-                for other_bound in ("EB", "WB"):
-                    footprint.update({f"SEC:{other_line}:H01_H02:{other_bound}",
-                                      f"PLAT:{other_line}:H01:{other_bound}", f"PLAT:{other_line}:H02:{other_bound}"})
+        from app.ps1.topology import closure_locations
+        footprint = actual | closure_locations(instance, a)
         missing = footprint - instance.supply.keys()
         if missing:
             raise ValueError(f"{aid}: required locations absent from supply: {sorted(missing)}")

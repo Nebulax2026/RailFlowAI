@@ -71,14 +71,20 @@ def closure_locations(instance: Instance, activity: Activity) -> set[str]:
     if contract.nature_of_activity == "Live" and any("H01_H02" in location for location in actual):
         other_lines = set(instance.lines) - {line}
         for other_line in other_lines:
+            other_sectors = sorted((s for s in instance.sectors.values() if s.line_code == other_line), key=lambda s: s.seq)
+            interchange = next((i for i, s in enumerate(other_sectors)
+                                if {s.from_station_id, s.to_station_id} == {"H01", "H02"}), None)
+            if interchange is None:
+                continue
+            # Official rejection examples A074/A075 include the receiving
+            # line's two-sector Live buffer, not only its interchange itself.
+            expanded = other_sectors[max(0, interchange - rule.up_to_buffer_sectors):
+                                     interchange + 1 + rule.up_to_buffer_sectors]
             for affected_bound in {"EB", "WB"}:
-                reserved.update(
-                    {
-                        f"SEC:{other_line}:H01_H02:{affected_bound}",
-                        f"PLAT:{other_line}:H01:{affected_bound}",
-                        f"PLAT:{other_line}:H02:{affected_bound}",
-                    }
-                )
+                for sector in expanded:
+                    reserved.update({f"{sector.sector_id}:{affected_bound}",
+                                     f"PLAT:{other_line}:{sector.from_station_id}:{affected_bound}",
+                                     f"PLAT:{other_line}:{sector.to_station_id}:{affected_bound}"})
     return {location for location in reserved if location in instance.supply} - actual
 
 

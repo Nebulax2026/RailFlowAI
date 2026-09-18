@@ -3,6 +3,35 @@ from itertools import combinations
 from collections import defaultdict
 from app.ps1.topology import activity_locations, closure_locations
 
+POLICY_VERSION = "observed-weekly-closures-v4"
+
+
+def weekly_closure_errors(instance, accesses, occupancy):
+    """Conservative compatibility with the supplied official rejection log.
+
+    An external group's work cannot enter a closure in the same week. A
+    reconstructed night is not an official CSV exemption. Exempt only direct,
+    legal sharing consistent at every common work location.
+    """
+    work = {a: set(activity_locations(instance, item)) for a, item in instance.activities.items()}
+    footprint = {a: work[a] | closure_locations(instance, item) for a, item in instance.activities.items()}
+    labels = {(r.activity_id, r.week, r.location_id): r.co_share_group for r in occupancy}
+    weeks = defaultdict(set)
+    for row in accesses:
+        if row.activity_id in work:
+            weeks[row.week].add(row.activity_id)
+    errors = []
+    for week, members in sorted(weeks.items()):
+        for left, right in combinations(sorted(members), 2):
+            hits = (work[left] & footprint[right]) | (work[right] & footprint[left])
+            common = work[left] & work[right]
+            exempt = common and legal_mix(instance, [left, right]) and all(
+                labels.get((left, week, loc)) and labels.get((left, week, loc)) == labels.get((right, week, loc))
+                for loc in common)
+            if hits and not exempt:
+                errors.append({"rule": "closure", "detail": f"Week {week}: {left}/{right} in different groups intersect a weekly closure at {sorted(hits)}; separate access nights do not exempt this conflict."})
+    return errors
+
 
 def legal_mix(instance, members):
     kinds = [instance.contracts[instance.activities[a].contract_number].access_type for a in members]

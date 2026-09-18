@@ -3,6 +3,7 @@ import time
 from dataclasses import asdict
 from app.ps1.solver import solve_scenario, SolveFailure
 from app.ps1.scenario_a.search import SearchResult
+from app.ps1.safety import POLICY_VERSION
 
 
 def solve(instance, scenario, config, stop, checkpoint):
@@ -18,7 +19,7 @@ def solve(instance, scenario, config, stop, checkpoint):
         return dict(status=status, scenario=scenario.value, strategy="legacy", config=asdict(config), objective=cost,
                     global_lower_bound=bound, absolute_gap=None if cost is None or bound is None else max(0, cost-bound),
                     elapsed_seconds=time.monotonic()-started, time_to_first_feasible=first,
-                    trajectory=list(trajectory), policy="local-protection-reservations-v1",
+                    trajectory=list(trajectory), policy=POLICY_VERSION,
                     official_validator_available=False, solver_stats=stats)
 
     def update(solution):

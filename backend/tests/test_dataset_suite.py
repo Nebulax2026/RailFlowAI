@@ -1,4 +1,5 @@
 import io
+import hashlib
 import json
 import zipfile
 from types import SimpleNamespace
@@ -22,7 +23,9 @@ def test_all_30_inputs_and_witnesses_and_zips():
     audit = json.loads((SUITE.parents[1] / "benchmarks/dataset-suite/current-validation.json").read_text())
     assert len(entries) == 30
     assert audit["dataset_count"] == 30
-    assert audit["scenario_checks"] == audit["feasible_checks"] == 90
+    assert audit["scenario_checks"] == 90
+    assert audit["policy"] == "observed-weekly-closures-v4"
+    checked_feasible = 0
     assert len({r["case_id"] for r in entries}) == 30
     assert {r["profile"]["name"] for r in entries} == {
         "small", "mixed", "priority_pressure", "interchange_congestion", "long_spans",
@@ -33,10 +36,20 @@ def test_all_30_inputs_and_witnesses_and_zips():
         for scenario in Scenario:
             files = {n: (folder.parent / "witness" / scenario.value / n).read_bytes() for n in OUTPUT_HEADERS}
             report = validate_exported_csvs(instance, scenario, files)
-            assert report.feasible
-            assert audit["cases"][row["case_id"]][scenario.value]["feasible"]
-            assert report.soft_scores["objective_score"] == audit["cases"][row["case_id"]][scenario.value]["objective_score"]
-            if scenario == Scenario.A: assert validate_csvs(instance, files).feasible
+            # Historical v3 witnesses are fixtures, not current certificates.
+            # Compare every current outcome against the versioned audit and
+            # ensure rejected schedules cannot retain a scored objective.
+            saved = audit["cases"][row["case_id"]][scenario.value]
+            assert report.feasible == saved["feasible"]
+            assert len(report.hard_violations) == saved["hard_violation_count"]
+            assert report.hard_violations[:3] == saved["violation_sample"]
+            assert hashlib.sha256(json.dumps(report.hard_violations, sort_keys=True).encode()).hexdigest() == saved["violations_sha256"]
+            assert report.soft_scores.get("objective_score") == saved["objective_score"]
+            checked_feasible += report.feasible
+            if not report.feasible:
+                assert "objective_score" not in report.soft_scores
+            if scenario == Scenario.A: assert validate_csvs(instance, files).feasible == report.feasible
+    assert checked_feasible == audit["feasible_checks"]
     with zipfile.ZipFile(SUITE / "all_30_inputs.zip") as archive:
         assert len(archive.namelist()) == 30 * 8
         assert len(set(archive.namelist())) == 240

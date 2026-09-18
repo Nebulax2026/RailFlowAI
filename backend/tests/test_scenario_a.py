@@ -68,14 +68,18 @@ def exhaustive_same_site(instance):
             counts = Counter(instance.contracts[instance.activities[a].contract_number].access_type for a in members)
             slots = counts["PM"] + counts["PC"] + (max(0, counts["C"] - 3 * counts["PC"]) + 3) // 4
             resources = Counter(instance.activities[a].contract_number for a in members)
-            if slots > min(s.supply_capacity for s in instance.supply.values()) or any(n > instance.contracts[c].number_of_workfronts * instance.contracts[c].number_of_maximum_access_per_week for c, n in resources.items()):
+            # At this single site, separate groups intersect each other's
+            # weekly closure even when extra supply is available.
+            if slots > min(1, min(s.supply_capacity for s in instance.supply.values())) or any(n > instance.contracts[c].number_of_workfronts * instance.contracts[c].number_of_maximum_access_per_week for c, n in resources.items()):
                 feasible = False; break
         if feasible:
             score = 0
-            for a in ids:
-                item = instance.activities[a]; c = instance.contracts[item.contract_number]
-                finish = instance.horizon_start + timedelta(days=max(schedule[a]) * 7 - 1)
-                score += max(0, (finish - c.planned_completion_date).days) * {1: 100, 2: 10, 3: 1}[c.contract_priority] * {1: 13, 2: 12, 3: 10}[item.activity_priority]
+            for cid, c in instance.contracts.items():
+                contract_ids = [a for a in ids if instance.activities[a].contract_number == cid]
+                finish = instance.horizon_start + timedelta(days=max(max(schedule[a]) for a in contract_ids) * 7 - 1)
+                multiplier_tenths = sum({1: 13, 2: 12, 3: 10}[instance.activities[a].activity_priority]
+                                        for a in contract_ids)
+                score += max(0, (finish - c.planned_completion_date).days) * {1: 100, 2: 10, 3: 1}[c.contract_priority] * multiplier_tenths
             best = score if best is None else min(best, score)
     return None if best is None else best / 10
 
@@ -107,14 +111,16 @@ def test_contract_resources_are_independent_of_location_slots():
     instance.activities["A1"] = replace(instance.activities["A1"], contract_number="C0")
     del instance.contracts["C1"]
     result = run(instance)
-    assert result.diagnostics["objective"] == exhaustive_same_site(instance) == 7
+    # Both activities belong to the late contract, so both multipliers are
+    # charged for its seven-day overrun: 7 * (1.0 + 1.0) = 14.
+    assert result.diagnostics["objective"] == exhaustive_same_site(instance) == 14
     assert len({a.week for a in result.solution.accesses}) == 2
     instance.contracts["C0"] = replace(instance.contracts["C0"], number_of_workfronts=2)
     assert run(instance).diagnostics["objective"] == 0
 
 
-@pytest.mark.parametrize("capacity,feasible", [(1, False), (2, True)])
-def test_buffers_conflict_but_separate_local_nights_are_allowed(capacity, feasible):
+@pytest.mark.parametrize("capacity,feasible", [(1, False), (2, False)])
+def test_weekly_work_buffer_conflicts_ignore_extra_supply(capacity, feasible):
     instance = tiny(("C", "C"), capacity=capacity, weeks=1, sectors=4)
     for cid in instance.contracts:
         instance.contracts[cid] = replace(instance.contracts[cid], nature_of_activity="Non-live (Consist)")
@@ -130,7 +136,7 @@ def test_direct_sharing_exempts_partners_but_not_external_buffers():
     assert result.solution and result.solution.validation.feasible
     files = scenario_csvs(result.solution)
     rows = files["SCHEDULE_OCCUPANCY.csv"].decode().splitlines()
-    files["SCHEDULE_OCCUPANCY.csv"] = ("\n".join(r.replace(",s1", ",external") if r.startswith("A1,") else r for r in rows) + "\n").encode()
+    files["SCHEDULE_OCCUPANCY.csv"] = ("\n".join(r.rsplit(",", 1)[0] + ",external" if r.startswith("A1,") else r for r in rows) + "\n").encode()
     assert not validate_csvs(instance, files).feasible
 
 
@@ -175,11 +181,12 @@ def test_no_horizon_extension_or_clamping():
 
 @pytest.mark.parametrize("types", [("PC", "PC"), ("PM", "C")])
 def test_validator_rejects_illegal_sharing(types):
-    instance = tiny(types, capacity=2, weeks=1)
+    instance = tiny(("C", "C"), capacity=2, weeks=1)
     files = scenario_csvs(run(instance).solution)
-    files["SCHEDULE_OCCUPANCY.csv"] = files["SCHEDULE_OCCUPANCY.csv"].replace(b",s2", b",s1")
+    for cid, typ in zip(sorted(instance.contracts), types):
+        instance.contracts[cid] = replace(instance.contracts[cid], access_type=typ)
     report = validate_csvs(instance, files)
-    assert "sharing" in {v["rule"] for v in report.hard_violations}
+    assert "legal_mix" in {v["rule"] for v in report.hard_violations}
 
 
 def test_validator_checks_optimizer_cost_and_extra_columns():
@@ -235,7 +242,7 @@ def test_worker_rejects_public_greedy_checkpoint_under_current_safety():
     assert result.solution is None
     assert result.diagnostics["status"] == "no_solution_within_budget"
     assert result.diagnostics["objective"] is None
-    assert "current application CSV validator" in result.diagnostics["validation_note"]
+    assert result.diagnostics["policy"] == "observed-weekly-closures-v4"
 
 
 def test_job_without_incumbent_retains_search_outcome(monkeypatch):

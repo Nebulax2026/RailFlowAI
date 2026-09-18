@@ -1,78 +1,45 @@
 {
-  "platform": "Windows-11-10.0.26200-SP0",
-  "python": "3.14.2",
+  "policy": "observed-weekly-closures-v4",
+  "source": "submission/official-score-optimized",
+  "note": "A/B match accepted results; optimized C is a separate unconfirmed candidate and has not replaced the accepted public-results CSVs.",
+  "official_validator_executed_locally": false,
+  "official_validator_result_recorded": true,
   "runs": {
-    "A": [
-      {
-        "phase": "first",
-        "termination_reason": "time_limit",
-        "wall_seconds": 30.720779399969615
-      },
-      {
-        "phase": "improve",
-        "elapsed_seconds": 90.62688119994709,
-        "first_feasible_seconds": 28.809753599984106,
-        "best_score": 25.2,
-        "best_bound": 25.2,
-        "relative_gap": 0.0,
-        "optimal": true,
-        "termination_reason": "optimal",
-        "model_variables": 82951,
-        "search_workers": 8,
-        "process_peak_memory_mb": 1647.75,
-        "wall_seconds": 90.63457300001755
-      }
-    ],
-    "B": [
-      {
-        "phase": "first",
-        "elapsed_seconds": 30.66892879997613,
-        "first_feasible_seconds": 29.634451899968553,
-        "best_score": 439,
-        "best_bound": -259.0,
-        "relative_gap": 1.5899772209567198,
-        "optimal": false,
-        "termination_reason": "time_limit",
-        "model_variables": 37819,
-        "search_workers": 8,
-        "process_peak_memory_mb": 1125.35,
-        "wall_seconds": 30.6787596999784
-      },
-      {
-        "phase": "improve",
-        "elapsed_seconds": 90.46372460003477,
-        "first_feasible_seconds": 10.920753500016872,
-        "best_score": 30,
-        "best_bound": 30.0,
-        "relative_gap": 0.0,
-        "optimal": true,
-        "termination_reason": "optimal",
-        "model_variables": 37819,
-        "search_workers": 8,
-        "process_peak_memory_mb": 1647.75,
-        "wall_seconds": 90.4677432999597
-      }
-    ],
-    "C": [
-      {
-        "phase": "first",
-        "termination_reason": "time_limit",
-        "wall_seconds": 27.94126769999275
-      },
-      {
-        "phase": "improve",
-        "elapsed_seconds": 90.65596280002501,
-        "first_feasible_seconds": 21.723734900006093,
-        "best_score": 25.2,
-        "best_bound": 25.2,
-        "relative_gap": 0.0,
-        "optimal": true,
-        "termination_reason": "optimal",
-        "model_variables": 84631,
-        "search_workers": 8,
-        "process_peak_memory_mb": 1712.71,
-        "wall_seconds": 90.66849150002236
-      }
-    ]
+    "A": {
+      "elapsed_seconds": 120.54700000002049,
+      "first_feasible_seconds": 27.5,
+      "best_score": 608.3,
+      "best_bound": 608.3,
+      "relative_gap": 0.0,
+      "optimal": true,
+      "termination_reason": "optimal",
+      "model_variables": 75502,
+      "search_workers": 4,
+      "process_peak_memory_mb": 931.69
+    },
+    "B": {
+      "elapsed_seconds": 448.75,
+      "first_feasible_seconds": null,
+      "best_score": 50,
+      "best_bound": null,
+      "relative_gap": null,
+      "optimal": false,
+      "termination_reason": "time_limit",
+      "model_variables": 35315,
+      "search_workers": 4,
+      "process_peak_memory_mb": 959.31
+    },
+    "C": {
+      "elapsed_seconds": 120.42099999997299,
+      "first_feasible_seconds": 44.84299999999348,
+      "best_score": 122.4,
+      "best_bound": 122.4,
+      "relative_gap": 0.0,
+      "optimal": true,
+      "termination_reason": "optimal",
+      "model_variables": 79406,
+      "search_workers": 4,
+      "process_peak_memory_mb": 1001.23
+    }
   }
 }

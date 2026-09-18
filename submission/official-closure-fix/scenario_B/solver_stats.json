@@ -1,0 +1,12 @@
+{
+  "elapsed_seconds": 448.75,
+  "first_feasible_seconds": null,
+  "best_score": 50,
+  "best_bound": null,
+  "relative_gap": null,
+  "optimal": false,
+  "termination_reason": "time_limit",
+  "model_variables": 35315,
+  "search_workers": 4,
+  "process_peak_memory_mb": 959.31
+}

@@ -1,4 +1,6 @@
-# Using the separate Scenario A optimizer
+# Using the Scenario A entry point
+
+All methods now use the shared A/B/C model and `observed-weekly-closures-v4` validator. The earlier separate safety policy and its benchmark scores are historical. See [closure compatibility changes](official-closure-fix.md).
 
 Run `npm run dev` at the repository root and open http://localhost:3000. Choose
 Existing planner or one of the four other methods from the same selector; see
