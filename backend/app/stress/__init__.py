@@ -1,1 +1,0 @@
-"""Schedule stress testing package."""

@@ -1,4 +1,5 @@
 __pycache__/
+.pytest_cache/
 *.py[cod]
 .venv/
 .pip-cache/
@@ -7,6 +8,7 @@ venv/
 .env.local
 node_modules/
 .next/
+out/
 *.tsbuildinfo
 dist/
 build/
