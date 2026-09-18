@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sqlite3
-import ssl
 from collections.abc import Iterable, Mapping
 from contextlib import closing, contextmanager
 from pathlib import Path
@@ -230,7 +229,7 @@ def _connect():  # type: ignore[no-untyped-def]
             host=parsed.hostname,
             port=parsed.port or 5432,
             database=unquote(parsed.path.lstrip("/")) or "postgres",
-            ssl_context=ssl.create_default_context(),
+            # Supabase's shared pooler presents a certificate chain that is not            # available in Render's default CA bundle. pg8000's True mode is            # equivalent to PostgreSQL sslmode=require: TLS is mandatory, but            # the server certificate is not independently verified.            ssl_context=True,
         )
     return sqlite3.connect(_db_path)
 
