@@ -1,11 +1,11 @@
 "use client";
 
-import { Download, LoaderCircle, Send, Wrench } from "lucide-react";
+import { Download, LoaderCircle, Send, Sparkles, Wrench } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import type { LocationUsage } from "./inspection";
+import { formatLocationName, type Scenario } from "./schedule-types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-type Scenario = "A" | "B" | "C";
 type Status = "queued" | "running" | "completed" | "failed";
 type Change = { activity_id: string; contract_number: string; before: { week: number; eclo: number; access_night: number }[]; after: { week: number; eclo: number; access_night: number }[]; reason: string };
 type Replan = {
@@ -24,7 +24,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
-export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locations }: { jobId: string; scenario: Scenario; runStatus: string; usage: LocationUsage[]; hotspots: LocationUsage[]; locations: { location_id: string; capacity: number }[] }) {
+export function AIAssistantPanel({
+  jobId,
+  scenario,
+  runStatus,
+  usage,
+  hotspots,
+  locations
+}: {
+  jobId: string;
+  scenario: Scenario;
+  runStatus: string;
+  usage: LocationUsage[];
+  hotspots: LocationUsage[];
+  locations: { location_id: string; capacity: number }[];
+}) {
   const suggested = hotspots[0] ?? usage[0];
   const [location, setLocation] = useState("");
   const [startWeek, setStartWeek] = useState(1);
@@ -42,15 +56,21 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
   const [starting, setStarting] = useState(false);
   const startingRef = useRef(false);
   const askingRef = useRef(false);
+  const [mode, setMode] = useState<"chat" | "replan">("chat");
 
   useEffect(() => {
     if (!location && suggested) {
-      setLocation(suggested.location_id); setStartWeek(suggested.week); setEndWeek(suggested.week);
+      setLocation(suggested.location_id);
+      setStartWeek(suggested.week);
+      setEndWeek(suggested.week);
       setCapacity(Math.max(0, suggested.capacity - 1));
     }
   }, [location, suggested]);
-  const nominal = locations.find(item => item.location_id === location)?.capacity ?? 1;
-  useEffect(() => { if (capacity >= nominal) setCapacity(Math.max(0, nominal - 1)); }, [capacity, nominal]);
+
+  const nominal = locations.find((item) => item.location_id === location)?.capacity ?? 1;
+  useEffect(() => {
+    if (capacity >= nominal) setCapacity(Math.max(0, nominal - 1));
+  }, [capacity, nominal]);
 
   useEffect(() => {
     if (!replan || !["queued", "running"].includes(replan.status)) return;
@@ -61,8 +81,14 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
       try {
         const next = await request<Replan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans/${replanId}`);
         if (disposed) return;
-        setReplan(next); if (next.status === "completed") setView("revised");
-      } catch (err) { if (!disposed) { setError(err instanceof Error ? err.message : "Could not refresh the re-plan."); timer = setTimeout(poll, 1500); } }
+        setReplan(next);
+        if (next.status === "completed") setView("revised");
+      } catch (err) {
+        if (!disposed) {
+          setError(err instanceof Error ? err.message : "Could not refresh re-plan.");
+          timer = setTimeout(poll, 1500);
+        }
+      }
     }
     timer = setTimeout(poll, 1500);
     return () => { disposed = true; clearTimeout(timer); };
@@ -71,61 +97,219 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
   async function startReplan(event: FormEvent) {
     event.preventDefault();
     if (startingRef.current || runStatus !== "completed" || (replan && ["queued", "running"].includes(replan.status))) return;
-    startingRef.current = true; setStarting(true); setError("");
+    startingRef.current = true;
+    setStarting(true);
+    setError("");
     try {
       const next = await request<Replan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ location_id: location, start_week: startWeek, end_week: endWeek, capacity, reason }),
       });
-      setReplan(next); setView("baseline");
-    } catch (err) { setError(err instanceof Error ? err.message : "Could not start the re-plan."); }
-    finally { startingRef.current = false; setStarting(false); }
+      setReplan(next);
+      setView("baseline");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start re-plan.");
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
+    }
   }
 
   async function ask(text = question) {
     if (!text.trim() || askingRef.current) return;
     askingRef.current = true;
-    setAsking(true); setAssistantError(""); setQuestion(text);
+    setAsking(true);
+    setAssistantError("");
+    setQuestion(text);
     try {
       const next = await request<Answer>(`/api/ps1/jobs/${jobId}/assistant/query`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario, replan_id: view === "revised" ? replan?.replan_id : null, question: text.trim() }),
       });
-      setAnswer(next); setConversation(current => [...current, { question: text.trim(), answer: next }]);
-    } catch (err) { setAssistantError(err instanceof Error ? err.message : "Schedule Assistant could not answer."); }
-    finally { setAsking(false); askingRef.current = false; }
+      setAnswer(next);
+      setConversation((current) => [...current, { question: text.trim(), answer: next }]);
+    } catch (err) {
+      setAssistantError(err instanceof Error ? err.message : "Schedule Assistant could not answer.");
+    } finally {
+      setAsking(false);
+      askingRef.current = false;
+    }
   }
 
   const summary = replan?.diff.summary;
-  return <div className="bonus-workspace">
-    <section className="data-panel replan-panel">
-      <div className="subheading"><h3>Disruption re-plan</h3><span>{replan?.status ?? "Ready"}</span></div>
-      <form className="disruption-form" onSubmit={startReplan}>
-        <label>Location<select value={location} onChange={event => setLocation(event.target.value)} required>{locations.map(item => <option key={item.location_id}>{item.location_id}</option>)}</select></label>
-        <label>Start week<input type="number" min={1} value={startWeek} onChange={event => setStartWeek(Number(event.target.value))} /></label>
-        <label>End week<input type="number" min={startWeek} value={endWeek} onChange={event => setEndWeek(Number(event.target.value))} /></label>
-        <label>Emergency capacity<input type="number" min={0} max={Math.max(0, nominal - 1)} value={capacity} onChange={event => setCapacity(Number(event.target.value))} /></label>
-        <label>Reason<select value={reason} onChange={event => setReason(event.target.value)}><option value="urgent_maintenance">Urgent maintenance</option><option value="defect">Infrastructure defect</option><option value="access_restriction">Access restriction</option><option value="other">Other</option></select></label>
-        <button className="primary-button" disabled={starting || runStatus !== "completed" || !location || replan?.status === "running" || replan?.status === "queued"}>{starting || (replan && ["running", "queued"].includes(replan.status)) ? <LoaderCircle size={16} className="spin" /> : <Wrench size={16} />}Re-plan</button>
-      </form>
-      <div className="replan-output">
-      {error && <p className="inline-error" role="alert">{error}</p>}
-      {replan && <p className="muted">{replan.error || replan.message}</p>}
-      {summary && <>
-        <div className="segmented-control" role="group" aria-label="Schedule version"><button type="button" className={view === "baseline" ? "active" : ""} onClick={() => setView("baseline")}>Baseline</button><button type="button" className={view === "revised" ? "active" : ""} onClick={() => setView("revised")}>Revised</button></div>
-        <div className="replan-metrics"><span><strong>{summary.moved_activities}</strong> moved activities</span><span><strong>{summary.preserved_percent}%</strong> preserved</span><span><strong>{summary.contracts_impacted}</strong> impacted contracts</span><span><strong>{summary.score_delta >= 0 ? "+" : ""}{summary.score_delta}</strong> score delta</span></div>
-        <div className="table-wrap change-table"><table><thead><tr><th>Activity</th><th>Before</th><th>After</th><th>Reason</th></tr></thead><tbody>{(replan.diff.activity_changes ?? []).map(item => <tr key={item.activity_id}><td>{item.activity_id}</td><td>{item.before.map(row => `W${row.week}`).join(", ")}</td><td>{item.after.map(row => `W${row.week}`).join(", ")}</td><td>{item.reason.replaceAll("_", " ")}</td></tr>)}</tbody></table></div>
-        {replan.status === "completed" && replan.disruption_audit.feasible && <div className="csv-links revised-downloads">{["SCHEDULE_ACCESS.csv", "SCHEDULE_OCCUPANCY.csv", "RESULTS.csv"].map(file => <a key={file} href={`${API_BASE}/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans/${replan.replan_id}/files/${file}`}><Download size={14} />{file.replace("SCHEDULE_", "").replace(".csv", "")}</a>)}</div>}
-      </>}
-      </div>
-    </section>
 
-    <section className="data-panel assistant-panel">
-      <div className="subheading"><h3>Schedule Assistant</h3><span>{answer?.mode ?? "Deterministic ready"}</span></div>
-      <div className="query-suggestions">{["Why was A001 moved?", "What is the downstream delay risk?", `Capacity at ${location || "SEC:ALP:S01_S02:EB"} week ${startWeek}`, "Who co-shares with A001?", `Handover brief for week ${startWeek}`].map(item => <button type="button" key={item} onClick={() => void ask(item)}>{item}</button>)}</div>
-      <form className="assistant-form" onSubmit={event => { event.preventDefault(); void ask(); }}><input value={question} maxLength={500} onChange={event => setQuestion(event.target.value)} placeholder="Ask about this schedule" /><button className="primary-button" disabled={asking || !question.trim()} aria-label="Ask Schedule Assistant">{asking ? <LoaderCircle size={16} className="spin" /> : <Send size={16} />}</button></form>
-      {assistantError && <p className="inline-error" role="alert">{assistantError}</p>}
-      <div className="assistant-conversation" role="log" aria-label="Schedule conversation">{conversation.map((entry, index) => <div className="assistant-answer" key={index}><strong>{entry.question}</strong><p>{entry.answer.answer}</p><small>{entry.answer.intent} · Evidence: {entry.answer.evidence.join(", ") || "schedule summary"}</small></div>)}</div>
-    </section>
-  </div>;
+  return (
+    <aside className="permanent-ai-sidebar" aria-label="AI Schedule Assistant">
+      <div className="ai-sidebar-header">
+        <h3>
+          <Sparkles size={16} color="var(--cyan)" />
+          RailFlow AI Assistant
+        </h3>
+        <div className="segmented-control" role="group">
+          <button
+            type="button"
+            className={`secondary-button ${mode === "chat" ? "primary-button" : ""}`}
+            style={{ fontSize: "11px", padding: "3px 8px" }}
+            onClick={() => setMode("chat")}
+          >
+            Chat
+          </button>
+          <button
+            type="button"
+            className={`secondary-button ${mode === "replan" ? "primary-button" : ""}`}
+            style={{ fontSize: "11px", padding: "3px 8px" }}
+            onClick={() => setMode("replan")}
+          >
+            Re-plan
+          </button>
+        </div>
+      </div>
+
+      <div className="ai-sidebar-body">
+        {mode === "chat" ? (
+          <>
+            <div className="query-suggestions">
+              {[
+                "Why was A001 moved?",
+                "What is the downstream delay risk?",
+                `Capacity at ${location || "SEC:ALP:S01_S02:EB"} week ${startWeek}`,
+                `Handover brief for week ${startWeek}`
+              ].map((item) => (
+                <button type="button" key={item} onClick={() => void ask(item)}>
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            <form
+              className="assistant-form"
+              onSubmit={(e) => { e.preventDefault(); void ask(); }}
+            >
+              <input
+                value={question}
+                maxLength={500}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Ask schedule assistant..."
+              />
+              <button
+                className="primary-button"
+                disabled={asking || !question.trim()}
+                aria-label="Send query"
+                style={{ padding: "6px 10px" }}
+              >
+                {asking ? <LoaderCircle size={14} className="spin" /> : <Send size={14} />}
+              </button>
+            </form>
+
+            {assistantError && <p className="alert error">{assistantError}</p>}
+
+            <div className="assistant-conversation" role="log">
+              {conversation.map((entry, idx) => (
+                <div className="assistant-answer" key={idx}>
+                  <strong>Q: {entry.question}</strong>
+                  <p>{entry.answer.answer}</p>
+                  <small>{entry.answer.intent} · Evidence: {entry.answer.evidence.join(", ") || "Summary"}</small>
+                </div>
+              ))}
+              {!conversation.length && (
+                <div style={{ textAlign: "center", padding: "24px 8px", color: "var(--text-dim)", fontSize: "11px" }}>
+                  Operational Q&A ready. Select a suggested prompt or type an inquiry.
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <span className="muted" style={{ fontSize: "11px" }}>
+              Simulate mid-horizon disruption & emergency quota drops.
+            </span>
+
+            <form className="disruption-form" onSubmit={startReplan}>
+              <label>
+                Disrupted Location
+                <select value={location} onChange={(e) => setLocation(e.target.value)} required>
+                  {locations.map((item) => (
+                    <option key={item.location_id} value={item.location_id}>
+                      {formatLocationName(item.location_id).primary}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <label>
+                  Start Week
+                  <input type="number" min={1} value={startWeek} onChange={(e) => setStartWeek(Number(e.target.value))} />
+                </label>
+                <label>
+                  End Week
+                  <input type="number" min={startWeek} value={endWeek} onChange={(e) => setEndWeek(Number(e.target.value))} />
+                </label>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <label>
+                  Quota Limit
+                  <input type="number" min={0} max={Math.max(0, nominal - 1)} value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} />
+                </label>
+                <label>
+                  Reason
+                  <select value={reason} onChange={(e) => setReason(e.target.value)}>
+                    <option value="urgent_maintenance">Urgent Maintenance</option>
+                    <option value="defect">Track Defect</option>
+                    <option value="access_restriction">Access Restriction</option>
+                  </select>
+                </label>
+              </div>
+
+              <button
+                className="primary-button"
+                disabled={starting || runStatus !== "completed" || !location || replan?.status === "running" || replan?.status === "queued"}
+              >
+                {starting || (replan && ["running", "queued"].includes(replan.status)) ? (
+                  <LoaderCircle size={14} className="spin" />
+                ) : (
+                  <Wrench size={14} />
+                )}
+                Run Re-plan
+              </button>
+            </form>
+
+            {error && <p className="alert error">{error}</p>}
+
+            {summary && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "6px" }}>
+                  <div className="detail-field"><span>Moved</span><strong>{summary.moved_activities}</strong></div>
+                  <div className="detail-field"><span>Preserved</span><strong>{summary.preserved_percent}%</strong></div>
+                  <div className="detail-field"><span>Delta</span><strong>{summary.score_delta >= 0 ? `+${summary.score_delta}` : summary.score_delta}</strong></div>
+                </div>
+
+                <div className="table-wrap">
+                  <table>
+                    <thead><tr><th>Activity</th><th>Old</th><th>New</th></tr></thead>
+                    <tbody>
+                      {(replan?.diff.activity_changes ?? []).slice(0, 5).map((ch) => (
+                        <tr key={ch.activity_id}>
+                          <td><strong>{ch.activity_id}</strong></td>
+                          <td>{ch.before.map((b) => `W${b.week}`).join(", ")}</td>
+                          <td>{ch.after.map((a) => `W${a.week}`).join(", ")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
 }
+
+// Backward compatibility
+export const AIAssistantDrawer = AIAssistantPanel;
+export const BonusTools = AIAssistantPanel;

@@ -1,59 +1,551 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, Calendar, CheckCircle2, Clock, Filter, Layers, MapPin, Shield, Users } from "lucide-react";
+import { formatLocationName } from "./schedule-types";
 
 export type EvidenceActivity = {
-  activity_id: string; contract_number: string; line: string; access_type: string;
-  required_workload: number; delivered_workload: number; completion_date: string;
-  planned_start_date: string; planned_completion_date: string; overrun_days: number; delay_cost: number;
-  contract_completion_date: string; contract_overrun_days: number;
-  predecessor: string | null; predecessor_finish_week: number | null; co_workers: string[];
+  activity_id: string;
+  contract_number: string;
+  line: string;
+  access_type: string;
+  required_workload: number;
+  delivered_workload: number;
+  completion_date: string;
+  planned_start_date: string;
+  planned_completion_date: string;
+  overrun_days: number;
+  delay_cost: number;
+  contract_completion_date: string;
+  contract_overrun_days: number;
+  predecessor: string | null;
+  predecessor_finish_week: number | null;
+  co_workers: string[];
   accesses: { week: number; eclo: number; access_night: number; physical_night?: number | null }[];
   protection: Record<string, string[]>;
   possessions: { week: number; location_id: string; co_share_group: string }[];
   evidence_note: string;
 };
-export type LocationUsage = { location_id: string; week: number; used: number; capacity: number;
-  work_possessions: number; protection_possessions: number; activities: string[]; groups: Record<string,string[]>; protection_groups: string[][] };
 
-export function Inspection({ activities, usage, view }: { activities: EvidenceActivity[]; usage: LocationUsage[]; view: "overview" | "activities" | "capacity" | "contracts" | "operations" | null }) {
+export type LocationUsage = {
+  location_id: string;
+  week: number;
+  used: number;
+  capacity: number;
+  work_possessions: number;
+  protection_possessions: number;
+  activities: string[];
+  groups: Record<string, string[]>;
+  protection_groups: string[][];
+};
+
+export function Inspection({
+  activities,
+  usage,
+  view,
+  initialWeekFilter,
+  onClearWeekFilter
+}: {
+  activities: EvidenceActivity[];
+  usage: LocationUsage[];
+  view: "overview" | "activities" | "locations" | "contracts" | null;
+  initialWeekFilter?: number | null;
+  onClearWeekFilter?: () => void;
+}) {
+  // Activities states
   const [contract, setContract] = useState("");
   const [line, setLine] = useState("");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "delayed" | "ontime">("all");
+  const [sortBy, setSortBy] = useState<"id" | "overrun" | "date">("id");
+  const [sortAsc, setSortAsc] = useState(true);
   const [selectedId, setSelectedId] = useState("");
-  const [location, setLocation] = useState("");
-  const [week, setWeek] = useState("");
-  const [table, setTable] = useState(false);
-  const filtered = useMemo(() => activities.filter(a => (!contract || a.contract_number === contract) && (!line || a.line === line) && a.activity_id.toLowerCase().includes(query.toLowerCase())), [activities, contract, line, query]);
-  const selected = filtered.find(a => a.activity_id === selectedId) ?? filtered[0];
-  const sites = usage.filter(u => (!location || u.location_id === location) && (!week || u.week === Number(week)));
-  return <div className="inspection" hidden={view !== "activities" && view !== "capacity"}>
-    <section className="data-panel inspection-panel" role="tabpanel" id={view ? "panel-activities" : undefined} aria-labelledby="tab-activities" tabIndex={0} hidden={view !== "activities"}>
-      <div className="subheading"><h3>Activity schedule and evidence</h3><button className="secondary-button" onClick={() => setTable(!table)}>{table ? "Show timeline" : "Show table"}</button></div>
-      <div className="inspection-filters">
-        <label>Contract<select value={contract} onChange={e => setContract(e.target.value)}><option value="">All contracts</option>{[...new Set(activities.map(a => a.contract_number))].sort().map(c => <option key={c}>{c}</option>)}</select></label>
-        <label>Line<select value={line} onChange={e => setLine(e.target.value)}><option value="">All lines</option>{[...new Set(activities.map(a => a.line))].sort().map(l => <option key={l}>{l}</option>)}</select></label>
-        <label>Activity<input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search activity ID" /></label>
-      </div>
-      <div className="activity-browser">
-        <div className="activity-list" aria-label="Activities">{filtered.map(a => <button aria-pressed={selected?.activity_id === a.activity_id} key={a.activity_id} onClick={() => setSelectedId(a.activity_id)}><strong>{a.activity_id}</strong><span>{a.contract_number} · {a.line}</span><small>{a.delivered_workload}/{a.required_workload} work units · {a.contract_overrun_days ? `contract ${a.contract_overrun_days} days late` : "Contract on plan"}</small></button>)}{!filtered.length && <p>No matching activities.</p>}</div>
-        {selected && <article className="activity-evidence" aria-label={`Evidence for ${selected.activity_id}`}>
-          <h4>{selected.activity_id} · {selected.access_type}</h4>
-          <p>Planned start {selected.planned_start_date}; planned completion {selected.planned_completion_date}. Activity completion {selected.completion_date}; contract completion {selected.contract_completion_date}. Official weighted contract-overrun allocation: {selected.delay_cost}.</p>
-          {table ? <div className="table-wrap"><table><thead><tr><th>Week</th><th>Local access night</th><th>Verified physical night</th><th>Yield</th></tr></thead><tbody>{selected.accesses.map(a => <tr key={a.week}><td>{a.week}</td><td>{a.access_night}</td><td>{a.physical_night ?? "Unavailable"}</td><td>{a.eclo ? "1.5 · ECLO" : "1 · Standard"}</td></tr>)}</tbody></table></div> : <ol className="access-timeline" aria-label="Scheduled access weeks">{selected.accesses.map(a => <li key={a.week} className={a.eclo ? "eclo" : ""}><strong>Week {a.week}</strong><span>Local night {a.access_night}; physical night {a.physical_night ?? "unavailable"}</span><small>{a.eclo ? "ECLO · 1.5 units" : "Standard · 1 unit"}</small></li>)}</ol>}
-          <p>Predecessor: {selected.predecessor ? `${selected.predecessor}, completes in week ${selected.predecessor_finish_week}` : "None"}. Co-sharing activities: {selected.co_workers.join(", ") || "None"}.</p>
-          <p className="muted">Access-night numbers are local to the contract and week. Verified physical nights 1?7 form one consistent weekly assignment across contracts; they are not confirmed maintenance dates. Group labels remain local to each location and week.</p>
-          {Object.entries(selected.protection).map(([kind, locations]) => <details key={kind}><summary>{kind.replaceAll("_", " ")} ({locations.length})</summary><ul>{locations.map(loc => <li key={loc}>{loc}</li>)}</ul></details>)}
-          <details><summary>Possession memberships ({selected.possessions.length})</summary><div className="table-wrap"><table><thead><tr><th>Week</th><th>Location</th><th>Group</th></tr></thead><tbody>{selected.possessions.map(p => <tr key={`${p.week}-${p.location_id}`}><td>{p.week}</td><td>{p.location_id}</td><td>{p.co_share_group}</td></tr>)}</tbody></table></div></details>
-          <p className="muted">{selected.evidence_note}</p>
-        </article>}
-      </div>
-    </section>
-    <section className="data-panel inspection-panel" role="tabpanel" id={view ? "panel-capacity" : undefined} aria-labelledby="tab-capacity" tabIndex={0} hidden={view !== "capacity"}>
-      <div className="subheading"><h3>Location and week inspection</h3><span>{sites.length} rows</span></div>
-      <div className="inspection-filters"><label>Location<select value={location} onChange={e => setLocation(e.target.value)}><option value="">All locations</option>{[...new Set(usage.map(u => u.location_id))].sort().map(l => <option key={l}>{l}</option>)}</select></label><label>Week<select value={week} onChange={e => setWeek(e.target.value)}><option value="">All weeks</option>{[...new Set(usage.map(u => u.week))].sort((a,b) => a-b).map(w => <option key={w}>{w}</option>)}</select></label></div>
-      <p className="muted">Used slots count work possessions only. Protection footprints do not consume extra supply. CSV validation reconstructs a consistent weekly night assignment across contracts, checking sharing and protection conflicts. Exact maintenance calendars are not supplied.</p>
-      <div className="table-wrap location-table"><table><thead><tr><th>Location</th><th>Week</th><th>Used / supply</th><th>Protecting activities</th><th>Activities</th><th>Groups</th></tr></thead><tbody>{sites.map(u => <tr key={`${u.location_id}-${u.week}`}><td>{u.location_id}</td><td>{u.week}</td><td>{u.used} / {u.capacity}</td><td>{u.protection_possessions}</td><td>{u.activities.join(", ")}</td><td>{Object.entries(u.groups).map(([g,ids]) => `${g}: ${ids.join(", ")}`).join("; ") || "Protection only"}</td></tr>)}{!sites.length && <tr><td colSpan={6}>No matching locations or weeks.</td></tr>}</tbody></table></div>
-    </section>
-  </div>;
+  const [showTimeline, setShowTimeline] = useState(true);
+
+  // Locations states
+  const [locLine, setLocLine] = useState("");
+  const [locQuery, setLocQuery] = useState("");
+  const [locWeek, setLocWeek] = useState(initialWeekFilter ? String(initialWeekFilter) : "");
+  const [locSaturation, setLocSaturation] = useState<"all" | "saturated" | "available">("all");
+  const [locSortBy, setLocSortBy] = useState<"name" | "week" | "saturation">("name");
+  const [locSortAsc, setLocSortAsc] = useState(true);
+
+  const filteredActivities = useMemo(() => {
+    return activities
+      .filter((a) => {
+        if (contract && a.contract_number !== contract) return false;
+        if (line && a.line !== line) return false;
+        if (query && !a.activity_id.toLowerCase().includes(query.toLowerCase())) return false;
+        if (statusFilter === "delayed" && a.contract_overrun_days <= 0) return false;
+        if (statusFilter === "ontime" && a.contract_overrun_days > 0) return false;
+        if (initialWeekFilter && !a.accesses.some((acc) => acc.week === initialWeekFilter)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        let diff = 0;
+        if (sortBy === "overrun") diff = a.contract_overrun_days - b.contract_overrun_days;
+        else if (sortBy === "date") diff = a.planned_start_date.localeCompare(b.planned_start_date);
+        else diff = a.activity_id.localeCompare(b.activity_id);
+        return sortAsc ? diff : -diff;
+      });
+  }, [activities, contract, line, query, statusFilter, sortBy, sortAsc, initialWeekFilter]);
+
+  const selected = filteredActivities.find((a) => a.activity_id === selectedId) ?? filteredActivities[0];
+
+  const filteredLocations = useMemo(() => {
+    return usage
+      .filter((u) => {
+        const isSaturated = u.used >= u.capacity;
+        if (locSaturation === "saturated" && !isSaturated) return false;
+        if (locSaturation === "available" && isSaturated) return false;
+        if (locWeek && u.week !== Number(locWeek)) return false;
+        if (locLine) {
+          const locLineCode = u.location_id.split(":")[1];
+          if (locLineCode !== locLine) return false;
+        }
+        if (locQuery) {
+          const formatted = formatLocationName(u.location_id);
+          const q = locQuery.toLowerCase();
+          if (!u.location_id.toLowerCase().includes(q) && !formatted.primary.toLowerCase().includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        let diff = 0;
+        if (locSortBy === "week") diff = a.week - b.week;
+        else if (locSortBy === "saturation") diff = (a.used / a.capacity) - (b.used / b.capacity);
+        else diff = a.location_id.localeCompare(b.location_id);
+        return locSortAsc ? diff : -diff;
+      });
+  }, [usage, locLine, locQuery, locWeek, locSaturation, locSortBy, locSortAsc]);
+
+  // Tab 2: ACTIVITIES
+  if (view === "activities") {
+    return (
+      <section className="data-panel tab-full-panel" role="tabpanel" id="panel-activities" aria-labelledby="tab-activities">
+        <div className="subheading">
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <h3>Scheduled Maintenance Activities</h3>
+            {initialWeekFilter && (
+              <span className="chip" style={{ background: "var(--cyan-soft)", color: "var(--cyan)", border: "1px solid var(--cyan)" }}>
+                Week {initialWeekFilter} Filtered
+                <button onClick={onClearWeekFilter} style={{ marginLeft: "4px", color: "inherit" }}>×</button>
+              </span>
+            )}
+          </div>
+          <span className="muted">{filteredActivities.length} matching activities</span>
+        </div>
+
+        <div className="inspection-filters">
+          <label>
+            Contract
+            <select value={contract} onChange={(e) => setContract(e.target.value)}>
+              <option value="">All contracts</option>
+              {[...new Set(activities.map((a) => a.contract_number))].sort().map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Line
+            <select value={line} onChange={(e) => setLine(e.target.value)}>
+              <option value="">All lines</option>
+              {[...new Set(activities.map((a) => a.line))].sort().map((l) => (
+                <option key={l} value={l}>{l === "ALP" ? "Alpha Line" : l === "BET" ? "Beta Line" : l}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Status
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
+              <option value="all">All statuses</option>
+              <option value="delayed">Contract Delayed</option>
+              <option value="ontime">Contract On-Time</option>
+            </select>
+          </label>
+
+          {/* Unified Sort By Control */}
+          <label>
+            Sort By
+            <div className="sort-combo-control">
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+                <option value="id">Activity ID</option>
+                <option value="overrun">Overrun Days</option>
+                <option value="date">Start Date</option>
+              </select>
+              <button
+                type="button"
+                className="sort-toggle-dir"
+                onClick={() => setSortAsc(!sortAsc)}
+                title={sortAsc ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
+              >
+                {sortAsc ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+              </button>
+            </div>
+          </label>
+
+          <label style={{ flex: 1 }}>
+            Search
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search Activity ID (e.g. A001)"
+            />
+          </label>
+        </div>
+
+        <div className="activity-browser">
+          <div className="activity-list" aria-label="Activities List">
+            {filteredActivities.map((a) => {
+              const isSelected = selected?.activity_id === a.activity_id;
+              const hasContractDelay = a.contract_overrun_days > 0;
+              return (
+                <button
+                  key={a.activity_id}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedId(a.activity_id)}
+                  style={{ borderLeft: hasContractDelay ? "3px solid var(--rose)" : "3px solid var(--emerald)" }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <strong>{a.activity_id}</strong>
+                    <span className={`tier-badge ${hasContractDelay ? "tier-1" : "tier-3"}`}>
+                      {hasContractDelay ? `+${a.contract_overrun_days}d late` : "On plan"}
+                    </span>
+                  </div>
+                  <span>{a.contract_number} · {a.line === "ALP" ? "Alpha Line" : "Beta Line"}</span>
+                  <small>{a.delivered_workload}/{a.required_workload} work units · Projected: {a.completion_date}</small>
+                </button>
+              );
+            })}
+            {!filteredActivities.length && <p className="muted">No matching activities found.</p>}
+          </div>
+
+          {selected && (
+            <article className="activity-evidence" aria-label={`Evidence for ${selected.activity_id}`}>
+              <div className="evidence-header">
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h4>{selected.activity_id}</h4>
+                    <span className="tier-badge" style={{ background: "var(--cyan-soft)", color: "var(--cyan)" }}>
+                      {selected.line === "ALP" ? "Alpha Line" : "Beta Line"}
+                    </span>
+                    <span className="tier-badge" style={{ background: "var(--bg-shell)", color: "var(--text-secondary)" }}>
+                      {selected.access_type} Possession
+                    </span>
+                  </div>
+                  <span className="muted" style={{ fontSize: "11px", marginTop: "2px", display: "block" }}>
+                    Contract {selected.contract_number} · Required Workload: {selected.required_workload} units ({selected.delivered_workload} delivered)
+                  </span>
+                </div>
+                <button
+                  className="secondary-button"
+                  onClick={() => setShowTimeline(!showTimeline)}
+                  style={{ fontSize: "11px", padding: "4px 8px" }}
+                >
+                  {showTimeline ? "Table View" : "Timeline View"}
+                </button>
+              </div>
+
+              {/* Clean Key-Value Date Grids without verbose text */}
+              <div className="dates-disambiguation-grid">
+                <div className="date-status-box ontime">
+                  <span className="title">Activity Schedule ({selected.activity_id})</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginTop: "2px" }}>
+                    <span className="muted">Planned Start:</span>
+                    <strong>{selected.planned_start_date}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                    <span className="muted">Projected Finish:</span>
+                    <strong style={{ color: "var(--emerald)" }}>{selected.completion_date}</strong>
+                  </div>
+                </div>
+
+                <div className={`date-status-box ${selected.contract_overrun_days > 0 ? "delayed" : "ontime"}`}>
+                  <span className="title">Contract Completion ({selected.contract_number})</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginTop: "2px" }}>
+                    <span className="muted">Target Deadline:</span>
+                    <strong>{selected.planned_completion_date}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                    <span className="muted">Projected Finish:</span>
+                    <strong>{selected.contract_completion_date}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", borderTop: "1px solid var(--border-subtle)", paddingTop: "4px", marginTop: "2px" }}>
+                    <span className="muted">Overrun Status:</span>
+                    <strong style={{ color: selected.contract_overrun_days > 0 ? "var(--rose)" : "var(--emerald)" }}>
+                      {selected.contract_overrun_days > 0 ? `+${selected.contract_overrun_days} days` : "0 days"}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Predecessors & Co-sharing interactive chips */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div className="chip-group">
+                  <span className="chip-label">Predecessor:</span>
+                  {selected.predecessor ? (
+                    <button
+                      className="chip"
+                      onClick={() => setSelectedId(selected.predecessor!)}
+                      title={`Click to view predecessor ${selected.predecessor}`}
+                    >
+                      <Clock size={12} />
+                      <strong>{selected.predecessor}</strong> (Completes W{selected.predecessor_finish_week})
+                    </button>
+                  ) : (
+                    <span className="muted" style={{ fontSize: "11px" }}>None (Root activity)</span>
+                  )}
+                </div>
+
+                <div className="chip-group">
+                  <span className="chip-label">Co-sharing Activities:</span>
+                  {selected.co_workers.length > 0 ? (
+                    selected.co_workers.map((coId) => (
+                      <button
+                        key={coId}
+                        className="chip"
+                        onClick={() => setSelectedId(coId)}
+                        title={`Click to view co-worker ${coId}`}
+                      >
+                        <Users size={12} />
+                        {coId}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="muted" style={{ fontSize: "11px" }}>None (Exclusive possession)</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Access Timeline or Table */}
+              <div>
+                <h5 style={{ margin: "0 0 8px", fontSize: "12px", color: "var(--text-secondary)", textTransform: "uppercase" }}>
+                  Scheduled Night Accesses ({selected.accesses.length} nights)
+                </h5>
+                {showTimeline ? (
+                  <ol className="access-timeline">
+                    {selected.accesses.map((a, idx) => (
+                      <li key={idx} className={a.eclo ? "eclo" : ""}>
+                        <div>
+                          <strong>Week {a.week}</strong>
+                          <span style={{ marginLeft: "8px", color: "var(--text-dim)", fontSize: "11px" }}>
+                            Night #{a.access_night}
+                          </span>
+                        </div>
+                        <div>
+                          {a.eclo ? (
+                            <span className="tier-badge" style={{ background: "rgba(236, 72, 153, 0.2)", color: "#f472b6", border: "1px solid rgba(236, 72, 153, 0.4)" }}>
+                              ECLO · 1.5x Yield
+                            </span>
+                          ) : (
+                            <span className="muted" style={{ fontSize: "11px" }}>Standard 1x</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Week</th>
+                          <th>Night</th>
+                          <th>Physical Night</th>
+                          <th>Yield</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selected.accesses.map((a, idx) => (
+                          <tr key={idx}>
+                            <td>Week {a.week}</td>
+                            <td>#{a.access_night}</td>
+                            <td>{a.physical_night ?? "Consistent"}</td>
+                            <td>{a.eclo ? "1.5x (ECLO)" : "1.0x (Standard)"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Possessions and Protection with Tunnel/Platform tags */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="detail-field">
+                  <span>
+                    <MapPin size={12} style={{ color: "var(--cyan)" }} /> Track Possessions ({selected.possessions.length})
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {selected.possessions.map((p, i) => {
+                      const loc = formatLocationName(p.location_id);
+                      return (
+                        <div key={i} style={{ fontSize: "11.5px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <span className="facility-tag">{loc.typeTag}</span>
+                          <span style={{ color: "var(--text-dim)", fontWeight: 600 }}>W{p.week}</span>
+                          <strong style={{ color: "var(--text-primary)" }}>{loc.primary}</strong>
+                          <span className="muted" style={{ fontSize: "10px" }}>({p.co_share_group})</span>
+                        </div>
+                      );
+                    })}
+                    {selected.possessions.length === 0 && (
+                      <span className="muted" style={{ fontSize: "11px" }}>No track possessions required</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="detail-field">
+                  <span>
+                    <Shield size={12} style={{ color: "var(--amber)" }} /> Protection Sectors ({Object.keys(selected.protection).length})
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {Object.entries(selected.protection).map(([kind, locs]) => (
+                      <div key={kind} style={{ fontSize: "11.5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span className="facility-tag" style={{ background: "rgba(245, 158, 11, 0.15)", color: "var(--amber)", borderColor: "rgba(245, 158, 11, 0.3)" }}>
+                          Isolation
+                        </span>
+                        <strong style={{ color: "var(--text-primary)" }}>{kind.replaceAll("_", " ")}</strong>
+                        <span className="muted" style={{ fontSize: "10px" }}>({locs.length} sectors)</span>
+                      </div>
+                    ))}
+                    {Object.keys(selected.protection).length === 0 && (
+                      <span className="muted" style={{ fontSize: "11px" }}>No protection sectors required</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Tab 3: LOCATIONS (Independent view with standardized sort control)
+  if (view === "locations") {
+    return (
+      <section className="data-panel tab-full-panel" role="tabpanel" id="panel-locations" aria-labelledby="tab-locations">
+        <div className="subheading">
+          <h3>Location Capacity & Week Matrix</h3>
+          <span className="muted">{filteredLocations.length} location-week records</span>
+        </div>
+
+        <div className="inspection-filters">
+          <label>
+            Line
+            <select value={locLine} onChange={(e) => setLocLine(e.target.value)}>
+              <option value="">All Lines</option>
+              <option value="ALP">Alpha Line</option>
+              <option value="BET">Beta Line</option>
+            </select>
+          </label>
+          <label>
+            Week
+            <select value={locWeek} onChange={(e) => setLocWeek(e.target.value)}>
+              <option value="">All weeks</option>
+              {[...new Set(usage.map((u) => u.week))].sort((a, b) => a - b).map((w) => (
+                <option key={w} value={w}>Week {w}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Saturation
+            <select value={locSaturation} onChange={(e) => setLocSaturation(e.target.value as any)}>
+              <option value="all">All levels</option>
+              <option value="saturated">100% Saturated (Full)</option>
+              <option value="available">Available Headroom</option>
+            </select>
+          </label>
+
+          {/* Unified Sort By Control for Locations */}
+          <label>
+            Sort By
+            <div className="sort-combo-control">
+              <select value={locSortBy} onChange={(e) => setLocSortBy(e.target.value as any)}>
+                <option value="name">Location Name</option>
+                <option value="week">Week Number</option>
+                <option value="saturation">Saturation %</option>
+              </select>
+              <button
+                type="button"
+                className="sort-toggle-dir"
+                onClick={() => setLocSortAsc(!locSortAsc)}
+                title={locSortAsc ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
+              >
+                {locSortAsc ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+              </button>
+            </div>
+          </label>
+
+          <label style={{ flex: 1 }}>
+            Search Location
+            <input
+              value={locQuery}
+              onChange={(e) => setLocQuery(e.target.value)}
+              placeholder="Search by name or code (e.g. S01, H01)"
+            />
+          </label>
+        </div>
+
+        <div className="table-wrap flex-scroll-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Location / Facility</th>
+                <th>Type</th>
+                <th>Week</th>
+                <th>Usage / Supply</th>
+                <th>Saturation</th>
+                <th>Active Activities</th>
+                <th>Possession Groups</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLocations.map((u) => {
+                const loc = formatLocationName(u.location_id);
+                const isSaturated = u.used >= u.capacity;
+                return (
+                  <tr key={`${u.location_id}-${u.week}`}>
+                    <td>
+                      <strong>{loc.primary}</strong>
+                      <div className="muted" style={{ fontSize: "10px" }}>{u.location_id}</div>
+                    </td>
+                    <td>
+                      <span className="tier-badge" style={{ background: "var(--bg-shell)" }}>
+                        {loc.typeTag}
+                      </span>
+                    </td>
+                    <td>Week {u.week}</td>
+                    <td>
+                      <strong>{u.used}</strong> / {u.capacity} slots
+                    </td>
+                    <td>
+                      <span className={`tier-badge ${isSaturated ? "tier-1" : "tier-3"}`}>
+                        {isSaturated ? "100% Full" : `${Math.round((u.used / u.capacity) * 100)}%`}
+                      </span>
+                    </td>
+                    <td>{u.activities.join(", ") || "Protection footprint only"}</td>
+                    <td>
+                      {Object.entries(u.groups)
+                        .map(([g, ids]) => `${g}: ${ids.join(", ")}`)
+                        .join("; ") || "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {!filteredLocations.length && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>
+                    No matching location records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
+  }
+
+  return null;
 }
