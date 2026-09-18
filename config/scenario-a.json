@@ -1,0 +1,13 @@
+{
+  "strategy": "alns",
+  "initialization": "greedy_hint",
+  "time_limit_seconds": 15,
+  "workers": 1,
+  "seed": 42,
+  "memory_limit_mb": 2048,
+  "initial_fraction": 0.4,
+  "repair_seconds": 2,
+  "neighborhood_min": 0.15,
+  "neighborhood_max": 0.7,
+  "restart_every": 6
+}

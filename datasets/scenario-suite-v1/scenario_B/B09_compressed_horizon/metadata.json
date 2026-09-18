@@ -1,0 +1,52 @@
+{
+  "scenario": "B",
+  "profile": {
+    "name": "compressed_horizon",
+    "activities": 72,
+    "horizon": 16,
+    "span": 2,
+    "group": 4,
+    "live": 0.2,
+    "links": 0.35,
+    "cluster": true,
+    "slack": 0,
+    "due": 14,
+    "contracts": 14
+  },
+  "seed": 20261926,
+  "split": "evaluation",
+  "generator": "synthetic-witness-first-v1",
+  "feasibility": "validated_witness_exists",
+  "optimality": "not_proved",
+  "official_validator_available": false,
+  "activities": 72,
+  "contracts": 15,
+  "horizon_weeks": 16,
+  "total_workload": 249,
+  "predecessor_links": 12,
+  "live_activities": 21,
+  "access_type_counts": {
+    "C": 57,
+    "PC": 13,
+    "PM": 2
+  },
+  "supply_range": [
+    1,
+    2
+  ],
+  "witness_score": 1888,
+  "witness_eclo": 120,
+  "witness_excess": 184,
+  "input_sha256": {
+    "01_LINES.csv": "b6e60b0e7726e4266efd059bf5061b3b3a2c9825ae7dd85a6431f41b81b383e7",
+    "02_STATIONS.csv": "4a27d6508defd03e8c833133b523390ac8850a1c1717f309033e40f364720e24",
+    "03_SECTORS.csv": "643fdb2bd317126b42572fafcce8f8108008e8e9c7b71c08dfd31cec11c3ee34",
+    "04_LOCATION_SUPPLY.csv": "c0f61172500eed39dd05011e255be99d3142dd33ab6fc6be5039f27a9328621e",
+    "05_BUFFER_LOCATION.csv": "4b9fe7fd6a1f9128bd6e83405496dc64a8028f997bb1fcd28355582a6d554de0",
+    "06_PARAMETERS.csv": "97667ca606f7fe7c701442e611444d277215eeca193871d2caa0130d51ced51b",
+    "07_PROJECT_DETAILS.csv": "1eb344ff5c384cdb04e240fb6bc4e0b4789543aa7aa8cbba1e11804cfe70a0cf",
+    "08_ACTIVITY_DETAILS.csv": "2dbab7cffd894e80e5efda4deb0d539b0b68119bb7a91f0706cc31a55d83d0c7"
+  },
+  "case_id": "B09_compressed_horizon",
+  "input_path": "scenario_B/B09_compressed_horizon/input"
+}

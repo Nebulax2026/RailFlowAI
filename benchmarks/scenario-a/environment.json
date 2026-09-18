@@ -1,0 +1,27 @@
+{
+  "cpu": "Apple M5",
+  "logical_cpus": 10,
+  "memory_bytes": 34359738368,
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.14",
+  "workers_per_run": 1,
+  "concurrent_benchmark_runs": 1,
+  "versions": {
+    "ortools": "9.15.6755",
+    "fastapi": "0.128.8",
+    "pydantic": "2.13.4",
+    "pytest": "8.4.2"
+  },
+  "implementation_sha256": {
+    "backend/app/ps1/scenario_a/__init__.py": "b28736b730d457048b977c2899a949844b78169c04bf84b1027cc505566e3d07",
+    "backend/app/ps1/scenario_a/cli.py": "aca8323e6d88e3538efd26a3ffb951197fbbef235787275a53fa1b5c82654b1f",
+    "backend/app/ps1/scenario_a/model.py": "d452b0fa616061b1433e9b265f900709344efad5c4309bc1f551a2bcd817d261",
+    "backend/app/ps1/scenario_a/policy.py": "e7903f3bb3f8159b2ecd43658e3eaae85481d0eb705f97c8a07b4eafb109d67c",
+    "backend/app/ps1/scenario_a/search.py": "3be123235eabc24a569b295fc452060209c28c9e5d91ffeff3d7b444cd9a4c8c",
+    "backend/app/ps1/scenario_a/validation.py": "a7cb6c4813c8338d65f9f5fe188100cba09c0265eed6fcc32d96469eeb6b4130",
+    "backend/app/ps1/scenario_a/worker.py": "cc71bd48a6ff7d4d9fb88da576e2bcc803fdf5c447cc15a06b57911532712a81"
+  },
+  "official_revision": "966c976005db2e3e40a691cff268fdb8f396a5df",
+  "official_validator_available": false,
+  "implementation_notes": "After the benchmark, malformed CSV column-count rejection and portable resource-import/thread-pool guards were added; the model, objective and neighborhood logic are unchanged."
+}

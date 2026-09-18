@@ -1,0 +1,239 @@
+{
+  "status": "feasible",
+  "strategy": "random_lns",
+  "config": {
+    "strategy": "random_lns",
+    "initialization": "greedy_hint",
+    "time_limit_seconds": 15.0,
+    "workers": 1,
+    "seed": 29,
+    "memory_limit_mb": 2048,
+    "initial_fraction": 0.4,
+    "repair_seconds": 2,
+    "neighborhood_min": 0.15,
+    "neighborhood_max": 0.7,
+    "restart_every": 6
+  },
+  "objective": 177.8,
+  "global_lower_bound": 33.6,
+  "absolute_gap": 144.2,
+  "bound_scope": "full model under local-witnessed-sharing-v1; not an official-validator bound",
+  "optimality_scope": "configured specification policy only",
+  "time_to_first_feasible": 0.031786708044819534,
+  "elapsed_seconds": 14.025992167007644,
+  "model_build_seconds": 0.18164833297487348,
+  "search_seconds": 13.726958749000914,
+  "validation_seconds": 0.16626941587310284,
+  "trajectory": [
+    {
+      "seconds": 0.031786708044819534,
+      "objective": 701.4
+    },
+    {
+      "seconds": 4.777049291995354,
+      "objective": 664.3
+    },
+    {
+      "seconds": 5.192915291991085,
+      "objective": 632.8
+    },
+    {
+      "seconds": 5.553752500039991,
+      "objective": 618.8
+    },
+    {
+      "seconds": 8.327609875006601,
+      "objective": 617.4
+    },
+    {
+      "seconds": 8.3544065420283,
+      "objective": 565.6
+    },
+    {
+      "seconds": 8.389010125014465,
+      "objective": 548.8
+    },
+    {
+      "seconds": 8.417514333035797,
+      "objective": 540.4
+    },
+    {
+      "seconds": 8.453311374993064,
+      "objective": 526.4
+    },
+    {
+      "seconds": 8.484036500041839,
+      "objective": 520.8
+    },
+    {
+      "seconds": 8.529412125004455,
+      "objective": 513.8
+    },
+    {
+      "seconds": 8.561874250008259,
+      "objective": 459.2
+    },
+    {
+      "seconds": 8.596986374992412,
+      "objective": 450.8
+    },
+    {
+      "seconds": 8.630112250044476,
+      "objective": 366.8
+    },
+    {
+      "seconds": 8.661866667040158,
+      "objective": 350.0
+    },
+    {
+      "seconds": 8.694764667015988,
+      "objective": 280.0
+    },
+    {
+      "seconds": 8.729348624998238,
+      "objective": 238.0
+    },
+    {
+      "seconds": 10.594323875033297,
+      "objective": 234.5
+    },
+    {
+      "seconds": 11.744581875042059,
+      "objective": 229.6
+    },
+    {
+      "seconds": 12.077551666996442,
+      "objective": 204.4
+    },
+    {
+      "seconds": 12.244118792004883,
+      "objective": 187.6
+    },
+    {
+      "seconds": 12.477671875036322,
+      "objective": 178.5
+    },
+    {
+      "seconds": 13.923964167013764,
+      "objective": 177.8
+    }
+  ],
+  "phases": [
+    {
+      "phase": "global",
+      "seconds": 5.521032417018432,
+      "solver_status": "FEASIBLE",
+      "relaxed_activities": 54,
+      "bound_scope": "full_model"
+    },
+    {
+      "phase": "diversify",
+      "seconds": 2.002161292009987,
+      "solver_status": "UNKNOWN",
+      "relaxed_activities": 45,
+      "bound_scope": "subproblem_not_global"
+    },
+    {
+      "phase": "diversify",
+      "seconds": 0.9600911249872297,
+      "solver_status": "OPTIMAL",
+      "relaxed_activities": 24,
+      "bound_scope": "subproblem_not_global"
+    },
+    {
+      "phase": "diversify",
+      "seconds": 2.0033746659755707,
+      "solver_status": "FEASIBLE",
+      "relaxed_activities": 39,
+      "bound_scope": "subproblem_not_global"
+    },
+    {
+      "phase": "diversify",
+      "seconds": 1.728890708007384,
+      "solver_status": "OPTIMAL",
+      "relaxed_activities": 24,
+      "bound_scope": "subproblem_not_global"
+    },
+    {
+      "phase": "diversify",
+      "seconds": 1.5114085410023108,
+      "solver_status": "FEASIBLE",
+      "relaxed_activities": 40,
+      "bound_scope": "subproblem_not_global"
+    }
+  ],
+  "operators": {
+    "delay": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "bottleneck": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "sharing": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "precedence": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "contract": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0,
+      "feasible_rate": 0.0,
+      "improvement_per_second": 0.0
+    },
+    "diversify": {
+      "calls": 5,
+      "seconds": 8.24616874998901,
+      "feasible": 4,
+      "improvement": 441.0,
+      "best_updates": 4,
+      "weight": 7.219232126003613,
+      "feasible_rate": 0.8,
+      "improvement_per_second": 53.47938095501474
+    }
+  },
+  "policy": "local-witnessed-sharing-v1",
+  "source_revision": "966c976005db2e3e40a691cff268fdb8f396a5df",
+  "official_validator_available": false,
+  "ortools_version": "9.15.6755",
+  "preprocessing_seconds": 0.0009977089939638972,
+  "peak_rss_mb": 341.65625,
+  "deadline_exceeded": false,
+  "python_version": "3.12.14",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "cpu_count": 10,
+  "memory_enforcement": "CP-SAT advisory limit; no portable OS address-space cap",
+  "total_elapsed_seconds": 14.043402041017544
+}

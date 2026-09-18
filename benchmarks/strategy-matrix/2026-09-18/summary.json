@@ -1,0 +1,529 @@
+[
+  {
+    "strategy": "greedy",
+    "scenario": "A",
+    "config": {
+      "strategy": "greedy",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 672.0,
+    "elapsed_seconds": 0.3309502089978196,
+    "policy": "local-witnessed-sharing-v1",
+    "phases": []
+  },
+  {
+    "strategy": "greedy",
+    "scenario": "B",
+    "config": {
+      "strategy": "greedy",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 72,
+    "elapsed_seconds": 0.3160975420032628,
+    "policy": "local-protection-reservations-v1",
+    "phases": []
+  },
+  {
+    "strategy": "greedy",
+    "scenario": "C",
+    "config": {
+      "strategy": "greedy",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 67.2,
+    "elapsed_seconds": 0.31716633297037333,
+    "policy": "local-protection-reservations-v1",
+    "phases": []
+  },
+  {
+    "strategy": "integrated",
+    "scenario": "A",
+    "config": {
+      "strategy": "integrated",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 110.6,
+    "elapsed_seconds": 14.254326834052335,
+    "policy": "local-witnessed-sharing-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 13.733239333028905,
+        "solver_status": "FEASIBLE",
+        "relaxed_activities": 54,
+        "bound_scope": "full_model"
+      }
+    ]
+  },
+  {
+    "strategy": "integrated",
+    "scenario": "B",
+    "config": {
+      "strategy": "integrated",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "optimal_for_policy",
+    "objective": 30,
+    "elapsed_seconds": 12.396573042031378,
+    "policy": "local-protection-reservations-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 11.957303249975666,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "full_model"
+      }
+    ]
+  },
+  {
+    "strategy": "integrated",
+    "scenario": "C",
+    "config": {
+      "strategy": "integrated",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 52.2,
+    "elapsed_seconds": 14.373346416978166,
+    "policy": "local-protection-reservations-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 13.583099165989552,
+        "solver_status": "FEASIBLE",
+        "bound_scope": "full_model"
+      }
+    ]
+  },
+  {
+    "strategy": "random_lns",
+    "scenario": "A",
+    "config": {
+      "strategy": "random_lns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 661.5,
+    "elapsed_seconds": 14.386992792016827,
+    "policy": "local-witnessed-sharing-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 5.499372875026893,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 54,
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 2.002076999982819,
+        "solver_status": "FEASIBLE",
+        "relaxed_activities": 34,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 0.7261756660300307,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 25,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 2.000387125008274,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 36,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 2.0009654999594204,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 35,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.4343985419836827,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 43,
+        "bound_scope": "subproblem_not_global"
+      }
+    ]
+  },
+  {
+    "strategy": "random_lns",
+    "scenario": "B",
+    "config": {
+      "strategy": "random_lns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "optimal_for_policy",
+    "objective": 30,
+    "elapsed_seconds": 7.13650779199088,
+    "policy": "local-protection-reservations-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 5.5496250410215,
+        "solver_status": "FEASIBLE",
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.1838101249886677,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "not_global"
+      }
+    ]
+  },
+  {
+    "strategy": "random_lns",
+    "scenario": "C",
+    "config": {
+      "strategy": "random_lns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 67.2,
+    "elapsed_seconds": 14.384960332943592,
+    "policy": "local-protection-reservations-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 5.427502457983792,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.7507235000375658,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.5412116660154425,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.550752541050315,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.751050041988492,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.035164667002391,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "global_restart",
+        "seconds": 0.44843950000358745,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "full_model"
+      }
+    ]
+  },
+  {
+    "strategy": "alns",
+    "scenario": "A",
+    "config": {
+      "strategy": "alns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 40.6,
+    "elapsed_seconds": 14.427373624988832,
+    "policy": "local-witnessed-sharing-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 5.497709040995687,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 54,
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "precedence",
+        "seconds": 2.002000708016567,
+        "solver_status": "FEASIBLE",
+        "relaxed_activities": 24,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "contract",
+        "seconds": 2.0113488340284675,
+        "solver_status": "FEASIBLE",
+        "relaxed_activities": 27,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "precedence",
+        "seconds": 0.9715360829723068,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 28,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "diversify",
+        "seconds": 1.2797116250148974,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 33,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "delay",
+        "seconds": 1.5463610829901882,
+        "solver_status": "OPTIMAL",
+        "relaxed_activities": 37,
+        "bound_scope": "subproblem_not_global"
+      },
+      {
+        "phase": "global_restart",
+        "seconds": 0.3662081669899635,
+        "solver_status": "UNKNOWN",
+        "relaxed_activities": 54,
+        "bound_scope": "full_model"
+      }
+    ]
+  },
+  {
+    "strategy": "alns",
+    "scenario": "B",
+    "config": {
+      "strategy": "alns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "feasible",
+    "objective": 40,
+    "elapsed_seconds": 14.350892042042688,
+    "policy": "local-protection-reservations-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 5.5463670829776675,
+        "solver_status": "FEASIBLE",
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "precedence",
+        "seconds": 2.0047338329604827,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "bottleneck",
+        "seconds": 0.21085375000257045,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "sharing",
+        "seconds": 1.2460277089849114,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "delay",
+        "seconds": 1.3392788330093026,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "delay",
+        "seconds": 1.6758991669630632,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "global_restart",
+        "seconds": 1.7415298340492882,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "bottleneck",
+        "seconds": 0.05087999999523163,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "sharing",
+        "seconds": 0.01082470896653831,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      }
+    ]
+  },
+  {
+    "strategy": "alns",
+    "scenario": "C",
+    "config": {
+      "strategy": "alns",
+      "initialization": "greedy_hint",
+      "time_limit_seconds": 15.0,
+      "workers": 1,
+      "seed": 42,
+      "memory_limit_mb": 2048,
+      "initial_fraction": 0.4,
+      "repair_seconds": 2,
+      "neighborhood_min": 0.15,
+      "neighborhood_max": 0.7,
+      "restart_every": 6
+    },
+    "feasible": true,
+    "status": "optimal_for_policy",
+    "objective": 25.2,
+    "elapsed_seconds": 8.481573415978346,
+    "policy": "local-protection-reservations-v1",
+    "phases": [
+      {
+        "phase": "global",
+        "seconds": 5.432591749995481,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "full_model"
+      },
+      {
+        "phase": "precedence",
+        "seconds": 0.23881279199849814,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "delay",
+        "seconds": 1.8547938340343535,
+        "solver_status": "UNKNOWN",
+        "bound_scope": "not_global"
+      },
+      {
+        "phase": "delay",
+        "seconds": 0.18713999999454245,
+        "solver_status": "OPTIMAL",
+        "bound_scope": "not_global"
+      }
+    ]
+  }
+]

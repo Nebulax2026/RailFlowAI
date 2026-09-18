@@ -1,0 +1,145 @@
+{
+  "main_commit": "d68611f",
+  "official_validator": false,
+  "cases": {
+    "main_public_A": {
+      "main_validator": {
+        "feasible": true,
+        "violations": 0,
+        "rules": {},
+        "weighted_delay": 40.6,
+        "objective": 40.6,
+        "examples": []
+      },
+      "scenario_a_validator": {
+        "feasible": true,
+        "violations": 0,
+        "rules": {},
+        "weighted_delay": 40.6,
+        "objective": 40.6,
+        "examples": []
+      }
+    },
+    "scenario_a_40_6": {
+      "main_validator": {
+        "feasible": false,
+        "violations": 31,
+        "rules": {
+          "closure": 31
+        },
+        "weighted_delay": 40.6,
+        "objective": null,
+        "examples": [
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 20: 2 possessions including 1 protection reservations exceed supply 1; activities ['A004', 'A025', 'A074']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:WB week 12: 2 possessions including 1 protection reservations exceed supply 1; activities ['A006', 'A058', 'A070']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:WB week 16: 2 possessions including 1 protection reservations exceed supply 1; activities ['A058', 'A070']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:WB week 17: 3 possessions including 2 protection reservations exceed supply 1; activities ['A050', 'A069', 'A070']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:WB week 18: 2 possessions including 1 protection reservations exceed supply 1; activities ['A020', 'A050', 'A069']."
+          }
+        ]
+      },
+      "scenario_a_validator": {
+        "feasible": true,
+        "violations": 0,
+        "rules": {},
+        "weighted_delay": 40.6,
+        "objective": 40.6,
+        "examples": []
+      }
+    },
+    "organizer_sample_A": {
+      "main_validator": {
+        "feasible": false,
+        "violations": 36,
+        "rules": {
+          "closure": 36
+        },
+        "weighted_delay": 48.3,
+        "objective": null,
+        "examples": [
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H01:WB week 26: 2 possessions including 1 protection reservations exceed supply 1; activities ['A023', 'A070']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H01:WB week 27: 2 possessions including 1 protection reservations exceed supply 1; activities ['A023', 'A070']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 21: 2 possessions including 1 protection reservations exceed supply 1; activities ['A004', 'A025', 'A074']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 22: 2 possessions including 2 protection reservations exceed supply 1; activities ['A004', 'A009']."
+          },
+          {
+            "rule": "closure",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 23: 2 possessions including 2 protection reservations exceed supply 1; activities ['A004', 'A009']."
+          }
+        ]
+      },
+      "scenario_a_validator": {
+        "feasible": false,
+        "violations": 18,
+        "rules": {
+          "closure_buffer_capacity": 18
+        },
+        "weighted_delay": 48.3,
+        "objective": null,
+        "examples": [
+          {
+            "rule": "closure_buffer_capacity",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 22: no legal packing of work and 2 reservations within supply 1."
+          },
+          {
+            "rule": "closure_buffer_capacity",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 23: no legal packing of work and 2 reservations within supply 1."
+          },
+          {
+            "rule": "closure_buffer_capacity",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:EB week 26: no legal packing of work and 1 reservations within supply 1."
+          },
+          {
+            "rule": "closure_buffer_capacity",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:WB week 9: no legal packing of work and 1 reservations within supply 1."
+          },
+          {
+            "rule": "closure_buffer_capacity",
+            "severity": "hard",
+            "detail": "PLAT:ALP:H02:WB week 10: no legal packing of work and 1 reservations within supply 1."
+          }
+        ]
+      }
+    }
+  },
+  "footprint_differences": []
+}

@@ -1,0 +1,347 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.14",
+  "ortools": "9.15.6755",
+  "workers_per_case": 1,
+  "run": {
+    "id": "b858b6f6300a4f128787c7a4f56824dc",
+    "status": "completed",
+    "method": "greedy",
+    "seconds": 5.0,
+    "seed": 42,
+    "created_at": "2026-09-18T11:33:24.584894+00:00",
+    "expires_at": "2026-09-18T12:38:24.584894+00:00",
+    "error": null,
+    "rows": [
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A01_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A02_mixed",
+        "status": "completed",
+        "score": 2207.8,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A03_priority_pressure",
+        "status": "completed",
+        "score": 2164.8,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A04_interchange_congestion",
+        "status": "completed",
+        "score": 1441.4,
+        "elapsed_seconds": 0.327,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A05_long_spans",
+        "status": "completed",
+        "score": 34.8,
+        "elapsed_seconds": 0.325,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A06_live_closures",
+        "status": "completed",
+        "score": 1884.0,
+        "elapsed_seconds": 0.327,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A07_precedence_chains",
+        "status": "completed",
+        "score": 972.0,
+        "elapsed_seconds": 0.326,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A08_contract_contention",
+        "status": "completed",
+        "score": 5.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A09_compressed_horizon",
+        "status": "completed",
+        "score": 362.0,
+        "elapsed_seconds": 0.328,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "A10_large_mixed",
+        "status": "completed",
+        "score": 2399.5,
+        "elapsed_seconds": 0.487,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B01_small",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.315,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B02_mixed",
+        "status": "completed",
+        "score": 38,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B03_priority_pressure",
+        "status": "completed",
+        "score": 66,
+        "elapsed_seconds": 0.322,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B04_interchange_congestion",
+        "status": "completed",
+        "score": 409,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B05_long_spans",
+        "status": "completed",
+        "score": 1199,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B06_live_closures",
+        "status": "completed",
+        "score": 497,
+        "elapsed_seconds": 0.322,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B07_precedence_chains",
+        "status": "completed",
+        "score": 692,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B08_contract_contention",
+        "status": "completed",
+        "score": 654,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B09_compressed_horizon",
+        "status": "completed",
+        "score": 1345,
+        "elapsed_seconds": 0.33,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "B10_large_mixed",
+        "status": "completed",
+        "score": 1358,
+        "elapsed_seconds": 0.481,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C01_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.317,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C02_mixed",
+        "status": "completed",
+        "score": 98.0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C03_priority_pressure",
+        "status": "completed",
+        "score": 4132.2,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C04_interchange_congestion",
+        "status": "completed",
+        "score": 34.7,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C05_long_spans",
+        "status": "completed",
+        "score": 343.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C06_live_closures",
+        "status": "completed",
+        "score": 2183.1,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C07_precedence_chains",
+        "status": "completed",
+        "score": 1102.6,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C08_contract_contention",
+        "status": "completed",
+        "score": 84.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C09_compressed_horizon",
+        "status": "completed",
+        "score": 1324.4,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "C10_large_mixed",
+        "status": "completed",
+        "score": 4273.6,
+        "elapsed_seconds": 0.492,
+        "termination_reason": "feasible",
+        "error": null
+      }
+    ],
+    "summary": [
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "total": 10,
+        "finished": 10,
+        "valid": 10,
+        "mean_score": 1147.13,
+        "worst_score": 2399.5
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "total": 10,
+        "finished": 10,
+        "valid": 10,
+        "mean_score": 625.8,
+        "worst_score": 1358
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "total": 10,
+        "finished": 10,
+        "valid": 10,
+        "mean_score": 1357.56,
+        "worst_score": 4273.6
+      }
+    ]
+  }
+}

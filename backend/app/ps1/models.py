@@ -181,6 +181,7 @@ class ScenarioRun:
     phase: str = "queued"
     termination_reason: str | None = None
     solver_stats: dict[str, Any] = field(default_factory=dict)
+    diagnostics: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -195,3 +196,6 @@ class SolveJob:
     replans: dict[str, ReplanRun] = field(default_factory=dict)
     cancel_requested: bool = False
     error: str | None = None
+    algorithm: str = "legacy"
+    solver_config: dict[str, Any] = field(default_factory=dict)
+    input_files: dict[str, bytes] = field(default_factory=dict, repr=False)

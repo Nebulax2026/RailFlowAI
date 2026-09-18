@@ -20,9 +20,7 @@ class SolveFailure(ValueError):
         self.reason = reason
 
 
-def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None,
-                   cancel_event=None, disruption=None):
-    started = time.monotonic()
+def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel_event, incumbent=None, disruption=None):
     if incumbent:
         from app.ps1.exporter import scenario_csvs
         report = validate_exported_csvs(instance, scenario, scenario_csvs(incumbent))
@@ -232,6 +230,20 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
                                  "Supply counts work groups only. CSV validation reconstructs a consistent seven-night assignment across contracts; exact maintenance dates are not provided by the input."]
         return solution
 
+    from types import SimpleNamespace
+    return SimpleNamespace(model=model, x=x, eclo=eclo, local_nights=local_nights,
+                           group_vars=group_vars, patterns=patterns, primary=primary,
+                           work=work, footprint=footprint, extract=extract,
+                           churn=churn, incumbent=incumbent)
+
+
+def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None,
+                   cancel_event=None, disruption=None, workers=8, seed=42):
+    started = time.monotonic()
+    cancel_event = cancel_event or threading.Event()
+    built = build_scenario_model(instance, scenario, time_limit_seconds, started, cancel_event, incumbent, disruption)
+    model, primary, x, extract = built.model, built.primary, built.x, built.extract
+    incumbent, churn = built.incumbent, built.churn
     best = [None if disruption else incumbent]
     best_rank = [None if disruption or not incumbent else (round(10 * incumbent.validation.soft_scores['objective_score']), 0)]
     first_time = [None]; callback_error = [None]
@@ -254,7 +266,7 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
             self.last = time.monotonic()
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = max(0.01, time_limit_seconds - (time.monotonic() - started))
-    solver.parameters.num_search_workers = 8; solver.parameters.random_seed = 42
+    solver.parameters.num_search_workers = workers; solver.parameters.random_seed = seed
     done = threading.Event()
     def monitor():
         while not done.wait(0.1):
@@ -277,7 +289,8 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
         model.Minimize(sum(week * var for (aid, week), var in x.items()))
         early_solver = cp_model.CpSolver()
         early_solver.parameters.max_time_in_seconds = remaining
-        early_solver.parameters.num_search_workers = 8
+        early_solver.parameters.num_search_workers = workers
+        early_solver.parameters.random_seed = seed
         early_done = threading.Event()
         def early_monitor():
             while not early_done.wait(0.1):
@@ -297,7 +310,7 @@ def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=Non
     solution.solver_stats = {"elapsed_seconds": time.monotonic() - started, "first_feasible_seconds": first_time[0], "best_score": score,
                              "best_bound": bound, "relative_gap": None if bound is None else max(0, score - bound) / max(1, abs(score)),
                              "optimal": status == cp_model.OPTIMAL, "termination_reason": reason,
-                             "model_variables": len(model.Proto().variables), "search_workers": 8,
+                             "model_variables": len(model.Proto().variables), "search_workers": workers,
                              "process_peak_memory_mb": peak_memory_mb()}
     if disruption:
         solution.solver_stats["churn_score"] = best_rank[0][1] if best_rank[0] else None

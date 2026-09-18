@@ -1,0 +1,126 @@
+{
+  "scenario": "C",
+  "strategy": "alns",
+  "status": "optimal_for_policy",
+  "objective": 25.2,
+  "global_lower_bound": 25.2,
+  "absolute_gap": 0,
+  "time_to_first_feasible": 0.01690408302238211,
+  "elapsed_seconds": 8.188130167021882,
+  "trajectory": [
+    {
+      "seconds": 0.016904457996133715,
+      "objective": 67.2
+    },
+    {
+      "seconds": 6.059161583019886,
+      "objective": 60.2
+    },
+    {
+      "seconds": 6.096863541984931,
+      "objective": 39.2
+    },
+    {
+      "seconds": 8.158487792010419,
+      "objective": 25.2
+    }
+  ],
+  "phases": [
+    {
+      "phase": "global",
+      "seconds": 5.432591749995481,
+      "solver_status": "UNKNOWN",
+      "bound_scope": "full_model"
+    },
+    {
+      "phase": "precedence",
+      "seconds": 0.23881279199849814,
+      "solver_status": "OPTIMAL",
+      "bound_scope": "not_global"
+    },
+    {
+      "phase": "delay",
+      "seconds": 1.8547938340343535,
+      "solver_status": "UNKNOWN",
+      "bound_scope": "not_global"
+    },
+    {
+      "phase": "delay",
+      "seconds": 0.18713999999454245,
+      "solver_status": "OPTIMAL",
+      "bound_scope": "not_global"
+    }
+  ],
+  "operators": {
+    "delay": {
+      "calls": 2,
+      "seconds": 2.061467417050153,
+      "feasible": 1,
+      "improvement": 14.000000000000004,
+      "best_updates": 1,
+      "weight": 6.0
+    },
+    "bottleneck": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0
+    },
+    "sharing": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0
+    },
+    "precedence": {
+      "calls": 1,
+      "seconds": 0.24976983398664743,
+      "feasible": 1,
+      "improvement": 28.0,
+      "best_updates": 1,
+      "weight": 6.0
+    },
+    "contract": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0
+    },
+    "diversify": {
+      "calls": 0,
+      "seconds": 0.0,
+      "feasible": 0,
+      "improvement": 0.0,
+      "best_updates": 0,
+      "weight": 1.0
+    }
+  },
+  "policy": "local-protection-reservations-v1",
+  "official_validator_available": false,
+  "bound_scope": "Full possession model only; restricted repairs never supply global bounds",
+  "config": {
+    "strategy": "alns",
+    "initialization": "greedy_hint",
+    "time_limit_seconds": 15.0,
+    "workers": 1,
+    "seed": 42,
+    "memory_limit_mb": 2048,
+    "initial_fraction": 0.4,
+    "repair_seconds": 2,
+    "neighborhood_min": 0.15,
+    "neighborhood_max": 0.7,
+    "restart_every": 6
+  },
+  "python_version": "3.12.14",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "cpu_count": 10,
+  "memory_enforcement": "CP-SAT advisory limit; no portable OS address-space cap",
+  "total_elapsed_seconds": 8.229174166976009,
+  "worker_elapsed_seconds": 8.481573415978346
+}

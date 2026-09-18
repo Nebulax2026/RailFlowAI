@@ -69,3 +69,20 @@ The official executable validator is unavailable. Comparable contract/type-local
 `stress_benchmark.json` and the `previous_*` compatibility entries are historical measurements of `local-protection-reservations-v1`, not measurements of this revision. The earlier doubled-demand probe found no result within 30 seconds; current larger-instance performance has not been remeasured. Location-local pattern enumeration still scales combinatorially.
 
 Manual browser verification remains necessary when a browser becomes available: load public data, observe improving revisions, filter activities/contracts/lines, toggle timeline/table, inspect protection and shared memberships, filter location/week usage, cancel while retaining output, and verify desktop/mobile layout and downloads.
+
+
+## Main integration audit
+
+Remote main added alternative search methods and 30 synthetic datasets while
+this safety update was in progress. Both feature sets are retained. The alternative
+worker now revalidates every candidate with the current application CSV validator
+before publication, in addition to any strategy-specific checks.
+
+The 30 historical dataset witnesses are preserved unchanged. Only 3 pass the v3
+physical-night rules; 27 are negative safety fixtures under this policy. Their
+exact current diagnostics are recorded in
+`benchmarks/dataset-suite/current-validation.json`. Historical witness feasibility
+and benchmark averages must not be presented as v3 validation results.
+
+Integration verification: 122 backend tests passed (three public full-search tests
+excluded); frontend type generation, TypeScript and production build passed.

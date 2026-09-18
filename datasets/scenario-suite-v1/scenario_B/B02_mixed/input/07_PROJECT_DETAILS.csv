@@ -1,0 +1,16 @@
+contract_number,contract_description,contract_award_date,activity_type,nature_of_activity,contract_priority,contract_completion_date,planned_completion_date,number_of_workfronts,access_type,number_of_maximum_access_per_week
+C001,Synthetic mixed programme C001,2026-07-28,Renewal,Non-live (Consist),2,2027-09-27,2027-08-31,1,C,3
+C002,Synthetic mixed programme C002,2026-09-08,Renewal,Live,2,2027-09-27,2027-08-29,1,PM,2
+C003,Synthetic mixed programme C003,2026-06-17,Construction,Non-live (Others),1,2027-09-27,2027-08-01,1,C,3
+C004,Synthetic mixed programme C004,2026-11-24,Renewal,Non-live (Consist),2,2027-09-27,2027-08-08,1,PC,3
+C005,Synthetic mixed programme C005,2026-07-22,Construction,Non-live (Others),3,2027-09-27,2027-04-04,1,C,3
+C006,Synthetic mixed programme C006,2026-11-02,Construction,Non-live (Others),3,2027-09-27,2027-03-28,1,C,3
+C007,Synthetic mixed programme C007,2026-09-19,Construction,Non-live (Others),3,2027-09-27,2027-08-15,1,C,3
+C008,Synthetic mixed programme C008,2026-06-10,Construction,Non-live (Others),3,2027-09-27,2027-08-29,1,C,3
+C009,Synthetic mixed programme C009,2026-10-27,Renewal,Live,1,2027-09-27,2027-08-15,1,C,2
+C010,Synthetic mixed programme C010,2026-07-08,Construction,Non-live (Others),1,2027-09-27,2027-04-04,1,C,3
+C011,Synthetic mixed programme C011,2026-07-16,Renewal,Non-live (Consist),2,2027-09-27,2027-07-11,1,C,3
+C012,Synthetic mixed programme C012,2026-10-16,Construction,Non-live (Others),1,2027-09-27,2027-07-27,1,C,3
+C013,Synthetic mixed programme C013,2026-10-19,Construction,Non-live (Others),1,2027-09-27,2027-05-23,1,C,3
+C014,Synthetic mixed programme C014,2026-06-18,Construction,Non-live (Others),3,2027-09-27,2027-05-02,1,C,3
+C015,Synthetic mixed programme C015,2026-09-25,Construction,Non-live (Others),3,2027-09-27,2027-08-29,1,PC,3
