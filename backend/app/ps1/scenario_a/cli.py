@@ -50,8 +50,8 @@ def main(argv=None):
     parser.add_argument("--input", type=Path, default=ROOT / "PS1/01_data")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--config", type=Path)
-    parser.add_argument("--strategy", choices=("greedy", "integrated", "random_lns", "alns"))
-    parser.add_argument("--initialization", choices=("direct", "feasibility", "greedy_hint"))
+    parser.add_argument("--strategy", choices=("integrated", "random_lns", "alns"))
+    parser.add_argument("--initialization", choices=("direct", "feasibility"))
     parser.add_argument("--seconds", type=float)
     parser.add_argument("--workers", choices=("auto", *map(str, range(1, 9))),
                         help="auto (default): select 1/2/4/8 workers from available CPUs; or set 1-8")

@@ -47,7 +47,7 @@ The model minimizes only the activity cost in integer tenths. There is no lexico
 
 ## Search and bounds
 
-Initialization supports direct optimization, a short feasibility phase, and a priority/slack/DAG/resource-aware greedy hint. A heuristic failure is never called infeasibility. Every incumbent is exported and re-read independently before acceptance, checkpointing or download.
+Initialization supports direct optimization and a short feasibility phase. Every incumbent is exported and re-read independently before acceptance, checkpointing or download.
 
 ALNS uses the same complete model. It fixes week decisions outside the selected neighborhood and leaves all local resource/slot variables free, so a frozen group cannot obstruct repacking. Existing co-sharing groups are included transitively in the released activity set. Operators cover weighted delay/blockers, spatial bottlenecks, sharing, predecessor chains, contract resources and random/week-window diversification. Operator weights adapt to cost improvement per second with a positive exploration floor. Stagnation increases neighborhood size, and periodic **full-model** restarts get budget. Acceptance is strictly improving; best feasible is retained separately from each candidate. No simulated annealing is enabled without evidence.
 

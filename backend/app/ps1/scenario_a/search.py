@@ -12,7 +12,7 @@ from app.ps1.models import Instance, ScenarioSolution
 @dataclass(frozen=True)
 class SearchConfig:
     strategy: str = "integrated"
-    initialization: str = "greedy_hint"
+    initialization: str = "direct"
     time_limit_seconds: float = 30
     workers: int | str = "auto"
     seed: int = 42
@@ -24,9 +24,9 @@ class SearchConfig:
     restart_every: int = 6
 
     def __post_init__(self):
-        if self.strategy not in {"greedy", "integrated", "random_lns", "alns"}:
+        if self.strategy not in {"integrated", "random_lns", "alns"}:
             raise ValueError("Unknown Scenario A strategy.")
-        if self.initialization not in {"direct", "feasibility", "greedy_hint"}:
+        if self.initialization not in {"direct", "feasibility"}:
             raise ValueError("Unknown initialization.")
         validate_workers(self.workers)
         if not 0.2 <= self.time_limit_seconds <= 600:

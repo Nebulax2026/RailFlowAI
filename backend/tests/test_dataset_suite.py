@@ -58,7 +58,7 @@ def test_all_30_inputs_and_witnesses_and_zips():
 def test_batch_average_counts_valid_zero_but_excludes_failed_and_pending(monkeypatch):
     manager = BenchmarkManager()
     manager._executor = SimpleNamespace(submit=lambda *args: None)
-    created = manager.create("greedy", 5, 42, ["D01_small"])
+    created = manager.create("integrated", 5, 42, ["D01_small"])
     assert [row["status"] for row in created["rows"]] == ["queued"] * 3
     scores = {"A": 0.0, "C": 25.2}
     def fake_run(instance, files, config, cancelled, on_update, scenario, legacy=False):
@@ -86,8 +86,8 @@ def test_batch_api_and_queued_cancellation(monkeypatch):
     assert client.get("/api/ps1/benchmark/datasets").json()["count"] == 30
     assert client.post("/api/ps1/benchmark/runs?method=unknown").status_code == 422
     created = client.post("/api/ps1/benchmark/runs?method=all&time_limit_seconds=5").json()
-    assert len(created["rows"]) == 450
-    assert len(created["summary"]) == 15
+    assert len(created["rows"]) == 360
+    assert len(created["summary"]) == 12
     assert all(row["total"] == 30 for row in created["summary"])
     assert client.get(f"/api/ps1/benchmark/runs/{created['id']}").status_code == 200
     cancelled = client.delete(f"/api/ps1/benchmark/runs/{created['id']}").json()
@@ -123,5 +123,5 @@ def test_all_benchmark_methods_receive_eight_workers(monkeypatch):
         return SearchResult(None, {"status": "no_solution_within_budget"})
     monkeypatch.setattr(benchmark_module, "run_worker", fake_run)
     manager._run(created["id"])
-    assert len(seen) == 15
+    assert len(seen) == 12
     assert SearchConfig().workers == "auto"

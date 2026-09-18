@@ -53,7 +53,7 @@ def test_weekly_closure_cannot_be_waived_by_nights_or_supply(public, scenario):
         assert not validate_csvs(roomy, scenario_csvs(solution)).feasible
 
 
-@pytest.mark.parametrize("strategy", ["greedy", "integrated", "random_lns", "alns"])
+@pytest.mark.parametrize("strategy", ["integrated", "random_lns", "alns"])
 def test_a_strategies_use_same_closure_gate(public, strategy):
     instance = conflicting_pair(public)
     result = solve_a(instance, SearchConfig(strategy=strategy, time_limit_seconds=3, workers=1))

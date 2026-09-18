@@ -62,13 +62,14 @@ Solve jobs run one at a time and expire after 60 minutes. A/B/C each receive a f
 
 ## Local Development
 
-The workspace has one search-method selector: Existing planner, Greedy,
-integrated CP-SAT, random LNS or adaptive LNS. Each handles A/B/C. The
+The workspace has one search-method selector: Existing planner, integrated
+CP-SAT, random LNS or adaptive LNS. Each handles A/B/C through the same
+closure constraints and exported-CSV validation gate. The
 30 synthetic shared datasets can be downloaded and evaluated under A, B and C
 for a one-click average-score comparison, with valid-run counts beside averages.
 See [dataset suite](datasets/scenario-suite-v1/README.md).
 The browser can run one method over 30 inputs × 3 scenarios (90 runs), or all
-five methods over 450 runs. Reported means use only validated outputs and include the
+four methods over 360 runs. Reported means use only validated outputs and include the
 valid-run denominator. A [reproducible batch command](docs/strategy-comparison.md)
 can save the same data to JSON.
 See [strategy selection and scenario scores](docs/strategy-comparison.md),

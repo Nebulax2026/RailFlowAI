@@ -19,8 +19,3 @@ def build_model(instance, prepared, deadline):
         return built.extract(SimpleNamespace(Value=value))
     return SimpleNamespace(model=built.model, x=built.x, nights=built.local_nights,
                            cost=built.primary, instance=instance, prepared=prepared, extract=extract)
-
-
-def greedy(instance, prepared, deadline):
-    from app.ps1.scenario_search import constructive
-    return constructive(instance, Scenario.A, deadline, lambda: False)

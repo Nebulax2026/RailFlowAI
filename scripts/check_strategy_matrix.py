@@ -26,7 +26,7 @@ def write_report(output):
     rows = json.loads((output / "summary.json").read_text(encoding="utf-8"))
     lines = ["# Public-data algorithm measurements", "",
              f"Budget: {metadata['seconds']:g}s per scenario; {metadata['workers']} CP-SAT workers; seed {metadata['seed']}; sequential runs.",
-             "Greedy does not use CP-SAT workers. Each method/scenario was run once.", "",
+             "Each method/scenario was run once.", "",
              "| Method | Scenario | Validated score | First valid result (s) | Total wall time (s) | Outcome |",
              "|---|---|---:|---:|---:|---|"]
     def number(value):
@@ -36,12 +36,12 @@ def write_report(output):
         note = diagnostics.get("validation_note")
         outcome = ("Optimal under implemented policy" if row['status'] == 'optimal_for_policy' else "Validated result") if row['feasible'] else (
             "Rejected by application CSV validator" if note else
-            "Greedy found no complete schedule" if row['strategy'] == 'greedy' else row['status'])
+            row['status'])
         lines.append(f"| {row['strategy']} | {row['scenario']} | {number(row['objective'])} | {number(row['first_feasible_seconds'])} | {number(row['elapsed_seconds'])} | {outcome} |")
     lines += ["", "Scores are comparable within a scenario; lower is better. Missing scores are not zero.",
               "Total wall time includes worker startup, parsing, search, and parent-side validation. First-result time is the first checkpoint accepted by the application validator.",
-              "A rejected candidate is not evidence of infeasibility or merely a time-budget failure. Greedy can stop before using its whole budget.", "",
-              "Scenario A's alternative algorithms use local-witnessed-sharing-v1, while the existing planner uses a different model. Outputs must additionally pass the application's common CSV validator. Do not compare A's model bounds across these implementations.",
+              "A rejected candidate is not evidence of infeasibility or merely a time-budget failure.", "",
+              "All methods use the same closure policy and exported-CSV validator. Do not compare model bounds across different search methods.",
               "Earlier planner results with a different time budget are not a same-budget baseline. One seed on one public instance does not establish an overall algorithm ranking.", "",
               "Artifacts: summary.csv, summary.json, metadata.json, and per-method/scenario diagnostics. Validated results also include the three submission CSVs and validation.json.", ""]
     (output / "RESULTS.md").write_text("\n".join(lines), encoding="utf-8")
@@ -63,11 +63,11 @@ def main():
                     commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                     git_status=subprocess.check_output(["git", "status", "--short"], cwd=ROOT, text=True),
                     input_sha256={n: hashlib.sha256(b).hexdigest() for n, b in files.items()},
-                    note="Serial single-seed public-data measurement; Scenario A uses a different policy from the existing planner.")
+                    note="Serial single-seed public-data measurement; all methods use the same closure policy and exported-CSV validator.")
     (args.output / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     (args.output / "working-tree.patch").write_bytes(subprocess.check_output(["git", "diff", "HEAD"], cwd=ROOT))
     rows = []
-    for strategy in ("greedy", "integrated", "random_lns", "alns"):
+    for strategy in ("integrated", "random_lns", "alns"):
         for scenario in Scenario:
             config = asdict(SearchConfig(strategy=strategy, time_limit_seconds=args.seconds, seed=args.seed, workers=args.workers))
             result = run_worker(instance, files, config, lambda: False, lambda *_: None, scenario)

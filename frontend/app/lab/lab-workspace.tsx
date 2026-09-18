@@ -9,11 +9,11 @@ import type { Job, Scenario, ScenarioDetail } from "../schedule-types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const REQUIRED_FILES = ["01_LINES.csv", "02_STATIONS.csv", "03_SECTORS.csv", "04_LOCATION_SUPPLY.csv", "05_BUFFER_LOCATION.csv", "06_PARAMETERS.csv", "07_PROJECT_DETAILS.csv", "08_ACTIVITY_DETAILS.csv"];
-type Method = "legacy" | "integrated" | "alns" | "random_lns" | "greedy";
+type Method = "legacy" | "integrated" | "alns" | "random_lns";
 type BatchRow = { method: Method; scenario: Scenario; case_id: string; status: string; score: number | null; elapsed_seconds: number | null; termination_reason: string | null; error: string | null };
 type BatchSummary = { method: Method; scenario: Scenario; total: number; finished: number; valid: number; mean_score: number | null; worst_score: number | null };
 type Batch = { id: string; status: string; method: Method | "all"; seconds: number; seed: number; cp_sat_workers?: number; rows: BatchRow[]; summary: BatchSummary[]; error: string | null };
-const METHOD_LABELS: Record<Method, string> = { legacy: "Existing planner", integrated: "Integrated CP-SAT", alns: "CP-SAT + adaptive LNS", random_lns: "CP-SAT + random LNS", greedy: "Greedy baseline" };
+const METHOD_LABELS: Record<Method, string> = { legacy: "Existing planner", integrated: "Integrated CP-SAT", alns: "CP-SAT + adaptive LNS", random_lns: "CP-SAT + random LNS" };
 
 const JOB_STORAGE_KEY = "railflow-lab-job-id";
 
@@ -221,7 +221,7 @@ export default function LabWorkspace() {
               <label>Time per scenario<select value={seconds} onChange={(event) => setSeconds(Number(event.target.value))}>{[15, 30, 60, 120].map((value) => <option key={value} value={value}>{value} seconds</option>)}</select></label>
               <label>Seed<input type="number" min={0} max={2147483647} step={1} value={seed} onChange={(event) => setSeed(Math.max(0, Math.min(2147483647, Math.trunc(Number(event.target.value)))))} /></label>
             </div>
-            <p className="solver-note">CP-SAT runs use the server worker configuration; Greedy does not use CP-SAT. Existing planner runs A, B and C sequentially, with one uninterrupted search of up to 120 seconds each; other methods use the selected time per scenario. Dataset runs are serial; the current server configures eight CP-SAT workers per run. Scenario A safety policies differ; official validator parity is unconfirmed.</p>
+            <p className="solver-note">All methods use the server CP-SAT worker configuration. Existing planner runs A, B and C sequentially, with one uninterrupted search of up to 120 seconds each; other methods use the selected time per scenario. Dataset runs are serial; the current server configures eight CP-SAT workers per run. Every method uses the same closure policy and exported-CSV validation gate.</p>
           </fieldset>
       </div>
       {labTab === "single" && error && <div className="alert error" role="alert"><AlertTriangle size={18} /><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError("")}><X size={16} /></button></div>}
@@ -243,9 +243,9 @@ export default function LabWorkspace() {
 
       <section className="data-panel dataset-panel" hidden={labTab !== "suite"}>
         <div className="subheading"><h2>30 shared test datasets · average scores</h2><span>Every dataset runs A, B and C</span></div>
-        <p>Synthetic datasets with an internally validated feasible example for each scenario. Average scores use completed, valid runs only; the success count is shown beside each average. Scores from different scenarios have different objectives. The two Scenario A safety policies also differ.</p>
-        <div className="button-row"><button className="secondary-button" disabled={active} onClick={() => void startBatch(false)}><Play size={15} /> Run selected method · 90 runs</button><button className="secondary-button" disabled={active} onClick={() => void startBatch(true)}><Play size={15} /> Compare all 5 methods · 450 runs</button></div>
-        <p className="muted">At {seconds}s per run: selected method up to {Math.ceil(90 * seconds / 60)} minutes; all methods up to {Math.ceil(450 * seconds / 60)} minutes, plus setup. Runs execute sequentially.{batch && ` Current run: ${batch.seconds}s per run, seed ${batch.seed}; CP-SAT workers: ${batch.cp_sat_workers ?? "not reported"}.`}</p>
+        <p>Synthetic datasets with an internally validated feasible example for each scenario. Average scores use completed, valid runs only; the success count is shown beside each average. Scores from different scenarios have different objectives. Every method uses the same closure policy and exported-CSV validation gate.</p>
+        <div className="button-row"><button className="secondary-button" disabled={active} onClick={() => void startBatch(false)}><Play size={15} /> Run selected method · 90 runs</button><button className="secondary-button" disabled={active} onClick={() => void startBatch(true)}><Play size={15} /> Compare all 4 methods · 360 runs</button></div>
+        <p className="muted">At {seconds}s per run: selected method up to {Math.ceil(90 * seconds / 60)} minutes; all methods up to {Math.ceil(360 * seconds / 60)} minutes, plus setup. Runs execute sequentially.{batch && ` Current run: ${batch.seconds}s per run, seed ${batch.seed}; CP-SAT workers: ${batch.cp_sat_workers ?? "not reported"}.`}</p>
         <div className="csv-links dataset-downloads"><a href={`${API_BASE}/api/ps1/benchmark/datasets/download`}><Download size={14} />Download all 30 shared datasets</a></div>
         {batchRestoring && <p role="status">Restoring previous dataset run…</p>}
         {batchError && <p className="inline-error" role="alert">{batchError}</p>}

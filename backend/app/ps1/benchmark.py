@@ -15,7 +15,7 @@ from app.ps1.scenario_a.search import SearchConfig
 from app.ps1.scenario_a.worker import run_worker
 
 SUITE = Path(__file__).resolve().parents[3] / "datasets" / "scenario-suite-v1"
-METHODS = ("legacy", "greedy", "integrated", "random_lns", "alns")
+METHODS = ("legacy", "integrated", "random_lns", "alns")
 BENCHMARK_WORKERS = 8
 
 

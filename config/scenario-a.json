@@ -1,6 +1,6 @@
 {
   "strategy": "alns",
-  "initialization": "greedy_hint",
+  "initialization": "direct",
   "time_limit_seconds": 15,
   "workers": "auto",
   "seed": 42,

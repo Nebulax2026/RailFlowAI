@@ -15,7 +15,7 @@ from app.ps1.benchmark import BENCHMARK_WORKERS, METHODS, benchmark_manager
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--method", choices=(*METHODS, "all"), default="greedy")
+    parser.add_argument("--method", choices=(*METHODS, "all"), default="integrated")
     parser.add_argument("--seconds", type=float, default=5)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -29,7 +29,7 @@ def main():
         time.sleep(.2)
     payload = dict(platform=platform.platform(), python=platform.python_version(),
                    ortools=ortools.__version__, cp_sat_workers_per_run=BENCHMARK_WORKERS,
-                   greedy_cp_sat_workers=0, run=result)
+                   run=result)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2)+"\n")
     print(json.dumps(dict(status=result["status"], summary=result["summary"]), indent=2))

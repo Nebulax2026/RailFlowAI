@@ -10,109 +10,18 @@ import random
 import threading
 import time
 from dataclasses import asdict
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 from ortools.sat.python import cp_model
 
 from app.ps1.exporter import scenario_csvs
-from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment, Scenario, ScenarioSolution
+from app.ps1.models import Scenario
 from app.ps1.safety import POLICY_VERSION, legal_mix
 from app.ps1.scenario_a.search import OPERATORS, SearchResult
 from app.ps1.scoring import delay_coefficient, week_end
 from app.ps1.solver import SolveFailure, build_scenario_model
-from app.ps1.topology import activity_locations, affected_lines, closure_locations
+from app.ps1.topology import affected_lines
 from app.ps1.validator import validate_exported_csvs
-
-
-def constructive(instance, scenario, deadline, cancelled, seed=42):
-    """Topological earliest placement, legal shared cohorts, optional ECLO.
-
-    No CP-SAT calls: failure means this heuristic found no schedule, never a
-    proof of infeasibility. Retry order/ECLO choices only within the same budget.
-    """
-    work = {a: set(activity_locations(instance, item)) for a, item in instance.activities.items()}
-    footprint = {a: work[a] | closure_locations(instance, item) for a, item in instance.activities.items()}
-    rng = random.Random(seed)
-    for attempt in range(8):
-        accesses, finish, groups = [], {}, defaultdict(list)
-        fronts, ecweeks = Counter(), defaultdict(set)
-        pending = set(instance.activities)
-        while pending and time.monotonic() < deadline and not cancelled():
-            ready = [a for a in pending if not instance.activities[a].predecessor_activity_id or instance.activities[a].predecessor_activity_id in finish]
-            if not ready:
-                break
-            def priority(aid):
-                a = instance.activities[aid]; c = instance.contracts[a.contract_number]
-                return (c.planned_completion_date, -delay_coefficient(c, a), -a.total_accesses, aid)
-            ready.sort(key=priority)
-            aid = ready[0] if attempt < 2 else ready[rng.randrange(min(4, len(ready)))]
-            a = instance.activities[aid]; c = instance.contracts[a.contract_number]
-            low = max(1, (a.planned_start_date - instance.horizon_start).days // 7 + 1,
-                      finish.get(a.predecessor_activity_id, 0) + 1)
-            high = instance.horizon_weeks
-            if scenario == Scenario.B:
-                high = min(high, ((c.planned_completion_date - instance.horizon_start).days + 1) // 7)
-            remaining, seq = 2 * a.total_accesses, 0
-            for week in range(low, high + 1):
-                if cancelled() or time.monotonic() >= deadline:
-                    return None
-                key = (a.contract_number, a.activity_type, week)
-                night = next((n for n in range(1, c.number_of_maximum_access_per_week + 1)
-                              if fronts[*key, n] < c.number_of_workfronts), None)
-                if night is None:
-                    continue
-                options = []
-                for index, members in enumerate(groups[week]):
-                    if legal_mix(instance, [*members, aid]) and set.intersection(work[aid], *(work[m] for m in members)):
-                        options.append(index)
-                options.append(len(groups[week]))
-                chosen = None
-                for index in options:
-                    trial = [set(m) for m in groups[week]]
-                    if index == len(trial): trial.append({aid})
-                    else: trial[index].add(aid)
-                    # Separate groups cannot enter each other's weekly closure.
-                    if any((work[aid] & footprint[m]) or (work[m] & footprint[aid])
-                           for j, members in enumerate(trial) if j != index for m in members):
-                        continue
-                    used = Counter(loc for members in trial for loc in set.union(*(work[m] for m in members)))
-                    if scenario == Scenario.B or all(count <= instance.supply[loc].supply_capacity + int(scenario == Scenario.C) for loc, count in used.items()):
-                        chosen = trial
-                        break
-                if chosen is None:
-                    continue
-                # Prefer standard yield; B accelerates when its hard deadline
-                # requires it. Retry with early acceleration for resource chains.
-                extra = int(scenario != Scenario.A and remaining > 2 and (attempt % 2 == 1 or (scenario == Scenario.B and remaining > 2 * (high - week + 1))))
-                lines = affected_lines(instance, a)
-                if extra and scenario == Scenario.C and any(max(ecweeks[line] | {week}) - min(ecweeks[line] | {week}) > 1 for line in lines):
-                    extra = 0
-                groups[week] = chosen
-                fronts[*key, night] += 1
-                if extra:
-                    for line in lines: ecweeks[line].add(week)
-                seq += 1
-                accesses.append(AccessAssignment(aid, seq, week, extra, night))
-                remaining -= 2 + extra
-                if remaining <= 0:
-                    finish[aid] = week
-                    pending.remove(aid)
-                    break
-            if remaining > 0:
-                break
-        if not pending:
-            occupancy = [OccupancyAssignment(aid, week, loc, f"g{index}")
-                         for week, cohorts in sorted(groups.items()) for index, members in enumerate(cohorts)
-                         for aid in sorted(members) for loc in sorted(work[aid])]
-            results = []
-            for cid, c in instance.contracts.items():
-                end = week_end(instance, max(finish[a] for a, item in instance.activities.items() if item.contract_number == cid))
-                results.append(ContractResult(scenario.value, cid, end, max(0, (end - c.planned_completion_date).days)))
-            solution = ScenarioSolution(scenario, accesses, occupancy, results, None)
-            solution.validation = validate_exported_csvs(instance, scenario, scenario_csvs(solution))
-            if solution.validation.feasible:
-                return solution
-    return None
 
 
 def neighborhood(instance, built, solution, operator, fraction, rng):
@@ -221,12 +130,9 @@ def solve(instance, scenario, config, cancelled=lambda: False, checkpoint=None):
     watcher = threading.Thread(target=monitor, daemon=True)
     watcher.start()
     try:
-        if config.strategy == "greedy" or config.initialization == "greedy_hint":
-            candidate = constructive(instance, scenario, search_deadline, stop.is_set, config.seed)
-            if candidate: accept(candidate)
         if best and best.validation.soft_scores["objective_score"] == 0:
             status = "optimal_for_policy"
-        elif config.strategy != "greedy" and not stop.is_set():
+        elif not stop.is_set():
             built = build_scenario_model(instance, scenario, search_deadline-started, started, stop)
 
             def phase(seconds, relaxed=None, label="global", feasibility=False):

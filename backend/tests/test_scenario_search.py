@@ -24,7 +24,7 @@ from ortools.sat.python import cp_model
 from app.ps1.validator import validate_exported_csvs
 
 
-@pytest.mark.parametrize("strategy", ["greedy", "integrated", "random_lns", "alns"])
+@pytest.mark.parametrize("strategy", ["integrated", "random_lns", "alns"])
 @pytest.mark.parametrize("scenario", [Scenario.B, Scenario.C])
 def test_four_methods_respect_bc_rules_and_score(tiny, strategy, scenario):
     result = solve(tiny, scenario, SearchConfig(strategy=strategy, time_limit_seconds=2))
@@ -33,23 +33,22 @@ def test_four_methods_respect_bc_rules_and_score(tiny, strategy, scenario):
     assert report.feasible
     assert result.diagnostics["objective"] == report.soft_scores["objective_score"]
     assert ('eclo_window' in result.diagnostics['operators']) == (scenario == Scenario.C)
-    if strategy != "greedy":
-        # Exhaustive single-activity oracle in test_regressions: 2 ECLO
-        # accesses before week 3 give the optimum of 10 in both B and C.
-        assert result.diagnostics["objective"] == 10
-        assert result.diagnostics["global_lower_bound"] == 10
+    # Exhaustive single-activity oracle in test_regressions: 2 ECLO
+    # accesses before week 3 give the optimum of 10 in both B and C.
+    assert result.diagnostics["objective"] == 10
+    assert result.diagnostics["global_lower_bound"] == 10
     if scenario == Scenario.B:
         assert all(r.overrun_days == 0 for r in result.solution.results)
 
 
-@pytest.mark.parametrize("strategy", ["greedy", "integrated", "random_lns", "alns"])
+@pytest.mark.parametrize("strategy", ["integrated", "random_lns", "alns"])
 def test_b_no_schedule_is_not_reported_as_zero_score(tiny, strategy):
     aid = next(iter(tiny.activities))
     impossible = replace(tiny, activities={aid: replace(tiny.activities[aid], total_accesses=10)})
     result = solve(impossible, Scenario.B, SearchConfig(strategy=strategy, time_limit_seconds=1))
     assert result.solution is None
     assert result.diagnostics["objective"] is None
-    assert result.diagnostics["status"] == ("no_solution_within_budget" if strategy == "greedy" else "infeasible_for_policy")
+    assert result.diagnostics["status"] == "infeasible_for_policy"
 
 
 def test_bc_cancel_keeps_csv_valid_incumbent(tiny):
@@ -125,7 +124,7 @@ def test_api_runs_all_scenarios_and_preserves_partial_results(tiny, monkeypatch)
         calls.append((scenario, config["strategy"], config["time_limit_seconds"]))
         if scenario == Scenario.A:
             return SearchResult(None, {"status": "no_solution_within_budget"})
-        result = solve(inst, scenario, SearchConfig(strategy="greedy", time_limit_seconds=1))
+        result = solve(inst, scenario, SearchConfig(strategy="integrated", time_limit_seconds=1))
         on_update(result.solution, result.diagnostics)
         return result
     monkeypatch.setattr(worker, "run_worker", run)
@@ -142,7 +141,7 @@ def test_api_runs_all_scenarios_and_preserves_partial_results(tiny, monkeypatch)
         assert detail["validation"]["feasible"]
         assert detail["solution_revision"] == 1
         assert detail["activity_details"]
-        assert detail["diagnostics"]["strategy"] == "greedy"
+        assert detail["diagnostics"]["strategy"] == "integrated"
     assert client.get(f"/api/ps1/jobs/{created['job_id']}/download").status_code == 200
 
 
@@ -156,7 +155,7 @@ def test_cancelling_b_marks_c_cancelled_and_retains_b(tiny, monkeypatch):
     def run(inst, files, config, cancelled, on_update, scenario):
         calls.append(scenario)
         if scenario == Scenario.A: return SearchResult(None, {"status": "no_solution_within_budget"})
-        result = solve(tiny, scenario, SearchConfig(strategy="greedy", time_limit_seconds=1))
+        result = solve(tiny, scenario, SearchConfig(strategy="integrated", time_limit_seconds=1))
         on_update(result.solution, result.diagnostics)
         manager.cancel(job.job_id)
         return result

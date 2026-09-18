@@ -220,6 +220,7 @@ def test_api_selection_is_validated_and_a_only(monkeypatch):
     monkeypatch.setattr(job_manager._executor, "submit", lambda *args: None)
     client = TestClient(app)
     assert client.post("/api/ps1/jobs?public=true&algorithm=unknown").status_code == 422
+    assert client.post("/api/ps1/jobs?public=true&algorithm=strategies&strategy=greedy").status_code == 422
     assert client.post("/api/ps1/jobs?public=true&algorithm=scenario_a&time_limit_seconds=9999").status_code == 422
     legacy = client.post("/api/ps1/jobs?public=true").json()
     assert set(legacy["scenarios"]) == {"A", "B", "C"}
@@ -231,18 +232,6 @@ def test_api_selection_is_validated_and_a_only(monkeypatch):
     assert client.get(f"/api/ps1/jobs/{new['job_id']}/download").status_code == 409
     cancelled = client.delete(f"/api/ps1/jobs/{new['job_id']}").json()
     assert cancelled["status"] == cancelled["scenarios"]["A"]["status"] == "cancelled"
-
-
-def test_worker_rejects_public_greedy_checkpoint_under_current_safety():
-    from app.ps1.scenario_a.worker import run_worker
-    from dataclasses import asdict
-    files = {n: (ROOT / "PS1/01_data" / n).read_bytes() for n in EXPECTED_FILES}
-    instance = parse_instance(files)
-    result = run_worker(instance, files, asdict(SearchConfig(strategy="greedy", time_limit_seconds=5)), lambda: False, lambda *_: None)
-    assert result.solution is None
-    assert result.diagnostics["status"] == "no_solution_within_budget"
-    assert result.diagnostics["objective"] is None
-    assert result.diagnostics["policy"] == "observed-weekly-closures-v4"
 
 
 def test_job_without_incumbent_retains_search_outcome(monkeypatch):

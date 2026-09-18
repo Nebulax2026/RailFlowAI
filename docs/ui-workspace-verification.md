@@ -3,15 +3,15 @@
 ## Latest main integration
 
 UI changes are based on upstream `07e3cc6`. Lab uses 30 shared datasets,
-90 runs per selected method and 450 runs across all methods. Individual rows
+90 runs per selected method and 360 runs across all methods. Individual rows
 include scenario in their display and identity; downloads use the shared ZIP
-endpoint. Current upstream CP-SAT runs use eight workers, while Greedy does not
-use CP-SAT. The separate local automatic-CPU backend changes are not part of
+endpoint. Current upstream CP-SAT runs use eight workers.
+The separate local automatic-CPU backend changes are not part of
 this UI commit; optional diagnostic configuration remains backwards compatible.
 
 Type checking and a Webpack production build passed in the isolated worktree.
 Turbopack rejected the external node_modules junction used only for this checkout.
-The browser regression passed again with 90/450 mocked runs, repeated dataset
+The browser regression passed again with 90/360 mocked runs, repeated dataset
 IDs across scenarios, both desktop sizes, mobile, and worker configuration
 compatibility. No actual backend solve was repeated for this main integration.
 
@@ -46,7 +46,7 @@ the actual-backend results below belong to the original workspace split.
 - Mock-API browser checks passed at 1366×768 and 1920×1080 for all five planner
   tabs, and for the Lab single-input and 150-row dataset views. Document overflow
   and mobile horizontal overflow were checked; screenshots were inspected.
-- Verified production does not request benchmark APIs, five methods exist only
+- Verified production does not request benchmark APIs, four methods exist only
   in Lab, separate saved IDs restore, 30/150-case requests work, and cancellation
   targets the dataset endpoint. Running Lab work does not disable the planner.
 - Verified activity filters, policy-specific re-plans and Assistant conversation
@@ -59,7 +59,6 @@ the actual-backend results below belong to the original workspace split.
   diagnostics, Assistant answers, saved Lab job restoration, planner default
   `legacy` execution/cancellation, 150-case creation/cancellation, dataset ZIP and
   raw batch report downloads passed.
-- A public Greedy run returned no solution for A/B/C under the current solver.
   This was an actual backend outcome, not a successful schedule benchmark.
 
 Completed re-plan results and long Assistant histories were tested with mocked

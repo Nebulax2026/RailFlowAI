@@ -56,7 +56,7 @@ def download_benchmark_datasets() -> Response:
 
 
 @router.post("/benchmark/runs", status_code=202)
-def create_benchmark(method: Literal["legacy", "greedy", "integrated", "random_lns", "alns", "all"] = "all",
+def create_benchmark(method: Literal["legacy", "integrated", "random_lns", "alns", "all"] = "all",
                      time_limit_seconds: float = Query(default=15, ge=5, le=120),
                      seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
     return benchmark_manager.create(method, time_limit_seconds, seed)
@@ -87,7 +87,7 @@ def benchmark_report(run_id: str) -> Response:
 @router.post("/jobs", status_code=202)
 async def create_job(files: list[UploadFile] | None = File(default=None), public: bool = False,
                      algorithm: Literal["legacy", "scenario_a", "strategies"] = "legacy",
-                     strategy: Literal["integrated", "alns", "random_lns", "greedy"] = "alns",
+                     strategy: Literal["integrated", "alns", "random_lns"] = "alns",
                      time_limit_seconds: float = Query(default=15, ge=5, le=120),
                      seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
     config = None
