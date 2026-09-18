@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, LoaderCircle, Send, Wrench } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import type { LocationUsage } from "./inspection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -37,6 +37,11 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [asking, setAsking] = useState(false);
+  const [assistantError, setAssistantError] = useState("");
+  const [conversation, setConversation] = useState<{ question: string; answer: Answer }[]>([]);
+  const [starting, setStarting] = useState(false);
+  const startingRef = useRef(false);
+  const askingRef = useRef(false);
 
   useEffect(() => {
     if (!location && suggested) {
@@ -49,17 +54,24 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
 
   useEffect(() => {
     if (!replan || !["queued", "running"].includes(replan.status)) return;
-    const timer = window.setInterval(async () => {
+    const replanId = replan.replan_id;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
       try {
-        const next = await request<Replan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans/${replan.replan_id}`);
+        const next = await request<Replan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans/${replanId}`);
+        if (disposed) return;
         setReplan(next); if (next.status === "completed") setView("revised");
-      } catch (err) { setError(err instanceof Error ? err.message : "Could not refresh the re-plan."); }
-    }, 1500);
-    return () => window.clearInterval(timer);
+      } catch (err) { if (!disposed) { setError(err instanceof Error ? err.message : "Could not refresh the re-plan."); timer = setTimeout(poll, 1500); } }
+    }
+    timer = setTimeout(poll, 1500);
+    return () => { disposed = true; clearTimeout(timer); };
   }, [jobId, replan, scenario]);
 
   async function startReplan(event: FormEvent) {
-    event.preventDefault(); setError(""); setAnswer(null);
+    event.preventDefault();
+    if (startingRef.current || runStatus !== "completed" || (replan && ["queued", "running"].includes(replan.status))) return;
+    startingRef.current = true; setStarting(true); setError("");
     try {
       const next = await request<Replan>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -67,18 +79,21 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
       });
       setReplan(next); setView("baseline");
     } catch (err) { setError(err instanceof Error ? err.message : "Could not start the re-plan."); }
+    finally { startingRef.current = false; setStarting(false); }
   }
 
   async function ask(text = question) {
-    if (!text.trim()) return;
-    setAsking(true); setError(""); setQuestion(text);
+    if (!text.trim() || askingRef.current) return;
+    askingRef.current = true;
+    setAsking(true); setAssistantError(""); setQuestion(text);
     try {
-      setAnswer(await request<Answer>(`/api/ps1/jobs/${jobId}/assistant/query`, {
+      const next = await request<Answer>(`/api/ps1/jobs/${jobId}/assistant/query`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario, replan_id: view === "revised" ? replan?.replan_id : null, question: text.trim() }),
-      }));
-    } catch (err) { setError(err instanceof Error ? err.message : "Schedule Assistant could not answer."); }
-    finally { setAsking(false); }
+      });
+      setAnswer(next); setConversation(current => [...current, { question: text.trim(), answer: next }]);
+    } catch (err) { setAssistantError(err instanceof Error ? err.message : "Schedule Assistant could not answer."); }
+    finally { setAsking(false); askingRef.current = false; }
   }
 
   const summary = replan?.diff.summary;
@@ -91,9 +106,10 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
         <label>End week<input type="number" min={startWeek} value={endWeek} onChange={event => setEndWeek(Number(event.target.value))} /></label>
         <label>Emergency capacity<input type="number" min={0} max={Math.max(0, nominal - 1)} value={capacity} onChange={event => setCapacity(Number(event.target.value))} /></label>
         <label>Reason<select value={reason} onChange={event => setReason(event.target.value)}><option value="urgent_maintenance">Urgent maintenance</option><option value="defect">Infrastructure defect</option><option value="access_restriction">Access restriction</option><option value="other">Other</option></select></label>
-        <button className="primary-button" disabled={runStatus !== "completed" || !location || replan?.status === "running" || replan?.status === "queued"}>{replan && ["running", "queued"].includes(replan.status) ? <LoaderCircle size={16} className="spin" /> : <Wrench size={16} />}Re-plan</button>
+        <button className="primary-button" disabled={starting || runStatus !== "completed" || !location || replan?.status === "running" || replan?.status === "queued"}>{starting || (replan && ["running", "queued"].includes(replan.status)) ? <LoaderCircle size={16} className="spin" /> : <Wrench size={16} />}Re-plan</button>
       </form>
-      {error && <p className="inline-error">{error}</p>}
+      <div className="replan-output">
+      {error && <p className="inline-error" role="alert">{error}</p>}
       {replan && <p className="muted">{replan.error || replan.message}</p>}
       {summary && <>
         <div className="segmented-control" role="group" aria-label="Schedule version"><button type="button" className={view === "baseline" ? "active" : ""} onClick={() => setView("baseline")}>Baseline</button><button type="button" className={view === "revised" ? "active" : ""} onClick={() => setView("revised")}>Revised</button></div>
@@ -101,13 +117,15 @@ export function BonusTools({ jobId, scenario, runStatus, usage, hotspots, locati
         <div className="table-wrap change-table"><table><thead><tr><th>Activity</th><th>Before</th><th>After</th><th>Reason</th></tr></thead><tbody>{(replan.diff.activity_changes ?? []).map(item => <tr key={item.activity_id}><td>{item.activity_id}</td><td>{item.before.map(row => `W${row.week}`).join(", ")}</td><td>{item.after.map(row => `W${row.week}`).join(", ")}</td><td>{item.reason.replaceAll("_", " ")}</td></tr>)}</tbody></table></div>
         {replan.status === "completed" && replan.disruption_audit.feasible && <div className="csv-links revised-downloads">{["SCHEDULE_ACCESS.csv", "SCHEDULE_OCCUPANCY.csv", "RESULTS.csv"].map(file => <a key={file} href={`${API_BASE}/api/ps1/jobs/${jobId}/scenarios/${scenario}/replans/${replan.replan_id}/files/${file}`}><Download size={14} />{file.replace("SCHEDULE_", "").replace(".csv", "")}</a>)}</div>}
       </>}
+      </div>
     </section>
 
     <section className="data-panel assistant-panel">
       <div className="subheading"><h3>Schedule Assistant</h3><span>{answer?.mode ?? "Deterministic ready"}</span></div>
       <div className="query-suggestions">{["Why was A001 moved?", "What is the downstream delay risk?", `Capacity at ${location || "SEC:ALP:S01_S02:EB"} week ${startWeek}`, "Who co-shares with A001?", `Handover brief for week ${startWeek}`].map(item => <button type="button" key={item} onClick={() => void ask(item)}>{item}</button>)}</div>
       <form className="assistant-form" onSubmit={event => { event.preventDefault(); void ask(); }}><input value={question} maxLength={500} onChange={event => setQuestion(event.target.value)} placeholder="Ask about this schedule" /><button className="primary-button" disabled={asking || !question.trim()} aria-label="Ask Schedule Assistant">{asking ? <LoaderCircle size={16} className="spin" /> : <Send size={16} />}</button></form>
-      {answer && <div className="assistant-answer"><p>{answer.answer}</p><small>{answer.intent} · Evidence: {answer.evidence.join(", ") || "schedule summary"}</small></div>}
+      {assistantError && <p className="inline-error" role="alert">{assistantError}</p>}
+      <div className="assistant-conversation" role="log" aria-label="Schedule conversation">{conversation.map((entry, index) => <div className="assistant-answer" key={index}><strong>{entry.question}</strong><p>{entry.answer.answer}</p><small>{entry.answer.intent} · Evidence: {entry.answer.evidence.join(", ") || "schedule summary"}</small></div>)}</div>
     </section>
   </div>;
 }

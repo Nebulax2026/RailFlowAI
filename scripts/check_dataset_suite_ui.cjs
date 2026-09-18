@@ -12,24 +12,32 @@ const { chromium } = require(process.env.RAILFLOW_PLAYWRIGHT_MODULE || 'playwrig
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('http://127.0.0.1:3000', { waitUntil: 'networkidle' });
+    const baseUrl = process.env.RAILFLOW_UI_BASE || 'http://127.0.0.1:3000';
+    await page.goto(`${baseUrl}/lab`, { waitUntil: 'networkidle' });
     const picker = page.getByRole('combobox', { name: /^Search method/ });
     assert.equal(await picker.locator('option').count(), 5);
     assert.equal(await picker.inputValue(), 'legacy');
-    await picker.selectOption('greedy');
-    await page.getByRole('button', { name: 'Load public dataset' }).click();
+    await picker.selectOption('integrated');
+    const inputDir = path.resolve(__dirname, '../datasets/scenario-suite-v1/cases/D01_small/input');
+    const inputFiles = (await fs.readdir(inputDir)).filter(name => name.endsWith('.csv')).map(name => path.join(inputDir, name));
+    await page.getByLabel('Select demand book CSV files').setInputFiles(inputFiles);
+    await page.getByRole('button', { name: 'Run demand book', exact: true }).click();
     await page.waitForSelector('.job-pill.completed', { timeout: 30000 });
     assert.equal(await page.locator('.comparison-panel').last().locator('tbody tr').count(), 3);
     for (const scenario of ['B', 'C']) {
-      await page.locator('.scenario-card').filter({ has: page.locator('.scenario-code', { hasText: scenario }) }).click();
+      await page.locator('.policy-select').filter({ has: page.locator('.scenario-code', { hasText: scenario }) }).click();
+      await page.getByRole('button', { name: 'Result details', exact: true }).click();
       await page.getByRole('heading', { name: `Scenario ${scenario} search`, exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Close result details' }).click();
     }
+    await page.getByRole('button', { name: 'Dataset suite', exact: true }).click();
+    await picker.selectOption('greedy');
     const created = page.waitForResponse(r => r.url().includes('/api/ps1/benchmark/runs?') && r.request().method() === 'POST');
     await page.getByRole('button', { name: /Run selected method/ }).click();
     const started = await (await created).json();
     assert.equal(started.rows.length, 90);
     await page.getByText('90/90 finished').waitFor({ timeout: 600000 });
-    const response = await page.request.get(`http://127.0.0.1:8000/api/ps1/benchmark/runs/${started.id}`);
+    const response = await page.request.get(`${baseUrl}/api/ps1/benchmark/runs/${started.id}`);
     const report = await response.json();
     assert.ok(['completed', 'partial'].includes(report.status));
     assert.equal(report.summary.length, 3);
@@ -53,6 +61,6 @@ const { chromium } = require(process.env.RAILFLOW_PLAYWRIGHT_MODULE || 'playwrig
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ passed: true, checks: ['five methods merged', 'public A/B/C scores', '30 shared cases x 3 scenarios', 'success denominators', 'dataset ZIP', '450-run setup', 'cancel', 'mobile'], output }));
+    console.log(JSON.stringify({ passed: true, checks: ['five methods merged', 'uploaded D01 A/B/C scores', '30-case averages', 'success denominators', 'dataset ZIP', '450-run setup', 'cancel', 'mobile'], output }));
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

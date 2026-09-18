@@ -15,7 +15,7 @@ export type EvidenceActivity = {
 export type LocationUsage = { location_id: string; week: number; used: number; capacity: number;
   work_possessions: number; protection_possessions: number; activities: string[]; groups: Record<string,string[]>; protection_groups: string[][] };
 
-export function Inspection({ activities, usage, view }: { activities: EvidenceActivity[]; usage: LocationUsage[]; view: "overview" | "activities" | "capacity" | "contracts" | null }) {
+export function Inspection({ activities, usage, view }: { activities: EvidenceActivity[]; usage: LocationUsage[]; view: "overview" | "activities" | "capacity" | "contracts" | "operations" | null }) {
   const [contract, setContract] = useState("");
   const [line, setLine] = useState("");
   const [query, setQuery] = useState("");
