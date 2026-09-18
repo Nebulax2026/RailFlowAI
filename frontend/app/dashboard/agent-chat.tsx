@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Pending = {
   approval_id: string;
@@ -20,10 +20,31 @@ type Message = { id: string; role: "user" | "assistant"; content: string; pendin
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export default function AgentChat({ role, owner, onChanged }: { role: string; owner: string; onChanged: () => Promise<void> }) {
-  const [messages, setMessages] = useState<Message[]>([{ id: "welcome", role: "assistant", content: "I can help with requests, schedule generation, alternatives, approvals, and freeze windows. I will preview every change and wait for your approval before applying it." }]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (role !== "approver" && role !== "schedule_manager") {
+      setMessages([{ id: "welcome", role: "assistant", content: "I can help with requests, schedule generation, alternatives, approvals, and freeze windows. I will preview every change and wait for your approval before applying it." }]);
+      return;
+    }
+    const controller = new AbortController();
+    setMessages([{ id: "overview", role: "assistant", content: "Preparing your planning overview…" }]);
+    fetch(`${API_BASE}/api/agent/chat`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+      body: JSON.stringify({
+        role, owner, history: [],
+        message: "Start this chat with a current planning overview. Call planning_overview first. In English, show total requests, counts by status, scheduled work count, and every pending request approval with its ID, title, priority, deadline, and requester. Also list pending displacement decisions with their IDs and owners. Say clearly when either pending list is empty. Do not approve or change anything."
+      })
+    }).then(parseResponse).then((data) => {
+      setMessages([{ id: "overview", role: "assistant", content: data.message }]);
+    }).catch((error) => {
+      if (!controller.signal.aborted) setMessages([{ id: "overview", role: "assistant", content: error instanceof Error ? error.message : "Could not load the planning overview.", state: "failed" }]);
+    });
+    return () => controller.abort();
+  }, [role, owner]);
 
   async function parseResponse(response: Response) {
     const data = await response.json().catch(() => ({}));

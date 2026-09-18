@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import json
+import asyncio
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -12,7 +13,10 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.api import agent
+from app.domain.enums import ApprovalStatus
+from app.domain.models import MaintenanceRequest
 from app.main import app
+from app.repositories import requests_repository
 from app.storage import (
     AUDIT_EVENTS, BLOCKED_TIME_SLOTS, DISPLACEMENT_APPROVALS, NOTIFICATIONS,
     PROPOSAL_SNAPSHOTS, REQUESTS, SCHEDULED_WORK, SETTINGS,
@@ -31,9 +35,9 @@ class AgentApprovalTest(unittest.TestCase):
         agent._pending.clear()
         client.get("/api/settings/scheduling")
 
-    @patch("app.api.agent._openai_response")
+    @patch("app.api.agent._claude_response")
     def test_mutation_is_staged_then_applied_exactly_once(self, model_response) -> None:
-        model_response.return_value = {"output": [{"type": "function_call", "call_id": "call-1", "name": "railflow_action", "arguments": '{"action":"update_settings","params":{"payload":{"urgent_lead_days":5}}}'}]}
+        model_response.return_value = {"content": [{"type": "tool_use", "id": "call-1", "name": "railflow_action", "input": {"action": "update_settings", "params": {"payload": {"urgent_lead_days": 5}}}}]}
         staged = client.post("/api/agent/chat", json={"message": "Set the urgent lead window to 5 days", "role": "approver", "owner": "field"})
         self.assertEqual(staged.status_code, 200)
         approval_id = staged.json()["pending"]["approval_id"]
@@ -64,6 +68,19 @@ class AgentApprovalTest(unittest.TestCase):
             agent._stage("freeze_schedule", {}, "requester", "field")
         self.assertEqual(getattr(error.exception, "status_code", None), 403)
         self.assertFalse(agent._pending)
+
+    def test_planning_overview_lists_pending_approvals(self) -> None:
+        start = datetime.now(timezone.utc) + timedelta(days=2)
+        requests_repository.save(MaintenanceRequest(
+            request_id="OVERVIEW-1", title="Inspect turnout", track_sector="T08",
+            work_type="inspection", duration_minutes=30, earliest_start=start,
+            deadline=start + timedelta(hours=2), priority=2,
+            approval_status=ApprovalStatus.PENDING_APPROVAL, created_by="field-ops",
+        ))
+        overview = asyncio.run(agent._call("planning_overview", {}, "approver", "field"))
+        self.assertEqual(overview["total_requests"], 1)
+        self.assertEqual(overview["request_status_counts"], {"pending_approval": 1})
+        self.assertEqual(overview["pending_request_approvals"][0]["request_id"], "OVERVIEW-1")
 
     @patch("app.settings.demo_controls_enabled", return_value=False)
     def test_hosted_demo_control_cannot_be_staged(self, _enabled) -> None:

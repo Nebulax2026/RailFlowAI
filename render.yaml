@@ -14,10 +14,10 @@ services:
         value: 3.12.13
       - key: DATABASE_URL
         sync: false
-      - key: OPENAI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
-      - key: OPENAI_MODEL
-        value: gpt-4.1-mini
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-6
       - key: RAILFLOW_CORS_ORIGINS
         sync: false
       - key: RAILFLOW_HOSTED

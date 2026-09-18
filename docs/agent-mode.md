@@ -2,9 +2,11 @@
 
 The Planning Board has a **Standard Mode / AI Agent Mode** switch. Agent mode keeps the existing calendar on the left and places chat on the right. On narrow screens the chat appears below the calendar. Standard mode keeps the existing dashboard controls.
 
+For Approver and Schedule Manager, the first chat message is an English planning overview generated from current request and approval data. It includes request status counts, scheduled work count, pending request approvals, and pending displacement decisions. The overview only reads data and does not apply changes.
+
 ## Configuration
 
-Set `OPENAI_API_KEY` on the **backend** service. `OPENAI_MODEL` defaults to `gpt-4.1-mini` and can be changed in the backend environment. Do not set the key in Next.js or use a `NEXT_PUBLIC_` prefix. The backend calls the OpenAI Responses API; the browser calls only RailFlowAI's `/api/agent/*` routes.
+Set `ANTHROPIC_API_KEY` on the **backend** service. `ANTHROPIC_MODEL` defaults to `claude-sonnet-4-6` and can be changed in the backend environment. Do not set the key in Next.js or use a `NEXT_PUBLIC_` prefix. The backend calls the Claude Messages API; the browser calls only RailFlowAI's `/api/agent/*` routes.
 
 The backend and frontend still require the existing `RAILFLOW_API_BASE_URL`, CORS, database, and deployment settings. A missing or failing model connection returns a visible error in chat.
 

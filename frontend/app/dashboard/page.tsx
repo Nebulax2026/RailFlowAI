@@ -1164,7 +1164,7 @@ export default function DashboardPage() {
       </section>
 
       </div>
-      {agentMode && <AgentChat role={role} owner={activeRequester} onChanged={loadDashboard} />}
+      {agentMode && <AgentChat key={`${role}:${activeRequester}`} role={role} owner={activeRequester} onChanged={loadDashboard} />}
       </div>
 
       {!agentMode && <>
