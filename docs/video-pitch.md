@@ -1,49 +1,43 @@
-# RailFlowAI 2-3 Minute Pitch
+# RailFlowAI 2–3 Minute Demo Script
 
-## 0:00-0:20 - Problem
+## 0:00–0:20 — The planning problem
 
-“Every engineering night is contested. Contractors need the same tunnels and platforms, but each activity has its own start date, predecessor, workfront, weekly allocation, safety footprint, and deadline. RailFlowAI turns that demand book into a possession plan a controller can inspect and dispatch.”
+**Show:** The RailFlowAI intake page.
 
-Show the workspace title and eight-file intake.
+**Say:** “Rail maintenance activities compete for a limited number of weekly possessions across platforms, sectors, buffers, and tunnels. Each activity has workload, release dates, predecessors, workfronts, safety footprint, and contract deadline constraints. RailFlowAI converts the PS1 demand book into a complete, auditable possession plan.”
 
-## 0:20-0:45 - Load and Validate
+## 0:20–0:40 — Input validation
 
-Click **Load public dataset**.
+**Show:** The eight-file upload list, then click **Load public dataset** or upload the demand book.
 
-“The app accepts the same eight CSV files used for hidden judging. Before optimisation, it verifies schemas, identifiers, topology, dates, capacities, contracts, activities, and predecessors. Invalid data never enters the solver.”
+**Say:** “The application accepts the eight official CSV inputs. Before optimisation, it checks schemas, cross-file identifiers, dates, topology, capacities, contracts, and predecessors. Invalid input does not reach the solver.”
 
-Point to instance totals: 54 activities, 192 accesses, and 30 weeks.
+## 0:40–1:10 — Optimisation and policies
 
-## 0:45-1:20 - Three Policies
+**Show:** The algorithm selector and a running A/B/C job.
 
-Show A/B/C progress and open each completed tab.
+**Say:** “The validated input is solved with OR-Tools CP-SAT. The model jointly assigns access weeks, legal co-sharing groups, local nights, and ECLO decisions. One run produces three policy views: A protects supply, B protects planned completion, and C balances delay, excess capacity, and ECLO. The dashboard shows each policy’s objective, overruns, excess access, ECLO nights, and total search time.”
 
-“One upload produces three independent answers. Scenario A protects nominal supply and accepts schedule slip. Scenario B protects planned completion and measures the extra operational cost, including ECLO. Scenario C balances both sides with tightly limited elasticity.”
+## 1:10–1:40 — Explainable schedule evidence
 
-Point to objective, overrun, excess, and ECLO metrics.
+**Show:** One scenario’s Overview, Activities, Location & capacity, and Contract results tabs.
 
-## 1:20-1:55 - Explainability
+**Say:** “The result is inspectable. We can see weekly access load, constrained locations, each activity’s scheduled work, legal possession groups, and contract completion dates. This makes the trade-off behind a score visible instead of treating the solver as a black box.”
 
-Show weekly access load, hotspots, and the contract table.
+## 1:40–2:05 — Validator-first export
 
-“Controllers can see where workload clusters, which locations reach capacity, which contracts overrun, and why. Compatible PC and C work is packed into auditable possession groups. The schedule is not a black box.”
+**Show:** Result details, then the CSV download links and ZIP download.
 
-## 1:55-2:25 - Urgent Re-planning
+**Say:** “Before files are downloadable, RailFlowAI exports the three required CSVs and validates those CSV bytes again. This independent check covers workload, precedence, capacity, workfront, ECLO, results, legal co-sharing, and weekly closure compatibility. The ZIP therefore contains the exact artifact that was validated.”
 
-Select a capacity hotspot, reduce its available slots, and click **Re-plan**.
+## 2:05–2:30 — Validation learning and close
 
-?When urgent maintenance cuts access, RailFlowAI treats the reduced capacity as a physical limit, preserves completed work, and finds the best policy result with minimum disruption to the remaining plan. Controllers see exactly which activities and contracts moved.?
+**Show:** The final submission folder with A.zip, B.zip, and C.zip.
 
-Ask **Why was A001 moved?** in Schedule Assistant and show the grounded evidence IDs.
+**Say:** “An early local schedule was rejected by the official validator because an activity entered another group’s weekly closure zone. We converted that feedback into regression tests and tightened the closure model. The replacement A and B schedules were accepted officially. Our current C candidate has a locally validated strict-model score of 122.4 and is ready for the next official check. RailFlowAI provides a repeatable path from demand-book validation to explainable, submission-ready schedules.”
 
-## 2:25-2:45 - Proof and Export
+## Recording notes
 
-Download one CSV and then the combined ZIP.
-
-“Before downloads are enabled, RailFlowAI serializes the official files, reads them back, and independently checks workload, dates, predecessors, weekly allocation, workfronts, occupancy, capacity, ECLO, and results. We validate the artifact the judges receive.”
-
-## 2:45-3:00 - Decision Evidence and Close
-
-Select an activity and show its scheduled weeks, shared possessions, and protection footprint.
-
-?Planners can trace each activity from its workload through its scheduled access and protection requirements. Compare the three policies, inspect the evidence, and export the internally validated result.?
+- Use the existing planner / normal CP-SAT path for the final submission demonstration.
+- Present integrated CP-SAT and adaptive LNS only as comparison modes; do not claim they produced the final C=122.4 candidate.
+- Say “internally validated” for local checks and “officially accepted” only for confirmed replacement submission results.

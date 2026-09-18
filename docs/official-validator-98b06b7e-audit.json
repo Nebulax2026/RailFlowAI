@@ -1,5 +1,5 @@
 {
-  "schedule_directory": "submission/railflow-98b06b7e-results/scenario_A",
+  "schedule_directory": "historical rejected artifact (removed)",
   "input_directory": "PS1/01_data",
   "input_assumption": "Repository public input; confirm this is the instance supplied to the official validator.",
   "csv_sha256": {
