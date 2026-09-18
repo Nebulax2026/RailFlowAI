@@ -1,0 +1,83 @@
+{
+  "main": {
+    "scenario": "A",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 0,
+      "contracts_overrunning": 0,
+      "earliness_days_total": 28,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "priority_weighted_score": 0.0,
+      "completion_percent": 100.0,
+      "objective_score": 0.0,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "capacity_hotspots": [],
+      "nights_scheduled": 60,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 0.0,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "local-protection-reservations-v1",
+      "capacity_hotspots_total": 0
+    }
+  },
+  "independent_A": {
+    "scenario": "A",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 0,
+      "contracts_overrunning": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "priority_weighted_score": 0.0,
+      "eclo_nights_total": 0,
+      "excess_access_nights_total": 0,
+      "formula_version": "ps1-spec-activity-days-v1",
+      "objective_score": 0.0
+    },
+    "detail": {
+      "validation_source": "independent-specification-validator",
+      "official_validator_available": false,
+      "policy": "local-witnessed-sharing-v1",
+      "capacity_hotspots": [],
+      "nights_scheduled": 60,
+      "eclo_nights": 0,
+      "activity_costs": {
+        "A001": 0.0,
+        "A002": 0.0,
+        "A003": 0.0,
+        "A004": 0.0,
+        "A005": 0.0,
+        "A006": 0.0,
+        "A007": 0.0,
+        "A008": 0.0,
+        "A009": 0.0,
+        "A010": 0.0,
+        "A011": 0.0,
+        "A012": 0.0,
+        "A013": 0.0,
+        "A014": 0.0,
+        "A015": 0.0,
+        "A016": 0.0,
+        "A017": 0.0,
+        "A018": 0.0
+      },
+      "capacity_hotspots_total": 0
+    }
+  }
+}

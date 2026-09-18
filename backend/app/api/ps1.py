@@ -22,19 +22,19 @@ MAX_TOTAL_BYTES = 16_000_000
 @router.get("/benchmark/datasets")
 def benchmark_datasets() -> dict:
     return {"datasets": [
-        {key: row[key] for key in ("case_id", "scenario", "profile", "split", "activities",
+        {key: row[key] for key in ("case_id", "profile", "split", "activities",
                                    "contracts", "horizon_weeks", "predecessor_links", "live_activities")}
         for row in catalog()
-    ], "count": 30, "per_scenario": 10,
-        "provenance": "Synthetic, with internally validated feasible witness schedules; not organizer hidden data."}
+    ], "count": 30, "scenarios_per_dataset": 3,
+        "provenance": "Synthetic, with internally validated A/B/C feasible witness schedules; not organizer hidden data."}
 
 
-@router.get("/benchmark/datasets/download/{scenario}")
-def download_benchmark_datasets(scenario: Scenario) -> Response:
+@router.get("/benchmark/datasets/download")
+def download_benchmark_datasets() -> Response:
     from app.ps1.benchmark import SUITE
-    return Response((SUITE / f"scenario_{scenario.value}_inputs.zip").read_bytes(),
+    return Response((SUITE / "all_30_inputs.zip").read_bytes(),
                     media_type="application/zip",
-                    headers={"Content-Disposition": f'attachment; filename="scenario-{scenario.value}-10-datasets.zip"'})
+                    headers={"Content-Disposition": 'attachment; filename="30-common-datasets.zip"'})
 
 
 @router.post("/benchmark/runs", status_code=202)

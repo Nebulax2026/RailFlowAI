@@ -1,4 +1,4 @@
-"""Serial, cancellable runs over the 30 generated public test datasets."""
+"""Serial, cancellable A/B/C runs over 30 common test datasets."""
 from __future__ import annotations
 
 import json
@@ -40,10 +40,10 @@ class BenchmarkManager:
                 raise ValueError("Unknown or empty dataset selection.")
             entries = [r for r in entries if r["case_id"] in requested]
         methods = METHODS if method == "all" else (method,)
-        rows = [dict(method=m, scenario=e["scenario"], case_id=e["case_id"],
+        rows = [dict(method=m, scenario=scenario.value, case_id=e["case_id"],
                      status="queued", score=None, elapsed_seconds=None,
                      termination_reason=None, error=None)
-                for e in entries for m in methods]
+                for e in entries for m in methods for scenario in Scenario]
         now = datetime.now(UTC)
         run = dict(id=uuid4().hex, status="queued", created_at=now.isoformat(),
                    expires_at=(now+timedelta(seconds=len(rows)*(seconds+5)+3600)).isoformat(),

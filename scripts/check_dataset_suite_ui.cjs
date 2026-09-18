@@ -27,24 +27,24 @@ const { chromium } = require(process.env.RAILFLOW_PLAYWRIGHT_MODULE || 'playwrig
     const created = page.waitForResponse(r => r.url().includes('/api/ps1/benchmark/runs?') && r.request().method() === 'POST');
     await page.getByRole('button', { name: /Run selected method/ }).click();
     const started = await (await created).json();
-    assert.equal(started.rows.length, 30);
-    await page.getByText('30/30 finished').waitFor({ timeout: 120000 });
+    assert.equal(started.rows.length, 90);
+    await page.getByText('90/90 finished').waitFor({ timeout: 600000 });
     const response = await page.request.get(`http://127.0.0.1:8000/api/ps1/benchmark/runs/${started.id}`);
     const report = await response.json();
     assert.ok(['completed', 'partial'].includes(report.status));
     assert.equal(report.summary.length, 3);
-    assert.deepEqual(report.summary.map(x => x.finished), [10, 10, 10]);
+    assert.deepEqual(report.summary.map(x => x.finished), [30, 30, 30]);
     for (const row of report.summary) {
-      assert.ok(row.valid >= 0 && row.valid <= 10);
+      assert.ok(row.valid >= 0 && row.valid <= 30);
       assert.equal(row.mean_score === null, row.valid === 0);
     }
     const download = page.waitForEvent('download');
-    await page.getByRole('link', { name: 'A · 10 CSV datasets' }).click();
-    await (await download).saveAs(path.join(output, 'scenario-A-inputs.zip'));
+    await page.getByRole('link', { name: 'Download all 30 shared datasets' }).click();
+    await (await download).saveAs(path.join(output, 'all-30-inputs.zip'));
     const allResponse = page.waitForResponse(r => r.url().includes('/api/ps1/benchmark/runs?') && r.request().method() === 'POST');
     await page.getByRole('button', { name: /Compare all 5 methods/ }).click();
     const all = await (await allResponse).json();
-    assert.equal(all.rows.length, 150);
+    assert.equal(all.rows.length, 450);
     assert.equal(all.summary.length, 15);
     await page.getByRole('button', { name: 'Stop comparison' }).click();
     await page.getByText('Dataset results · cancelled').waitFor();
@@ -53,6 +53,6 @@ const { chromium } = require(process.env.RAILFLOW_PLAYWRIGHT_MODULE || 'playwrig
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []);
-    console.log(JSON.stringify({ passed: true, checks: ['five methods merged', 'public A/B/C scores', '30-case averages', 'success denominators', 'dataset ZIP', '150-case setup', 'cancel', 'mobile'], output }));
+    console.log(JSON.stringify({ passed: true, checks: ['five methods merged', 'public A/B/C scores', '30 shared cases x 3 scenarios', 'success denominators', 'dataset ZIP', '450-run setup', 'cancel', 'mobile'], output }));
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -1,0 +1,35 @@
+{
+  "main": {
+    "scenario": "C",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 0,
+      "contracts_overrunning": 0,
+      "earliness_days_total": 29,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "priority_weighted_score": 0.0,
+      "completion_percent": 100.0,
+      "objective_score": 0.0,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "capacity_hotspots": [],
+      "nights_scheduled": 67,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 0.0,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "local-protection-reservations-v1",
+      "capacity_hotspots_total": 0
+    }
+  }
+}

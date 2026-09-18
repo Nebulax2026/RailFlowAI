@@ -81,10 +81,10 @@ download, mobile layout and switching back to the existing planner.
 
 ## Thirty dataset average
 
-The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 10 witnessed
-feasible inputs for each scenario. The UI offers **Run selected method · 30
-cases** and **Compare all 5 methods · 150 cases**. Both run serially with the
-same configured time and one CP-SAT worker per case. The old Existing planner
+The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 30 shared inputs,
+each with a feasible witness for A, B and C. The UI offers **Run selected method · 90
+runs** and **Compare all 5 methods · 450 runs**. Both run serially with the
+same configured time and one CP-SAT worker per run. The old Existing planner
 uses one bounded pass per dataset, matching the time budget used for the other
 methods. A single-input Existing planner run retains its original 30+90 second
 search workflow. The average uses validated finished runs only and displays
@@ -105,13 +105,14 @@ backend/.venv/bin/python scripts/benchmark_dataset_suite.py \
   --output benchmarks/dataset-suite/new-greedy-run.json
 ```
 
-`--method all` runs all five methods on all 30 cases. At five seconds per case
-this can take more than 12 minutes, and at 15 seconds per case up to about
-38 minutes plus setup. The all-method run has not been used to select a winner;
+`--method all` runs all five methods on all 30 inputs under each scenario.
+At five seconds per run this can take more than 37 minutes, and at 15 seconds
+per run up to about 113 minutes plus setup. The all-method run has not been used to select a winner;
 the UI displays observed results when the user starts it.
 
-The completed five-second Greedy run reached 10/10 validated cases in each
-scenario. Its measured means were A 1147.13, B 625.8 and C 1357.56; raw
-cases and runtime are in the [batch result](../benchmarks/dataset-suite/RESULTS.md).
-All five methods were also exercised on the three small cases as a 15-run
-integration check. The full 150-run comparison remains an on-demand operation.
+On the shared suite, the five-second Greedy run produced validated results for
+28/30 A cases and 30/30 B and C cases; the mean valid scores were A 52.4,
+B 5.367 and C 5.367. D14 and D30 had no solution within five seconds under A.
+The [raw batch result](../benchmarks/dataset-suite/RESULTS.md) records every
+run. The earlier scenario-specific run is preserved there as historical data.
+The full 450-run comparison remains an on-demand operation.

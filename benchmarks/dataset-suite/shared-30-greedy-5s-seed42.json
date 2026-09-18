@@ -1,0 +1,947 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.14",
+  "ortools": "9.15.6755",
+  "workers_per_case": 1,
+  "run": {
+    "id": "4f8e399d90774461a6ad8b222f7db34d",
+    "status": "partial",
+    "method": "greedy",
+    "seconds": 5.0,
+    "seed": 42,
+    "created_at": "2026-09-18T12:04:22.941841+00:00",
+    "expires_at": "2026-09-18T13:19:22.941841+00:00",
+    "error": null,
+    "rows": [
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D01_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.322,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D01_small",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D01_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D02_mixed",
+        "status": "completed",
+        "score": 1200.0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D02_mixed",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D02_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.316,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D03_priority_pressure",
+        "status": "completed",
+        "score": 242.0,
+        "elapsed_seconds": 0.325,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D03_priority_pressure",
+        "status": "completed",
+        "score": 14,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D03_priority_pressure",
+        "status": "completed",
+        "score": 14.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D04_interchange_congestion",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.332,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D04_interchange_congestion",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D04_interchange_congestion",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D05_long_spans",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D05_long_spans",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.328,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D05_long_spans",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.325,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D06_live_closures",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D06_live_closures",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D06_live_closures",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D07_precedence_chains",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.328,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D07_precedence_chains",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D07_precedence_chains",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D08_contract_contention",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.325,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D08_contract_contention",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.328,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D08_contract_contention",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D09_compressed_horizon",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D09_compressed_horizon",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D09_compressed_horizon",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D10_large_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.523,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D10_large_mixed",
+        "status": "completed",
+        "score": 14,
+        "elapsed_seconds": 0.333,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D10_large_mixed",
+        "status": "completed",
+        "score": 14.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D11_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.317,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D11_small",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D11_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.314,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D12_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D12_mixed",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.316,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D12_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D13_priority_pressure",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.331,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D13_priority_pressure",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.322,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D13_priority_pressure",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D14_interchange_congestion",
+        "status": "failed",
+        "score": null,
+        "elapsed_seconds": 0.313,
+        "termination_reason": "no_solution_within_budget",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D14_interchange_congestion",
+        "status": "completed",
+        "score": 14,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D14_interchange_congestion",
+        "status": "completed",
+        "score": 14.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D15_long_spans",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.329,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D15_long_spans",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D15_long_spans",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D16_live_closures",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D16_live_closures",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D16_live_closures",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D17_precedence_chains",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.326,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D17_precedence_chains",
+        "status": "completed",
+        "score": 14,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D17_precedence_chains",
+        "status": "completed",
+        "score": 14.0,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D18_contract_contention",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D18_contract_contention",
+        "status": "completed",
+        "score": 28,
+        "elapsed_seconds": 0.325,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D18_contract_contention",
+        "status": "completed",
+        "score": 28.0,
+        "elapsed_seconds": 0.332,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D19_compressed_horizon",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.316,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D19_compressed_horizon",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D19_compressed_horizon",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D20_large_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.498,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D20_large_mixed",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.327,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D20_large_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D21_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.313,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D21_small",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.315,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D21_small",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.314,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D22_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.326,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D22_mixed",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D22_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D23_priority_pressure",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.326,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D23_priority_pressure",
+        "status": "completed",
+        "score": 28,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D23_priority_pressure",
+        "status": "completed",
+        "score": 28.0,
+        "elapsed_seconds": 0.318,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D24_interchange_congestion",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.333,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D24_interchange_congestion",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.32,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D24_interchange_congestion",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D25_long_spans",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D25_long_spans",
+        "status": "completed",
+        "score": 28,
+        "elapsed_seconds": 0.322,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D25_long_spans",
+        "status": "completed",
+        "score": 28.0,
+        "elapsed_seconds": 0.329,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D26_live_closures",
+        "status": "completed",
+        "score": 7.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D26_live_closures",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D26_live_closures",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D27_precedence_chains",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D27_precedence_chains",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.328,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D27_precedence_chains",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.319,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D28_contract_contention",
+        "status": "completed",
+        "score": 18.2,
+        "elapsed_seconds": 0.325,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D28_contract_contention",
+        "status": "completed",
+        "score": 21,
+        "elapsed_seconds": 0.323,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D28_contract_contention",
+        "status": "completed",
+        "score": 21.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "feasible",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D29_compressed_horizon",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.329,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D29_compressed_horizon",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.321,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D29_compressed_horizon",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "case_id": "D30_large_mixed",
+        "status": "failed",
+        "score": null,
+        "elapsed_seconds": 0.311,
+        "termination_reason": "no_solution_within_budget",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "case_id": "D30_large_mixed",
+        "status": "completed",
+        "score": 0,
+        "elapsed_seconds": 0.324,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "case_id": "D30_large_mixed",
+        "status": "completed",
+        "score": 0.0,
+        "elapsed_seconds": 0.336,
+        "termination_reason": "optimal_for_policy",
+        "error": null
+      }
+    ],
+    "summary": [
+      {
+        "method": "greedy",
+        "scenario": "A",
+        "total": 30,
+        "finished": 30,
+        "valid": 28,
+        "mean_score": 52.4,
+        "worst_score": 1200.0
+      },
+      {
+        "method": "greedy",
+        "scenario": "B",
+        "total": 30,
+        "finished": 30,
+        "valid": 30,
+        "mean_score": 5.367,
+        "worst_score": 28
+      },
+      {
+        "method": "greedy",
+        "scenario": "C",
+        "total": 30,
+        "finished": 30,
+        "valid": 30,
+        "mean_score": 5.367,
+        "worst_score": 28.0
+      }
+    ]
+  }
+}

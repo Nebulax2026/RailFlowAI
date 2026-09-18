@@ -19,16 +19,17 @@ from app.ps1 import benchmark as benchmark_module
 def test_all_30_csv_inputs_have_valid_witnesses_and_zips():
     entries = catalog()
     assert len(entries) == 30
-    assert {s: sum(r["scenario"] == s for r in entries) for s in "ABC"} == {"A": 10, "B": 10, "C": 10}
+    assert len({r["case_id"] for r in entries}) == 30
     assert {r["profile"]["name"] for r in entries} == {
         "small", "mixed", "priority_pressure", "interchange_congestion", "long_spans",
         "live_closures", "precedence_chains", "contract_contention", "compressed_horizon", "large_mixed"}
     for row in entries:
         folder = SUITE / row["input_path"]
         instance = parse_instance({n: (folder / n).read_bytes() for n in EXPECTED_FILES})
-        files = {n: (folder.parent / "witness" / n).read_bytes() for n in OUTPUT_HEADERS}
-        assert validate_exported_csvs(instance, Scenario(row["scenario"]), files).feasible
-        if row["scenario"] == "A": assert validate_csvs(instance, files).feasible
+        for scenario in Scenario:
+            files = {n: (folder.parent / "witness" / scenario.value / n).read_bytes() for n in OUTPUT_HEADERS}
+            assert validate_exported_csvs(instance, scenario, files).feasible
+            if scenario == Scenario.A: assert validate_csvs(instance, files).feasible
     with zipfile.ZipFile(SUITE / "all_30_inputs.zip") as archive:
         assert len(archive.namelist()) == 30 * 8
         assert len(set(archive.namelist())) == 240
@@ -37,7 +38,7 @@ def test_all_30_csv_inputs_have_valid_witnesses_and_zips():
 def test_batch_average_counts_valid_zero_but_excludes_failed_and_pending(monkeypatch):
     manager = BenchmarkManager()
     manager._executor = SimpleNamespace(submit=lambda *args: None)
-    created = manager.create("greedy", 5, 42, ["A01_small", "B01_small", "C01_small"])
+    created = manager.create("greedy", 5, 42, ["D01_small"])
     assert [row["status"] for row in created["rows"]] == ["queued"] * 3
     scores = {"A": 0.0, "C": 25.2}
     def fake_run(instance, files, config, cancelled, on_update, scenario, legacy=False):
@@ -64,16 +65,17 @@ def test_batch_api_and_queued_cancellation(monkeypatch):
     assert client.get("/api/ps1/benchmark/datasets").json()["count"] == 30
     assert client.post("/api/ps1/benchmark/runs?method=unknown").status_code == 422
     created = client.post("/api/ps1/benchmark/runs?method=all&time_limit_seconds=5").json()
-    assert len(created["rows"]) == 150
+    assert len(created["rows"]) == 450
     assert len(created["summary"]) == 15
+    assert all(row["total"] == 30 for row in created["summary"])
     assert client.get(f"/api/ps1/benchmark/runs/{created['id']}").status_code == 200
     cancelled = client.delete(f"/api/ps1/benchmark/runs/{created['id']}").json()
     assert cancelled["status"] == "cancelled"
     assert all(row["status"] == "cancelled" for row in cancelled["rows"])
     assert client.get(f"/api/ps1/benchmark/runs/{created['id']}/report").status_code == 200
-    response = client.get("/api/ps1/benchmark/datasets/download/A")
+    response = client.get("/api/ps1/benchmark/datasets/download")
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
-        assert len(archive.namelist()) == 80
+        assert len(archive.namelist()) == 240
 
 
 def test_existing_planner_uses_bounded_worker_and_main_validator():

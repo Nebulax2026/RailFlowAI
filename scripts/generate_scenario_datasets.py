@@ -1,4 +1,4 @@
-"""Generate 10 reproducible, witnessed-feasible datasets for each PS1 scenario."""
+"""Generate 30 common PS1 inputs, each witnessed feasible for A, B and C."""
 from __future__ import annotations
 
 import argparse
@@ -22,7 +22,7 @@ from app.ps1.models import AccessAssignment, ContractResult, OccupancyAssignment
 from app.ps1.parser import EXPECTED_FILES, parse_instance
 from app.ps1.scenario_a.validation import independent_footprints, validate_csvs
 from app.ps1.topology import activity_locations, closure_locations
-from app.ps1.validator import validate_exported_csvs
+from app.ps1.validator import OUTPUT_HEADERS, validate_exported_csvs
 
 PROFILES = [
     dict(name="small", activities=18, horizon=20, span=1, group=2, live=.10, links=.10, cluster=False, slack=1, due=0, contracts=10),
@@ -133,14 +133,12 @@ def generate(source, scenario, index, seed):
     for c in contracts:
         aids = [a["activity_id"] for a in activities if a["contract_number"] == c["contract_number"]]
         last = max(w for a in aids for w, _ in placements[a])
-        first = min(w for a in aids for w, _ in placements[a])
         peak = max(front_counts[c["contract_number"], w] for w in range(1, horizon+1))
         c["number_of_workfronts"] = max(1, math.ceil(peak/c["number_of_maximum_access_per_week"]))
         actual_finish = start+timedelta(days=last*7-1)
-        if scenario == Scenario.B:
-            due = actual_finish+timedelta(days=rng.choice([0, 0, 2, 7]))
-        else:
-            due = max(start+timedelta(days=first*7-1), actual_finish-timedelta(days=rng.randint(0, profile["due"])))
+        # The common zero-ECLO witness must meet B's fixed completion date;
+        # the same CSV input can then be evaluated independently under A/C.
+        due = actual_finish+timedelta(days=rng.choice([0, 0, 2, 7]))
         c["planned_completion_date"] = str(due)
     files["07_PROJECT_DETAILS.csv"] = encode(EXPECTED_FILES["07_PROJECT_DETAILS.csv"], contracts)
     files["08_ACTIVITY_DETAILS.csv"] = encode(EXPECTED_FILES["08_ACTIVITY_DETAILS.csv"], activities)
@@ -187,9 +185,9 @@ def generate(source, scenario, index, seed):
     if not validation.feasible: raise ValueError(f"{scenario}/{profile['name']}: {validation.hard_violations[:3]}")
     independent = validate_csvs(instance, witness_files) if scenario == Scenario.A else None
     if independent and not independent.feasible: raise ValueError(f"Independent A check: {independent.hard_violations[:3]}")
-    metadata = dict(scenario=scenario.value, profile=profile, seed=seed,
+    metadata = dict(profile=profile, seed=seed,
                     split="development" if index < 5 else "evaluation",
-                    generator="synthetic-witness-first-v1", feasibility="validated_witness_exists",
+                    generator="synthetic-common-witness-v2", feasibility="validated_witness_exists_for_A_B_C",
                     optimality="not_proved", official_validator_available=False,
                     activities=len(activities), contracts=len(contracts), horizon_weeks=horizon,
                     total_workload=sum(a.total_accesses for a in instance.activities.values()),
@@ -197,9 +195,8 @@ def generate(source, scenario, index, seed):
                     live_activities=sum(instance.contracts[a.contract_number].nature_of_activity == "Live" for a in instance.activities.values()),
                     access_type_counts=dict(Counter(instance.contracts[a.contract_number].access_type for a in instance.activities.values())),
                     supply_range=[min(s.supply_capacity for s in instance.supply.values()), max(s.supply_capacity for s in instance.supply.values())],
-                    witness_score=validation.soft_scores["objective_score"],
-                    witness_eclo=validation.soft_scores["eclo_nights_total"],
-                    witness_excess=validation.soft_scores["excess_access_nights_total"],
+                    witness_eclo_A=validation.soft_scores["eclo_nights_total"],
+                    witness_excess_A=validation.soft_scores["excess_access_nights_total"],
                     input_sha256={n: hashlib.sha256(v).hexdigest() for n, v in files.items()})
     reports = {"main": validation_summary(validation)}
     if independent: reports["independent_A"] = validation_summary(independent)
@@ -223,45 +220,56 @@ def main():
     args.output.mkdir(parents=True, exist_ok=False)
     source = {n: (ROOT / "PS1/01_data" / n).read_bytes() for n in EXPECTED_FILES}
     manifest, all_entries = [], {}
-    for scenario_index, scenario in enumerate(Scenario):
-        scenario_entries = {}
-        for index, profile in enumerate(PROFILES):
-            seed = args.seed+scenario_index*1000+index
-            inputs, witness, metadata, reports = generate(source, scenario, index, seed)
-            case_id = f"{scenario.value}{index+1:02d}_{profile['name']}"
-            directory = args.output / f"scenario_{scenario.value}" / case_id
-            (directory / "input").mkdir(parents=True)
-            (directory / "witness").mkdir()
-            for name, data in inputs.items():
-                (directory / "input" / name).write_bytes(data)
-                scenario_entries[f"{case_id}/{name}"] = data
-                all_entries[f"scenario_{scenario.value}/{case_id}/{name}"] = data
-            for name, data in witness.items(): (directory / "witness" / name).write_bytes(data)
-            # Re-read the actual artifacts, not merely the generator's objects.
-            reread = parse_instance({n: (directory / "input" / n).read_bytes() for n in EXPECTED_FILES})
-            csvs = {n: (directory / "witness" / n).read_bytes() for n in witness}
-            assert validate_exported_csvs(reread, scenario, csvs).feasible
-            if scenario == Scenario.A: assert validate_csvs(reread, csvs).feasible
-            metadata.update(case_id=case_id, input_path=str(directory.relative_to(args.output) / "input"))
-            (directory / "metadata.json").write_text(json.dumps(metadata, indent=2)+"\n")
-            (directory / "witness" / "validation.json").write_text(json.dumps(reports, indent=2)+"\n")
-            manifest.append(metadata)
-            print(f"{case_id}: {metadata['activities']} activities, witness score {metadata['witness_score']}, valid", flush=True)
-        archive(args.output / f"scenario_{scenario.value}_inputs.zip", scenario_entries)
+    for number in range(30):
+        index = number % len(PROFILES)
+        profile = PROFILES[index]
+        seed = args.seed+number
+        inputs, witness, metadata, _ = generate(source, Scenario.A, index, seed)
+        case_id = f"D{number+1:02d}_{profile['name']}"
+        directory = args.output / "cases" / case_id
+        (directory / "input").mkdir(parents=True)
+        for name, data in inputs.items():
+            (directory / "input" / name).write_bytes(data)
+            all_entries[f"{case_id}/{name}"] = data
+        reread = parse_instance({n: (directory / "input" / n).read_bytes() for n in EXPECTED_FILES})
+        scores = {}
+        for scenario in Scenario:
+            scenario_witness = dict(witness)
+            results = table(witness["RESULTS.csv"])
+            for row in results: row["scenario"] = scenario.value
+            scenario_witness["RESULTS.csv"] = encode(OUTPUT_HEADERS["RESULTS.csv"], results)
+            witness_dir = directory / "witness" / scenario.value
+            witness_dir.mkdir(parents=True)
+            for name, data in scenario_witness.items(): (witness_dir / name).write_bytes(data)
+            csvs = {n: (witness_dir / n).read_bytes() for n in OUTPUT_HEADERS}
+            report = validate_exported_csvs(reread, scenario, csvs)
+            if not report.feasible: raise ValueError(f"{case_id}/{scenario.value}: {report.hard_violations[:3]}")
+            scenario_reports = {"main": validation_summary(report)}
+            if scenario == Scenario.A:
+                independent = validate_csvs(reread, csvs)
+                if not independent.feasible: raise ValueError(f"{case_id}/independent A: {independent.hard_violations[:3]}")
+                scenario_reports["independent_A"] = validation_summary(independent)
+            (witness_dir / "validation.json").write_text(json.dumps(scenario_reports, indent=2)+"\n")
+            scores[scenario.value] = report.soft_scores["objective_score"]
+        metadata.update(case_id=case_id, input_path=str(directory.relative_to(args.output) / "input"),
+                        witness_scores=scores, scenarios=[s.value for s in Scenario],
+                        split="development" if number < 15 else "evaluation")
+        (directory / "metadata.json").write_text(json.dumps(metadata, indent=2)+"\n")
+        manifest.append(metadata)
+        print(f"{case_id}: {metadata['activities']} activities, A/B/C witnesses valid", flush=True)
     archive(args.output / "all_30_inputs.zip", all_entries)
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
-    lines = ["# Synthetic A/B/C dataset suite", "", "30 datasets: 10 per scenario. Each input directory contains exactly eight official-schema CSVs.",
+    lines = ["# Synthetic common A/B/C dataset suite", "", "30 common datasets. Each input directory contains eight official-schema CSVs and is evaluated under A, B and C.",
              "Each witness is a verified feasible example, not an optimal answer. Do not pass witnesses as hints when measuring a solver.",
-             "A witnesses pass both current internal validators; B/C witnesses pass main's validator. Official validator unavailable.",
+             "Every input has A, B and C feasible witnesses. A witnesses pass both current internal validators; B/C witnesses pass main's validator. Official validator unavailable.",
              "All datasets are synthetic, built on the bundled network; these are not organizer hidden datasets or a guarantee of hidden-set performance.",
-             "", "## Use", "", "Unzip scenario_A_inputs.zip, scenario_B_inputs.zip, scenario_C_inputs.zip or all_30_inputs.zip. Upload the eight CSVs from one case to the frontend.",
-             "The frontend runs A/B/C; the scenario in a folder name identifies the scenario whose feasibility was certified. Other scenarios may be infeasible on that input.",
+             "", "## Use", "", "Unzip all_30_inputs.zip. Upload the eight CSVs from one case to the frontend, which runs A, B and C on that same input.",
              "For isolated evaluation, use the CLI with --scenario A, B or C and --input pointing at that case's input folder.",
-             "Cases 01–05 are designated development; 06–10 evaluation. This is a provisional split, not a statistically independent hidden evaluation.",
+             "Cases 01–15 are designated development; 16–30 evaluation. This is a provisional split, not a statistically independent hidden evaluation.",
              "Supply and workfront limits were derived from generated witness demand. This construction bias is intentional to certify feasibility, not evidence of realistic difficulty.",
-             "", "## Contents", "", "| Case | Split | Activities | Contracts | Weeks | Links | Live | Witness cost |", "|---|---|---:|---:|---:|---:|---:|---:|"]
+             "", "## Contents", "", "| Case | Split | Activities | Contracts | Weeks | Links | Live | A/B/C witness cost |", "|---|---|---:|---:|---:|---:|---:|---:|"]
     for row in manifest:
-        lines.append(f"| {row['case_id']} | {row['split']} | {row['activities']} | {row['contracts']} | {row['horizon_weeks']} | {row['predecessor_links']} | {row['live_activities']} | {row['witness_score']} |")
+        lines.append(f"| {row['case_id']} | {row['split']} | {row['activities']} | {row['contracts']} | {row['horizon_weeks']} | {row['predecessor_links']} | {row['live_activities']} | {row['witness_scores']['A']}/{row['witness_scores']['B']}/{row['witness_scores']['C']} |")
     lines += ["", "## Reproduce", "", "```sh", f"backend/.venv/bin/python scripts/generate_scenario_datasets.py --output datasets/scenario-suite-reproduction --seed {args.seed}", "```", ""]
     (args.output / "README.md").write_text("\n".join(lines))
 

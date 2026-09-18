@@ -1,0 +1,740 @@
+{
+  "main": {
+    "scenario": "C",
+    "feasible": true,
+    "hard_violations": [],
+    "soft_scores": {
+      "overrun_days_total": 0,
+      "contracts_overrunning": 0,
+      "earliness_days_total": 23,
+      "excess_access_nights_total": 0,
+      "eclo_nights_total": 0,
+      "priority_overrun": {
+        "1": 0,
+        "2": 0,
+        "3": 0
+      },
+      "priority_weighted_score": 0.0,
+      "completion_percent": 100.0,
+      "objective_score": 0.0,
+      "formula_version": "ps1-2026-v2"
+    },
+    "detail": {
+      "capacity_hotspots": [
+        {
+          "location_id": "PLAT:ALP:H01:EB",
+          "week": 14,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 5,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H01:WB",
+          "week": 6,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 2,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:ALP:H02:EB",
+          "week": 14,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 5,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:H02:WB",
+          "week": 6,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 2,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:ALP:S02:EB",
+          "week": 12,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:ALP:S02:WB",
+          "week": 12,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:ALP:S03:EB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:ALP:S03:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 0,
+          "protection_possessions": 5
+        },
+        {
+          "location_id": "PLAT:ALP:S04:EB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 3,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:ALP:S04:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:ALP:S05:EB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 4,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:ALP:S05:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:ALP:S06:EB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:ALP:S06:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 0,
+          "protection_possessions": 5
+        },
+        {
+          "location_id": "PLAT:ALP:S07:EB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:ALP:S07:WB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:BET:H01:EB",
+          "week": 14,
+          "used": 8,
+          "capacity": 8,
+          "work_possessions": 6,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 1,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:H01:WB",
+          "week": 15,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:H02:EB",
+          "week": 14,
+          "used": 8,
+          "capacity": 8,
+          "work_possessions": 6,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:H02:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 1,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:BET:H02:WB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:H02:WB",
+          "week": 15,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:S12:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S12:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S12:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S12:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S12:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S12:WB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S13:EB",
+          "week": 14,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "PLAT:BET:S13:WB",
+          "week": 6,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:S13:WB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:S14:EB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 4,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S14:WB",
+          "week": 14,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S14:WB",
+          "week": 15,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S15:EB",
+          "week": 14,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 5,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S15:WB",
+          "week": 14,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S15:WB",
+          "week": 15,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "PLAT:BET:S16:EB",
+          "week": 6,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:S16:EB",
+          "week": 8,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:S16:EB",
+          "week": 11,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:S16:EB",
+          "week": 14,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "PLAT:BET:S16:WB",
+          "week": 6,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:S16:WB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:S17:EB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "PLAT:BET:S17:WB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:ALP:H01_H02:EB",
+          "week": 14,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 5,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:ALP:H01_H02:WB",
+          "week": 6,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 2,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:ALP:H02_S05:EB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 4,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:ALP:H02_S05:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:ALP:S02_S03:EB",
+          "week": 12,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:ALP:S02_S03:WB",
+          "week": 12,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:ALP:S03_S04:EB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:ALP:S03_S04:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 0,
+          "protection_possessions": 5
+        },
+        {
+          "location_id": "SEC:ALP:S04_H01:EB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 3,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:ALP:S04_H01:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:ALP:S05_S06:EB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:ALP:S05_S06:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 0,
+          "protection_possessions": 5
+        },
+        {
+          "location_id": "SEC:ALP:S06_S07:EB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:ALP:S06_S07:WB",
+          "week": 12,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:BET:H01_H02:EB",
+          "week": 14,
+          "used": 8,
+          "capacity": 8,
+          "work_possessions": 6,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:BET:H01_H02:WB",
+          "week": 12,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 1,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:BET:H01_H02:WB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:BET:H01_H02:WB",
+          "week": 15,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 2,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:BET:H02_S15:EB",
+          "week": 14,
+          "used": 6,
+          "capacity": 6,
+          "work_possessions": 5,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:H02_S15:WB",
+          "week": 14,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:H02_S15:WB",
+          "week": 15,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S12_S13:EB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S12_S13:EB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S12_S13:EB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S12_S13:WB",
+          "week": 6,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S12_S13:WB",
+          "week": 8,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S12_S13:WB",
+          "week": 11,
+          "used": 1,
+          "capacity": 1,
+          "work_possessions": 0,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S13_S14:EB",
+          "week": 14,
+          "used": 4,
+          "capacity": 4,
+          "work_possessions": 0,
+          "protection_possessions": 4
+        },
+        {
+          "location_id": "SEC:BET:S13_S14:WB",
+          "week": 6,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:BET:S13_S14:WB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:BET:S14_H01:EB",
+          "week": 14,
+          "used": 5,
+          "capacity": 5,
+          "work_possessions": 4,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S14_H01:WB",
+          "week": 14,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S14_H01:WB",
+          "week": 15,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 2,
+          "protection_possessions": 1
+        },
+        {
+          "location_id": "SEC:BET:S15_S16:EB",
+          "week": 6,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:BET:S15_S16:EB",
+          "week": 8,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:BET:S15_S16:EB",
+          "week": 11,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:BET:S15_S16:EB",
+          "week": 14,
+          "used": 3,
+          "capacity": 3,
+          "work_possessions": 0,
+          "protection_possessions": 3
+        },
+        {
+          "location_id": "SEC:BET:S15_S16:WB",
+          "week": 6,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:BET:S15_S16:WB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:BET:S16_S17:EB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        },
+        {
+          "location_id": "SEC:BET:S16_S17:WB",
+          "week": 11,
+          "used": 2,
+          "capacity": 2,
+          "work_possessions": 0,
+          "protection_possessions": 2
+        }
+      ],
+      "nights_scheduled": 228,
+      "eclo_nights": 0,
+      "score_breakdown": {
+        "delay": 0.0,
+        "excess_supply": 0,
+        "eclo": 0
+      },
+      "safety_policy": "local-protection-reservations-v1",
+      "capacity_hotspots_total": 88
+    }
+  }
+}
