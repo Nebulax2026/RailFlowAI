@@ -28,7 +28,7 @@ class SearchConfig:
     strategy: str = "integrated"
     initialization: str = "greedy_hint"
     time_limit_seconds: float = 30
-    workers: int = 1
+    workers: int = 8
     seed: int = 42
     memory_limit_mb: int = 2048
     initial_fraction: float = 0.4

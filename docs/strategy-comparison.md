@@ -53,7 +53,7 @@ curl -X POST 'http://127.0.0.1:8000/api/ps1/jobs?public=true&algorithm=strategie
 # CLI: one scenario, one new output directory per invocation.
 cd backend
 .venv/bin/python -m app.ps1.scenario_a.cli --scenario B --strategy random_lns \
-  --seconds 15 --workers 1 --seed 42 --output ../submission/my-b-run
+  --seconds 15 --workers 8 --seed 42 --output ../submission/my-b-run
 ```
 
 `algorithm=legacy` (also the default) keeps main's two-pass A/B/C planner.
@@ -84,7 +84,8 @@ download, mobile layout and switching back to the existing planner.
 The [synthetic suite](../datasets/scenario-suite-v1/README.md) has 30 shared inputs,
 each with a feasible witness for A, B and C. The UI offers **Run selected method · 90
 runs** and **Compare all 5 methods · 450 runs**. Both run serially with the
-same configured time and one CP-SAT worker per run. The old Existing planner
+same configured time and eight CP-SAT workers per run. Greedy uses no CP-SAT
+workers. The old Existing planner
 uses one bounded pass per dataset, matching the time budget used for the other
 methods. A single-input Existing planner run retains its original 30+90 second
 search workflow. The average uses validated finished runs only and displays
@@ -114,5 +115,6 @@ On the shared suite, the five-second Greedy run produced validated results for
 28/30 A cases and 30/30 B and C cases; the mean valid scores were A 52.4,
 B 5.367 and C 5.367. D14 and D30 had no solution within five seconds under A.
 The [raw batch result](../benchmarks/dataset-suite/RESULTS.md) records every
-run. The earlier scenario-specific run is preserved there as historical data.
+run. The saved scores predate the eight-worker default; Greedy itself does not
+use CP-SAT workers. The earlier scenario-specific run is preserved there as historical data.
 The full 450-run comparison remains an on-demand operation.

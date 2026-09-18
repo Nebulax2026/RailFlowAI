@@ -1,7 +1,9 @@
 # Shared 30-dataset batch: Greedy, five seconds per scenario
 
 Each of the 30 common inputs was run under A, B and C (90 serial runs), with
-seed 42 and one worker. The CSV validator accepted 28/30 A results and all
+seed 42 under the earlier one-worker configuration. Greedy does not use
+CP-SAT workers, so the worker setting had no effect on these scores. The CSV
+validator accepted 28/30 A results and all
 30 B/C results. The two A misses (D14 and D30) ended with
 `no_solution_within_budget`; each input has a separately validated witness.
 These are search failures, not invalid output schedules.

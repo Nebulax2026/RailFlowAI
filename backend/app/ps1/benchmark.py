@@ -16,6 +16,7 @@ from app.ps1.scenario_a.worker import run_worker
 
 SUITE = Path(__file__).resolve().parents[3] / "datasets" / "scenario-suite-v1"
 METHODS = ("legacy", "greedy", "integrated", "random_lns", "alns")
+BENCHMARK_WORKERS = 8
 
 
 def catalog():
@@ -26,8 +27,8 @@ class BenchmarkManager:
     def __init__(self):
         self._lock = threading.RLock()
         self._runs = {}
-        # Share the one-slot queue with ordinary solve jobs. The worker itself
-        # runs one CP-SAT worker; no concurrent solver processes are started.
+        # Share the one-slot queue with ordinary solve jobs. Each CP-SAT run
+        # may use eight workers, but solver processes never run concurrently.
         self._executor = job_manager._executor
 
     def create(self, method, seconds, seed, case_ids=None):
@@ -47,7 +48,7 @@ class BenchmarkManager:
         now = datetime.now(UTC)
         run = dict(id=uuid4().hex, status="queued", created_at=now.isoformat(),
                    expires_at=(now+timedelta(seconds=len(rows)*(seconds+5)+3600)).isoformat(),
-                   method=method, seconds=seconds, seed=seed, rows=rows,
+                   method=method, seconds=seconds, seed=seed, cp_sat_workers=BENCHMARK_WORKERS, rows=rows,
                    cancelled=threading.Event(), error=None)
         with self._lock:
             self._cleanup()
@@ -81,7 +82,7 @@ class BenchmarkManager:
                                     mean_score=round(sum(r["score"] for r in valid)/len(valid), 3) if valid else None,
                                     worst_score=max((r["score"] for r in valid), default=None)))
         return dict(id=run_id, status=run["status"], method=run["method"],
-                    seconds=run["seconds"], seed=run["seed"],
+                    seconds=run["seconds"], seed=run["seed"], cp_sat_workers=run["cp_sat_workers"],
                     created_at=run["created_at"], expires_at=run["expires_at"],
                     error=run["error"], rows=rows, summary=summary)
 
@@ -115,7 +116,8 @@ class BenchmarkManager:
                     files = {name: (folder / name).read_bytes() for name in EXPECTED_FILES}
                     instance = parse_instance(files)
                     strategy = "integrated" if row["method"] == "legacy" else row["method"]
-                    config = SearchConfig(strategy=strategy, time_limit_seconds=run["seconds"], workers=1, seed=run["seed"])
+                    config = SearchConfig(strategy=strategy, time_limit_seconds=run["seconds"],
+                                          workers=BENCHMARK_WORKERS, seed=run["seed"])
 
                     def update(solution, diagnostics):
                         if solution:

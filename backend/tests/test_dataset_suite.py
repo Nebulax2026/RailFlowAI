@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.api import ps1 as api
-from app.ps1.benchmark import BenchmarkManager, SUITE, catalog
+from app.ps1.benchmark import BENCHMARK_WORKERS, BenchmarkManager, SUITE, catalog
 from app.ps1.models import Scenario
 from app.ps1.parser import EXPECTED_FILES, parse_instance
 from app.ps1.scenario_a.search import SearchConfig, SearchResult
@@ -42,6 +42,7 @@ def test_batch_average_counts_valid_zero_but_excludes_failed_and_pending(monkeyp
     assert [row["status"] for row in created["rows"]] == ["queued"] * 3
     scores = {"A": 0.0, "C": 25.2}
     def fake_run(instance, files, config, cancelled, on_update, scenario, legacy=False):
+        assert config["workers"] == BENCHMARK_WORKERS == 8
         if scenario.value not in scores:
             return SearchResult(None, {"status": "no_solution_within_budget"})
         solution = SimpleNamespace(validation=SimpleNamespace(soft_scores={"objective_score": scores[scenario.value]}))
@@ -83,8 +84,24 @@ def test_existing_planner_uses_bounded_worker_and_main_validator():
     folder = SUITE / entry["input_path"]
     files = {n: (folder / n).read_bytes() for n in EXPECTED_FILES}
     instance = parse_instance(files)
-    result = run_worker(instance, files, vars(SearchConfig(strategy="integrated", time_limit_seconds=5, workers=1)),
+    result = run_worker(instance, files, vars(SearchConfig(strategy="integrated", time_limit_seconds=5, workers=8)),
                         lambda: False, lambda *_: None, Scenario.A, legacy=True)
     assert result.solution and result.solution.validation.feasible
     assert result.diagnostics["strategy"] == "legacy"
-    assert result.diagnostics["config"]["workers"] == 1
+    assert result.diagnostics["config"]["workers"] == 8
+
+
+def test_all_benchmark_methods_receive_eight_workers(monkeypatch):
+    manager = BenchmarkManager()
+    manager._executor = SimpleNamespace(submit=lambda *args: None)
+    created = manager.create("all", 5, 42, ["D01_small"])
+    assert created["cp_sat_workers"] == 8
+    seen = set()
+    def fake_run(instance, files, config, cancelled, on_update, scenario, legacy=False):
+        assert config["workers"] == 8
+        seen.add((config["strategy"], legacy, scenario.value))
+        return SearchResult(None, {"status": "no_solution_within_budget"})
+    monkeypatch.setattr(benchmark_module, "run_worker", fake_run)
+    manager._run(created["id"])
+    assert len(seen) == 15
+    assert SearchConfig().workers == 8

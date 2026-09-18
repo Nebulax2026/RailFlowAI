@@ -7,19 +7,19 @@ described below remain available.
 
 An `algorithm=scenario_a` API run includes only A. Its default is **ALNS, 15 seconds, seed 42**, selected using the two-seed public tuning experiment. Integrated CP-SAT remains selectable; the library/CLI without a configuration file defaults to that reference model. The run reports the best independently validated cost, full-model lower bound, absolute gap and time to first feasible. A valid incumbent becomes downloadable while search continues. **Stop search** preserves it. The ZIP contains only `scenario_A/` CSVs plus validation; the separate **Search report** contains configurations, timings, bounds, trajectory and operator statistics. Bounds and validation refer to the documented safety policy, not an unavailable official validator.
 
-Python 3.11+ (tested with 3.12.14), OR-Tools 9.15.6755 and the pinned `backend/requirements.txt` are required. One worker is the default to avoid oversubscription and improve repeatability. Wall-clock limits can still produce different stopping points under machine load.
+Python 3.11+ (tested with 3.12.14), OR-Tools 9.15.6755 and the pinned `backend/requirements.txt` are required. Eight CP-SAT workers are the default; only one solver process runs at a time. Wall-clock limits can still produce different stopping points under machine load.
 
 ```sh
 # From the repository root; choose a new output directory per invocation.
 cd backend
 .venv/bin/python -m app.ps1.scenario_a.cli \
   --input ../PS1/01_data --output ../submission/my-scenario-a-run \
-  --config ../config/scenario-a.json --seconds 30 --workers 1 --seed 42
+  --config ../config/scenario-a.json --seconds 30 --workers 8 --seed 42
 
 # Explicit ALNS experiment using the same integrated hard constraints.
 .venv/bin/python -m app.ps1.scenario_a.cli \
   --input ../PS1/01_data --output ../submission/my-alns-run \
-  --strategy alns --seconds 30 --workers 1 --seed 42
+  --strategy alns --seconds 30 --workers 8 --seed 42
 ```
 
 Each output directory includes the three official-schema CSVs, `validation.json`, `diagnostics.json`, and atomic incumbent checkpoints. No debugging columns are added to CSVs. On interruption, `checkpoint.json` points to the last complete validated generation. The API runs new searches in a separate process and validates these files again before exposing them.

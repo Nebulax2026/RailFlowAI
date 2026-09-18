@@ -2,7 +2,7 @@
   "strategy": "alns",
   "initialization": "greedy_hint",
   "time_limit_seconds": 15,
-  "workers": 1,
+  "workers": 8,
   "seed": 42,
   "memory_limit_mb": 2048,
   "initial_fraction": 0.4,
