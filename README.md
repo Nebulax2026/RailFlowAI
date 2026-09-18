@@ -1,255 +1,140 @@
-# RailFlow AI
+# RailFlowAI
 
-Explainable Railway Maintenance Scheduling System for NEBULA X Hackathon.
+RailFlowAI is a validator-first railway possession planner for NebulaX 2026 Problem Statement 1. It accepts the official eight-file demand book, schedules every activity under Scenarios A, B, and C, explains the trade-offs, and exports the exact three CSV files required for each scenario.
 
-RailFlow AI is a web-first, human-in-the-loop scheduling system. Field teams submit maintenance requests through a browser interface, while planners generate schedules, inspect conflicts, compare alternatives, and approve solver-validated changes.
+## What It Does
 
-## Current Workflow
+- Validates all eight PS1 files and their cross-file references before solving.
+- Expands activity spans into every tunnel and platform location they occupy.
+- Uses OR-Tools CP-SAT to assign access weeks and contract-local access nights.
+- Packs legal `PC + C` and `C + C` co-sharing possessions.
+- Applies strict-supply, strict-schedule, and balanced scenario policies.
+- Re-parses and independently validates exported CSV bytes before enabling downloads.
+- Shows contract completion, weekly workload, capacity hotspots, and plain-language explanations.
+- Displays LTA DataMall train service alerts as context only; live data never changes synthetic PS1 inputs.
 
-```text
-New Request submitted
-        |
-Request is validated and saved to the configured database
-        |
-Request appears in the Planning Board queue
-        |
-Schedule Manager clicks Generate Schedule
-        |
-Backend creates tentative scheduled work
-        |
-Manager reviews conflicts, proposals, KPIs, and affected work
-        |
-Manager approves selected tentative work into locked baseline
-```
+## Required Input
 
-New requests do not appear on the calendar immediately. They are queued first, then placed on the calendar only after `Generate Schedule` or an applied proposal creates `scheduled_work`.
-
-Planning times are interpreted and displayed in Singapore time (`Asia/Singapore`, UTC+08:00). `earliest_start` is the earliest allowed start, not a fixed start. The scheduler may place work later in the allowed window, preferring the standard engineering window when it fits.
-
-## Project Layout
+Upload these files together with their exact names:
 
 ```text
-backend/
-  app/
-    main.py
-    api/
-    domain/
-    adapters/
-    validation/
-    conflict/
-    scheduler/
-    kpi/
-    explanation/
-    stress/
-  tests/
-
-frontend/
-  app/
-    page.tsx
-    request/new/page.tsx
-    dashboard/page.tsx
-
-data/
-  sample_requests.csv
+01_LINES.csv
+02_STATIONS.csv
+03_SECTORS.csv
+04_LOCATION_SUPPLY.csv
+05_BUFFER_LOCATION.csv
+06_PARAMETERS.csv
+07_PROJECT_DETAILS.csv
+08_ACTIVITY_DETAILS.csv
 ```
+
+The bundled public instance is available through **Load public dataset**.
+
+## Output
+
+Each scenario produces:
+
+```text
+SCHEDULE_ACCESS.csv
+SCHEDULE_OCCUPANCY.csv
+RESULTS.csv
+```
+
+The combined download uses `scenario_A/`, `scenario_B/`, and `scenario_C/` directories and includes `validation_summary.json`.
+
+## Architecture
+
+```text
+Next.js workspace
+      |
+FastAPI job API ---- LTA DataMall context proxy
+      |
+Strict CSV parser -> topology expansion -> CP-SAT solver
+      |                                      |
+      +---------- export-level validator <---+
+                             |
+                   scenario CSVs and ZIP
+```
+
+Solve jobs run one at a time, expose scenario progress independently, and expire after 60 minutes. Uploads are held only in memory and are not logged.
+
+## Local Development
+
+Requirements: Python 3.11+, Node.js 22+, and npm.
+
+```powershell
+cd backend
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+cd ..\frontend
+npm install
+cd ..
+npm run dev
+```
+
+Open `http://127.0.0.1:3000`. FastAPI and Swagger run at `http://127.0.0.1:8000` and `http://127.0.0.1:8000/docs`.
 
 ## Environment
-
-Copy `.env.example` when local overrides are needed.
-
-```bash
-copy .env.example .env
-```
-
-Important variables:
 
 ```text
 RAILFLOW_API_BASE_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_API_BASE_URL=
 RAILFLOW_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 RAILFLOW_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
-RAILFLOW_DB_PATH=backend/.railflow/railflow.sqlite3
-RAILFLOW_DEMO_CONTROLS_ENABLED=true
-RAILFLOW_HOSTED=false
-DATABASE_URL=
+DATAMALL_ACCOUNT_KEY=
 ```
 
-By default, the frontend calls same-origin `/api/*` and Next.js rewrites those requests to `RAILFLOW_API_BASE_URL`. Leave `NEXT_PUBLIC_API_BASE_URL` empty unless the browser must call a backend directly.
+`DATAMALL_ACCOUNT_KEY` is optional. It remains server-side and is never returned to the browser.
 
-## Install
-
-Backend:
-
-```bash
-cd backend
-# Windows: py -m venv .venv && .venv\Scripts\python.exe -m pip install -r requirements.txt
-# macOS:   python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
-```
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-```
-
-## Run Locally
-
-Run both backend and frontend from the repository root:
-
-```bash
-npm run dev
-```
-
-Default URLs:
+## API
 
 ```text
-Frontend: http://127.0.0.1:3000
-Backend:  http://127.0.0.1:8000
-Swagger:  http://127.0.0.1:8000/docs
+POST   /api/ps1/jobs
+GET    /api/ps1/jobs/{job_id}
+DELETE /api/ps1/jobs/{job_id}
+GET    /api/ps1/jobs/{job_id}/scenarios/{A|B|C}
+GET    /api/ps1/jobs/{job_id}/download
+GET    /api/datamall/train-service-alerts
+GET    /api/health
 ```
 
-Run services separately:
+Start a public-data run:
 
 ```bash
-npm run dev:backend
-npm run dev:frontend
+curl -X POST "http://127.0.0.1:8000/api/ps1/jobs?public=true"
 ```
 
-Or run the backend directly:
+## Verification
 
-```bash
+```powershell
 cd backend
-# Windows: py -m uvicorn app.main:app --reload
-# macOS:   python3 -m uvicorn app.main:app --reload
-```
-
-## Test And Build
-
-Backend tests:
-
-```bash
-cd backend
-# Windows: py -m pytest
-# macOS:   python3 -m pytest
-```
-
-Frontend type-check:
-
-```bash
-cd frontend
+py -m pytest
+cd ..\frontend
 npm run lint
-```
-
-Frontend production build:
-
-```bash
-cd frontend
 npm run build
+cd ..
+docker build -t railflowai .
 ```
 
-## Demo Data
+The supplied feasible submission is a golden validator fixture. Generated outputs are accepted only after workload, dates, weekly allocation, workfront, occupancy, capacity, ECLO, completion, and schema checks pass.
 
-The Planning Board has dashboard controls for deterministic demo state:
+## Deployment
 
-```text
-Seed Demo -> load sample locked, tentative, and pending/conflicting work
-Reset     -> clear demo state
-```
-
-Equivalent API endpoints:
-
-```text
-POST /api/demo/seed
-POST /api/demo/reset
-```
-
-Basic demo click path:
-
-```text
-Seed Demo
-Select pending request(s)
-Show Proposals
-Apply Proposal as Schedule Manager
-Select tentative calendar tasks
-Approve Selected
-```
-
-## Persistence
-
-RailFlow stores state in SQLite by default:
-
-```text
-backend/.railflow/railflow.sqlite3
-```
-
-When `DATABASE_URL` is set, the backend instead stores requests, schedules, approvals, settings, notifications, and audit records in a shared PostgreSQL `railflow_state` table. Supabase's session-pooler URL is recommended for the deployed Render backend. The database is initialized and loaded automatically when FastAPI starts.
-
-Persistence endpoints:
-
-```text
-GET  /api/persistence/status
-POST /api/persistence/save
-POST /api/persistence/load
-POST /api/persistence/clear
-```
-
-The status endpoint remains available when hosted. Manual save, load, and clear operations, along with demo seed/reset, return `403` in hosted environments.
-
-## Cloud Deployment
-
-The supported demonstration deployment uses Supabase PostgreSQL, one Render backend instance, and a Vercel-hosted Next.js frontend. The dashboard silently refreshes shared state every 15 seconds while its browser tab is visible.
-
-See [`docs/cloud-deployment.md`](docs/cloud-deployment.md) for setup, secrets, deployment, and verification instructions.
-
-## Imports
-
-CSV and JSON are supported through API endpoints. Until the import UI is built, use Swagger at `http://127.0.0.1:8000/docs`.
-
-```text
-POST /api/import/preview
-POST /api/import/confirm
-POST /api/import/json/preview
-POST /api/import/json/confirm
-```
-
-Sample CSV:
-
-```text
-data/sample_requests.csv
-```
-
-## Troubleshooting
-
-`Failed to fetch` from New Request usually means the backend is not running or the frontend dev server needs a restart after `next.config.ts` changed. Run `npm run dev` from the repository root.
-
-`Could not load planning board data.` means one dashboard API failed. Check these endpoints:
-
-```text
-GET  /api/requests
-GET  /api/schedule
-POST /api/conflicts/detect
-GET  /api/kpis
-```
-
-If browser requests hit the backend directly, make sure `RAILFLOW_CORS_ORIGINS` includes the frontend origin. The default Next.js proxy avoids most local CORS issues.
-
-If Python cannot import `app.main`, run the backend from `backend/` or use the root script:
+The production image builds a static Next.js export and serves it from FastAPI on one origin.
 
 ```bash
-npm run dev:backend
+docker build -t railflowai .
+docker run --rm -p 8000:8000 -e DATAMALL_ACCOUNT_KEY=your-key railflowai
 ```
 
-If frontend dependencies are missing, run:
+`render.yaml` defines the hosted Render service. Connect the GitHub repository, create the blueprint, set `DATAMALL_ACCOUNT_KEY` as a secret, and verify `/api/health` before submitting the generated domain.
 
-```bash
-cd frontend
-npm.cmd install
-```
+## Submission Assets
 
-If backend dependencies are missing, run:
+- Public outputs and ZIP: `submission/public-results/`
+- Short solution write-up: `docs/solution-writeup.md`
+- 2-3 minute pitch script: `docs/video-pitch.md`
+- Product and technical contract: `docs/requirements-design.md`
+- Validator rules and known assumptions: `docs/validator-spec.md`
 
-```bash
-cd backend
-py -m pip install -r requirements.txt
-```
+The official reference validator was not included in the information pack. RailFlowAI therefore uses the published rules and organizers' feasible sample as its parity baseline.

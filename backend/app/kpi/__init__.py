@@ -1,1 +1,0 @@
-"""KPI calculation package."""

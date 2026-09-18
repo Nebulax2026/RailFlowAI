@@ -1,73 +1,38 @@
 # RailFlowAI Cloud Deployment
 
-This deployment is intended for the shared coursework demonstration environment. It does not add authentication and must run a single backend instance because application state is cached in memory between transactional database writes.
+RailFlowAI ships as one Docker service. The image builds the Next.js workspace as static assets, copies them into FastAPI, and serves the UI and API from one origin. PS1 uploads and generated results remain in memory and expire after 60 minutes, so no database is required.
 
-## Architecture
+## Render Blueprint
 
-- Supabase PostgreSQL stores shared application state.
-- Render runs one FastAPI backend instance.
-- Vercel runs the Next.js frontend.
-- The frontend proxies `/api/*` to Render using the server-only `RAILFLOW_API_BASE_URL` value.
-- The dashboard silently reloads shared state every 15 seconds while the tab is visible.
+The root `render.yaml` defines a Docker web service with `/api/health` as its health check. Connect the GitHub repository to Render and create a Blueprint from that file.
 
-## 1. Supabase
-
-1. Create a free project in the Singapore region.
-2. Disable the Data API and automatic table exposure; RailFlowAI connects directly to PostgreSQL.
-3. Open **Connect**, choose **Session pooler**, and copy the PostgreSQL connection string.
-4. Replace the password placeholder locally when entering the value in Render. Never commit or paste the completed URL into GitHub, frontend configuration, logs, or documentation.
-
-No table needs to be created manually. FastAPI creates `railflow_state` on startup. PostgreSQL uses a `JSONB` payload column; local SQLite continues using text-encoded JSON.
-
-## 2. Render backend
-
-The root `render.yaml` defines the backend service with `rootDir: backend`, Singapore region, the health check at `/api/health`, and one instance.
-
-Set these Render environment values:
+Set these values for the final hostname:
 
 ```text
-DATABASE_URL=<Supabase session-pooler URL; secret>
-RAILFLOW_CORS_ORIGINS=<deployed Vercel origin>
-RAILFLOW_HOSTED=true
-RAILFLOW_DEMO_CONTROLS_ENABLED=false
+RAILFLOW_ALLOWED_HOSTS=<render-hostname>,localhost,127.0.0.1
+RAILFLOW_CORS_ORIGINS=https://<render-hostname>
+DATAMALL_ACCOUNT_KEY=<optional secret>
 ```
 
-Do not add a persistent disk. Supabase is the durable store. Keep the service at one instance; multiple instances would retain separate in-memory copies.
+`DATAMALL_ACCOUNT_KEY` must remain a backend secret. When it is absent or DataMall is unavailable, the service-alert panel reports an unavailable state without affecting scheduling.
 
-## 3. Vercel frontend
+## Local Container Check
 
-The repository is organization-owned, so the frontend can be deployed manually from `frontend/` without connecting the GitHub organization.
-
-1. Install or invoke the Vercel CLI.
-2. From `frontend/`, link or create the Vercel project.
-3. Add this server-side environment value for Preview and Production:
-
-```text
-RAILFLOW_API_BASE_URL=https://<render-service>.onrender.com
+```bash
+docker build -t railflowai .
+docker run --rm -p 8000:8000 -e DATAMALL_ACCOUNT_KEY=your-key railflowai
 ```
 
-4. Leave `NEXT_PUBLIC_API_BASE_URL` empty. This keeps the backend target out of the browser bundle and uses the same-origin `/api/*` rewrite.
-5. Deploy a preview, verify it, then promote or deploy to production.
+Open `http://127.0.0.1:8000` and verify `GET /api/health` returns `{"status":"ok"}`.
 
-## Hosted safety behavior
+## Production Verification
 
-When `RAILFLOW_HOSTED=true` or Render's built-in `RENDER=true` is present:
+1. Load the bundled public dataset and start a solve job.
+2. Confirm Scenarios A, B, and C expose partial results as each completes.
+3. Inspect the score, contract table, timeline, heatmap, and occupancy views.
+4. Download the combined ZIP and confirm all three scenario directories and `validation_summary.json` are present.
+5. Refresh the page and start another job to verify the single-origin API route.
+6. Confirm the DataMall panel works with a valid key and degrades cleanly without one.
+7. Confirm an expired job returns no downloadable uploaded data or output after 60 minutes.
 
-- `POST /api/demo/seed` returns `403`.
-- `POST /api/demo/reset` returns `403`.
-- `POST /api/persistence/save` returns `403`.
-- `POST /api/persistence/load` returns `403`.
-- `POST /api/persistence/clear` returns `403`.
-- `GET /api/persistence/status` remains available and never returns the database URL.
-
-## Verification
-
-1. Confirm `GET /api/health` returns `{"status":"ok"}`.
-2. Confirm `GET /api/persistence/status` reports `database_backend: postgresql` and no database path or URL.
-3. Submit a request, restart the Render backend, and confirm the request remains.
-4. Open the Vercel site in two browsers. Make a change in one and confirm the other shows it within 15 seconds while visible.
-5. Verify schedule generation, urgent approval/rejection, CSV and JSON imports, and D+3 freezing.
-6. Verify every hosted demo/reset/persistence mutation endpoint listed above returns `403`.
-7. Search GitHub, frontend build output, Render logs, and API responses for the database hostname and password. Neither should appear.
-
-Render free services can sleep after inactivity. The first request after sleeping can take longer while the backend starts.
+The service intentionally has no persistent disk or Supabase dependency. Uploaded challenge data is ephemeral and must not be written to logs.
