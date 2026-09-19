@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Gauge, Info, LoaderCircle, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Download, Gauge, Info, LoaderCircle, MoreVertical, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Inspection } from "./inspection";
 import { AIAssistantPanel } from "./bonus-tools";
 import { POLICIES, TABS, formatLocationName, type Scenario, type Job, type ScenarioDetail, type RunState, type DetailTab, type ReplanState } from "./schedule-types";
 
 export function ScheduleResults({
   job,
-  details
+  details,
+  onSandboxStateChange,
 }: {
   job: Job;
   details: Partial<Record<Scenario, ScenarioDetail>>;
+  onSandboxStateChange?: (active: boolean) => void;
 }) {
   const [choice, setSelectedScenario] = useState<Scenario>("A");
   const selectedScenario = job.scenarios[choice] ? choice : ((Object.keys(job.scenarios)[0] as Scenario) ?? "A");
@@ -21,6 +23,7 @@ export function ScheduleResults({
   const [activeReplan, setActiveReplan] = useState<ReplanState | null>(null);
   const [replanViewMode, setReplanViewMode] = useState<"baseline" | "replan">("replan");
   const [appliedReplans, setAppliedReplans] = useState<Partial<Record<Scenario, ReplanState>>>({});
+  const [replanDownloadMenuOpen, setReplanDownloadMenuOpen] = useState(false);
 
   const handleReplanCreated = (newReplan: ReplanState) => {
     setActiveReplan(newReplan);
@@ -42,6 +45,26 @@ export function ScheduleResults({
 
   const currentReplanForScenario = activeReplan && activeReplan.scenario === selectedScenario ? activeReplan : null;
   const isApplied = !!(currentReplanForScenario && appliedReplans[selectedScenario]?.replan_id === currentReplanForScenario.replan_id);
+
+  const isSandboxActive = !!(currentReplanForScenario && currentReplanForScenario.status === "completed");
+
+  useEffect(() => {
+    onSandboxStateChange?.(isSandboxActive);
+  }, [isSandboxActive, onSandboxStateChange]);
+
+  const handleApplyReplan = () => {
+    if (!currentReplanForScenario) return;
+    setAppliedReplans((prev) => ({ ...prev, [selectedScenario]: currentReplanForScenario }));
+    setReplanViewMode("replan");
+    setActiveReplan(null);
+    setReplanDownloadMenuOpen(false);
+  };
+
+  const handleDiscardReplan = () => {
+    setActiveReplan(null);
+    setReplanViewMode("baseline");
+    setReplanDownloadMenuOpen(false);
+  };
 
   return (
     <section className="dashboard-2col-layout" aria-label="Command Center Dashboard">
@@ -144,31 +167,63 @@ export function ScheduleResults({
                   <button
                     type="button"
                     className={`replan-btn-apply ${isApplied ? "applied" : ""}`}
-                    onClick={() => {
-                      setAppliedReplans((prev) => ({ ...prev, [selectedScenario]: currentReplanForScenario }));
-                      setReplanViewMode("replan");
-                    }}
-                    title={isApplied ? "Schedule applied to active view" : "Apply this re-planned schedule as the active view"}
+                    onClick={handleApplyReplan}
+                    title="Apply this re-planned schedule as the active view and exit sandbox"
                   >
                     {isApplied ? "✓ Applied to Schedule" : "Apply to Schedule"}
                   </button>
 
-                  <a
-                    href={`/api/ps1/jobs/${job.job_id}/scenarios/${currentReplanForScenario.scenario}/replans/${currentReplanForScenario.replan_id}/files/SCHEDULE_ACCESS.csv`}
-                    download
-                    className="replan-btn-download"
-                    title="Download Re-optimized SCHEDULE_ACCESS.csv"
-                  >
-                    Download CSV
-                  </a>
+                  {/* Re-plan Split Download Button Group */}
+                  <div className="split-button-group replan-download-split">
+                    <a
+                      className="split-button-main"
+                      href={`/api/ps1/jobs/${job.job_id}/scenarios/${currentReplanForScenario.scenario}/replans/${currentReplanForScenario.replan_id}/download`}
+                      download
+                      title="Download complete re-optimized ZIP package"
+                    >
+                      <Download size={13} />
+                      Download ZIP
+                    </a>
+                    <button
+                      type="button"
+                      className="split-button-trigger"
+                      onClick={() => setReplanDownloadMenuOpen(!replanDownloadMenuOpen)}
+                      aria-label="More re-plan download options"
+                    >
+                      <MoreVertical size={13} />
+                    </button>
+
+                    {replanDownloadMenuOpen && (
+                      <div className="dropdown-menu" onMouseLeave={() => setReplanDownloadMenuOpen(false)}>
+                        <a
+                          className="dropdown-item"
+                          href={`/api/ps1/jobs/${job.job_id}/scenarios/${currentReplanForScenario.scenario}/replans/${currentReplanForScenario.replan_id}/files/SCHEDULE_ACCESS.csv`}
+                          download
+                        >
+                          <Download size={12} /> SCHEDULE_ACCESS.csv
+                        </a>
+                        <a
+                          className="dropdown-item"
+                          href={`/api/ps1/jobs/${job.job_id}/scenarios/${currentReplanForScenario.scenario}/replans/${currentReplanForScenario.replan_id}/files/SCHEDULE_OCCUPANCY.csv`}
+                          download
+                        >
+                          <Download size={12} /> SCHEDULE_OCCUPANCY.csv
+                        </a>
+                        <a
+                          className="dropdown-item"
+                          href={`/api/ps1/jobs/${job.job_id}/scenarios/${currentReplanForScenario.scenario}/replans/${currentReplanForScenario.replan_id}/files/RESULTS.csv`}
+                          download
+                        >
+                          <Download size={12} /> RESULTS.csv
+                        </a>
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     type="button"
                     className="replan-btn-discard"
-                    onClick={() => {
-                      setActiveReplan(null);
-                      setReplanViewMode("baseline");
-                    }}
+                    onClick={handleDiscardReplan}
                     title="Close sandbox and discard preview"
                   >
                     ✕ Discard

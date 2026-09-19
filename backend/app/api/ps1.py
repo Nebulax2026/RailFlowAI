@@ -234,6 +234,23 @@ def download_replan_file(job_id: str, scenario: Scenario, replan_id: str, filena
                     headers={"Content-Disposition": f'attachment; filename="revised-{filename}"'})
 
 
+@router.get("/jobs/{job_id}/scenarios/{scenario}/replans/{replan_id}/download")
+def download_replan_zip(job_id: str, scenario: Scenario, replan_id: str) -> Response:
+    _require_job(job_id); replan = job_manager.get_replan(job_id, replan_id)
+    if not replan or replan.scenario != scenario:
+        raise HTTPException(status_code=404, detail="Re-plan not found or expired.")
+    if (replan.status != JobStatus.COMPLETED or not replan.solution
+            or not replan.solution.validation.feasible
+            or replan.solution.validation.detail.get("safety_status") != "verified"
+            or not replan.disruption_audit.get("feasible")):
+        raise HTTPException(status_code=409, detail="A fully validated revised output is not available.")
+    return Response(
+        solutions_zip([replan.solution]),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="railflow-replan-{scenario.value}-{replan_id[:8]}.zip"'},
+    )
+
+
 @router.post("/jobs/{job_id}/assistant/query")
 def schedule_query(job_id: str, request: AssistantRequest) -> dict:
     job = _require_job(job_id)

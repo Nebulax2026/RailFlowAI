@@ -296,6 +296,34 @@ svg {
   background: #34d399;
 }
 
+.split-button-main.disabled,
+.split-button-main[aria-disabled="true"] {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--text-dim);
+  border-color: rgba(16, 185, 129, 0.2);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.split-button-trigger:disabled {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--text-dim);
+  border-color: rgba(16, 185, 129, 0.2);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.split-button-group.sandbox-blocked {
+  box-shadow: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.split-button-group.sandbox-blocked .split-button-main,
+.split-button-group.sandbox-blocked .split-button-trigger {
+  filter: grayscale(0.8);
+}
+
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -3763,6 +3791,49 @@ tr:hover td {
   background: rgba(51, 65, 85, 0.9);
   border-color: var(--cyan);
   color: var(--cyan);
+}
+
+.replan-download-split {
+  position: relative;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+.replan-download-split .split-button-main {
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+  border-right: none;
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
+.replan-download-split .split-button-main:hover {
+  background: rgba(51, 65, 85, 0.95);
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.replan-download-split .split-button-trigger {
+  background: rgba(30, 41, 59, 0.9);
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 7px;
+  font-size: 11px;
+}
+
+.replan-download-split .split-button-trigger:hover {
+  background: rgba(51, 65, 85, 0.95);
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.replan-download-split .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 100;
+  min-width: 220px;
 }
 
 .replan-btn-discard {

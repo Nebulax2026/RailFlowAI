@@ -591,7 +591,9 @@ export function AIAssistantPanel({
   const mounted = useRef(true);
 
   useEffect(() => {
-    if (activeReplan && (!replan || activeReplan.replan_id !== replan.replan_id)) {
+    if (!activeReplan) {
+      setReplan(null);
+    } else if (!replan || activeReplan.replan_id !== replan.replan_id) {
       setReplan(activeReplan);
     }
   }, [activeReplan]);
@@ -1085,24 +1087,6 @@ export function AIAssistantPanel({
                   )}
                 </div>
               )}
-              <div className="replan-downloads-row">
-                <a
-                  href={`/api/ps1/jobs/${jobId}/scenarios/${replan.scenario}/replans/${replan.replan_id}/files/SCHEDULE_ACCESS.csv`}
-                  download
-                  className="secondary-button"
-                  style={{ fontSize: "10.5px", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                >
-                  <Download size={11} /> Access CSV
-                </a>
-                <a
-                  href={`/api/ps1/jobs/${jobId}/scenarios/${replan.scenario}/replans/${replan.replan_id}/files/RESULTS.csv`}
-                  download
-                  className="secondary-button"
-                  style={{ fontSize: "10.5px", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                >
-                  <Download size={11} /> Results CSV
-                </a>
-              </div>
             </div>
           )}
 

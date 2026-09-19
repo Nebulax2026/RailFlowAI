@@ -43,6 +43,7 @@ export default function Workspace() {
   const [intake, setIntake] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+  const [isSandboxActive, setIsSandboxActive] = useState(false);
   const requestPending = useRef(false);
   const [restoring, setRestoring] = useState(true);
 
@@ -118,7 +119,11 @@ export default function Workspace() {
   }, [jobId]);
 
   const allFilesReady = publicDatasetSelected || (REQUIRED_FILES.every((name) => files.has(name)) && files.size === REQUIRED_FILES.length);
-  const canDownload = job && Object.values(job.scenarios).some((run) => run.feasible);
+  const canDownload = Boolean(
+    job &&
+    Object.values(job.scenarios).some((run) => run.feasible) &&
+    !isSandboxActive
+  );
 
   function acceptFiles(list: FileList | File[]) {
     if (busy || active) return;
@@ -224,7 +229,10 @@ export default function Workspace() {
               )}
 
               {/* Integrated Split Download Button Group */}
-              <div className="split-button-group">
+              <div
+                className={`split-button-group ${isSandboxActive ? "sandbox-blocked" : ""}`}
+                title={isSandboxActive ? "Resolve or discard active Re-plan Sandbox first" : undefined}
+              >
                 <a
                   className={`split-button-main ${canDownload ? "" : "disabled"}`}
                   aria-disabled={!canDownload}
@@ -364,7 +372,12 @@ export default function Workspace() {
       {/* Main Results Dashboard (3-Column Layout) */}
       {job && (
         <div className="results-host" hidden={intake}>
-          <ScheduleResults key={job.job_id} job={job} details={details} />
+          <ScheduleResults
+            key={job.job_id}
+            job={job}
+            details={details}
+            onSandboxStateChange={setIsSandboxActive}
+          />
         </div>
       )}
     </main>
