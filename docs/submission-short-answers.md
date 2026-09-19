@@ -1,17 +1,26 @@
 # Submission Short Answers
 
-## What does your solution do? (107 words)
+## What does your solution do? (110 words)
 
-RailFlowAI turns the eight PS1 demand-book CSVs into complete, auditable railway possession schedules for Scenarios A, B, and C. It validates the input, expands each activity into its platform, sector, buffer, and protection footprint, then uses CP-SAT to choose access weeks, legal co-sharing groups, local nights, and ECLO use while enforcing precedence, capacity, workfront, and weekly closure constraints. A separate CSV-level validator rereads the exported files before download, so the artifact is checked independently of the solver. The workspace compares scenario scores, overruns, excess capacity, ECLO usage, and total search time, then exports the three required CSVs in a submission-ready ZIP.
+RailFlowAI transforms the eight PS1 demand-book CSVs into fully audited, optimal railway possession schedules for Scenarios A, B, and C. Powered by OR-Tools CP-SAT and an independent validator, it strictly enforces network topology, weekly closures, and co-sharing rules. Beyond solving, RailFlowAI serves as an operational command center for 2 AM works controllers: interactive visual dashboards deliver real-time **fragility scoring** (supply headroom and zero-buffer bottleneck risks) and **contractor negotiation support** (priority-tiered milestone overrun audits). A grounded AI Assistant powered by Google Gemini provides plain-English schedule querying and **what-if digital-twin sandboxing**—allowing dispatchers to simulate capacity disruptions, execute bounded re-planning on the fly with minimal churn, and export submission-ready CSV packages.
 
-## What tech stack was used to build this solution? (67 words)
+## What tech stack was used to build this solution? (62 words)
 
-The backend is Python 3.12 with FastAPI, Pydantic-style data models, and Google OR-Tools CP-SAT for optimisation. The frontend uses Next.js 16, React 19, TypeScript, and Lucide icons. Pytest covers parsing, topology, solver, CSV validation, and regression cases; TypeScript checks validate the frontend. Docker builds the static Next.js frontend and serves it from the FastAPI service as one deployable application.
+The backend is Python 3.12 with FastAPI, Google OR-Tools CP-SAT for optimization, and Google Gemini via Vertex AI for grounded scheduling intelligence. The frontend uses Next.js 16, React 19, TypeScript, and Lucide icons for interactive analytics dashboards. Pytest covers parsing, topology, solver, CSV validation, and regression cases; TypeScript checks validate the frontend. Docker packages the entire application into a single deployable service.
 
 ## What challenges did you face, and how did you overcome them? (116 words)
 
-The main challenge was validator parity. An early schedule passed our local checks but the official validator rejected activities that entered another group's weekly closure zone. We converted the reported conflicts into regression tests and strengthened the model and CSV validator so different local nights no longer waive a weekly closure conflict; only direct legal co-sharing can do so. Official feedback also revealed that delay is charged at contract completion, so we corrected the objective and re-optimised the model. The replacement A and B schedules were accepted officially at 608.3 and 50.0. Our current Scenario C candidate scores 122.4 under the strict local model and is pending official confirmation. We also benchmarked integrated CP-SAT and adaptive LNS as alternative search strategies while retaining the validated CP-SAT path for final submissions.
+Ensuring official validator parity across tightly coupled railway constraints was our toughest hurdle. We explored diverse paradigms: greedy heuristics trapped early decisions into deadlocks, while Random and Adaptive LNS introduced search variance and struggled with complex weekly closure boundaries. Benchmarking proved that standard CP-SAT was decisively superior and more reliable. We pivoted to strengthening the core CP-SAT model directly: encoding official feedback into regression tests, enforcing strict closure exclusivity without heuristic shortcuts, and accurately penalizing contract completion delays. Paired with an independent CSV validator, this pure constraint programming approach eliminated illegal overlaps and achieved stable global convergence, securing officially accepted schedules for Scenarios A (608.3) and B (50.0), alongside our locally validated 122.4 Scenario C candidate.
+
+## Bonus Scope & Beyond-the-Schedule Innovation
+
+- **What-if / Digital-Twin Sandboxing**: Interactive disruption injection where controllers simulate capacity reductions mid-horizon, preview affected work, and trigger live, bounded CP-SAT re-optimization that stabilizes unaffected schedules.
+- **Fragility & Bottleneck Scoring**: Real-time operational resilience diagnostics via Supply Headroom %, pinpointing saturated zero-buffer hotspots and downstream delay propagation risks.
+- **Contractor Negotiation Support**: Comprehensive milestone delivery audit tracking planned deadlines vs simulated completion across Priority 1 ($100\times$), Priority 2 ($10\times$), and Priority 3 ($1\times$) tiers to guide commercial trade-offs.
+- **Predictive Bundling**: Automated co-sharing legal-mix optimization that bundles non-conflicting maintenance activities into shared possessions, maximizing network throughput.
+- **Natural Language Operational Q&A**: Dual-engine assistant (Google Gemini + deterministic parser) answering complex controller queries regarding move root-causes, milestone risks, and shift handover briefs.
 
 ## Status wording
 
 Use “officially accepted” only for the submitted A/B/C replacement run. Describe C=122.4 as a “locally validated, strict-model candidate pending official confirmation.”
+
