@@ -34,7 +34,10 @@ export type ReplanState = {
   phase: string; progress: number; elapsed_seconds?: number | null; budget_seconds?: number | null;
   disruption: { location_id: string; start_week: number; end_week: number; capacity: number; reason: string };
   disruption_audit?: { feasible?: boolean };
-  diff: { summary?: { moved_activities: number; preserved_percent: number; score_delta: number } };
+  diff: {
+    summary?: { moved_activities: number; preserved_percent: number; score_delta: number };
+    activity_changes?: { activity_id: string; contract_number: string; before: { week: number; eclo: number; access_night: number }[]; after: { week: number; eclo: number; access_night: number }[]; reason: string }[];
+  };
   solution?: {
     validation: { feasible: boolean; detail: { safety_status?: string }; soft_scores: { objective_score?: number; completion_percent?: number; overrun_days_total?: number; excess_access_nights_total?: number; eclo_nights_total?: number } };
     results: ContractResult[];

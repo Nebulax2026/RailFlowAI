@@ -86,8 +86,11 @@ def _parse_deterministic(question):
     weeks = [int(value) for value in re.findall(r"\bweeks?\s+(\d+)\b", lower)]
     range_match = re.search(r"\bweeks?\s+(\d+)\s*(?:to|-|through)\s*(\d+)\b", lower)
     if range_match: weeks = [int(range_match.group(1)), int(range_match.group(2))]
+    scen_match = re.search(r"\b(?:scenario|policy|for|in)\s+([abc])\b", lower)
+    scenario_hint = scen_match.group(1).upper() if scen_match else None
     entities = {"activity_ids": [a.upper() for a in aids], "contract_ids": [c.upper() for c in contracts],
-                "location_id": locations[0].rstrip(":,;").upper() if locations else None, "weeks": weeks}
+                "location_id": locations[0].rstrip(":,;").upper() if locations else None, "weeks": weeks,
+                "scenario": scenario_hint}
     if any(token in lower for token in ("compare scenario", "scenarios a", "scenarios b", "scenarios c")): intent = "scenario_comparison"
     elif "milestone" in lower or ("late" in lower and contracts): intent = "milestone_risk"
     elif "what changed" in lower or "unaffected" in lower or "replan impact" in lower: intent = "replan_impact_summary"
@@ -282,11 +285,12 @@ def _disruption_draft(instance, entities):
                 "SEC:ALP:S01_S02:EB capacity to 1 in week 12.", [], None)
     start, end = min(weeks), max(weeks)
     nominal = instance.supply[location].supply_capacity
+    target_scenario = entities.get("scenario") or "A"
     data = {"location_id": location, "start_week": start, "end_week": end, "capacity": capacity,
-            "reason": "access_restriction", "nominal_capacity": nominal}
+            "reason": "access_restriction", "nominal_capacity": nominal, "scenario": target_scenario}
     if start < 1 or end > instance.horizon_weeks or capacity < 0 or capacity >= nominal:
         return "That disruption draft is outside the planning horizon or does not reduce the location's nominal capacity.", [location, f"week:{start}"], {**data, "valid": False}
-    return (f"I prepared a disruption preview for {location}: capacity {nominal} to {capacity} in weeks {start}-{end}. "
+    return (f"I prepared a disruption preview for Scenario {target_scenario} at {location}: capacity {nominal} to {capacity} in weeks {start}-{end}. "
             "No schedule has changed; review it and explicitly run the validated re-plan.", [location, *(f"week:{w}" for w in range(start, end + 1))], {**data, "valid": True})
 
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, LoaderCircle, MapPin, Send, Sparkles } from "lucide-react";
+import { CheckCircle2, Download, LoaderCircle, MapPin, Send, ShieldAlert, Sparkles } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import ReactMarkdown from "react-markdown";
@@ -574,13 +574,86 @@ export function AIAssistantPanel({
   const askingRef = useRef(false);
   const [showLocationGuide, setShowLocationGuide] = useState(false);
 
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [replan, setReplan] = useState<ReplanState | null>(null);
+  const [executing, setExecuting] = useState(false);
+  const executingRef = useRef(false);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!replan || !["queued", "running"].includes(replan.status)) return;
+    const timer = window.setInterval(
+      () =>
+        void request<ReplanState>(
+          `/api/ps1/jobs/${jobId}/scenarios/${replan.scenario}/replans/${replan.replan_id}`
+        )
+          .then((updated) => {
+            if (mounted.current) setReplan(updated);
+          })
+          .catch(() => {}),
+      1200
+    );
+    return () => window.clearInterval(timer);
+  }, [jobId, replan]);
+
+  async function executePreview() {
+    if (!preview || executingRef.current || !mounted.current) return;
+    executingRef.current = true;
+    setExecuting(true);
+    try {
+      const started = await request<ReplanState>(
+        `/api/ps1/jobs/${jobId}/scenarios/${preview.scenario}/replans/execute`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preview_id: preview.preview_id }),
+        }
+      );
+      setReplan(started);
+      setPreview(null);
+      setConversation((current) => [
+        ...current,
+        {
+          question: "",
+          answer: {
+            answer: `**Re-plan Submitted**: Bounded CP-SAT optimization has started for Scenario ${preview.scenario}. Schedules outside the disruption are being preserved with minimal churn.`,
+            intent: "replan_started",
+            mode: "system",
+            evidence: [started.replan_id],
+          },
+        },
+      ]);
+    } catch (err) {
+      setAssistantError(err instanceof Error ? err.message : "Could not start the re-plan.");
+    } finally {
+      executingRef.current = false;
+      setExecuting(false);
+    }
+  }
+
   async function ask(text = question) {
     const query = text.trim();
-    if (!query || askingRef.current) return;
+    if (!query || askingRef.current || executingRef.current) return;
     askingRef.current = true;
     setAsking(true);
     setAssistantError("");
     setQuestion("");
+
+    const history = conversation
+      .slice(-6)
+      .filter((entry) => entry.answer)
+      .flatMap((entry) => [
+        ...(entry.question ? [{ role: "user" as const, content: entry.question }] : []),
+        { role: "assistant" as const, content: entry.answer.answer.slice(0, 12000) },
+      ]);
+
     try {
       const next = await request<Answer>(`/api/ps1/jobs/${jobId}/assistant/query`, {
         method: "POST",
@@ -588,9 +661,27 @@ export function AIAssistantPanel({
         body: JSON.stringify({
           scenario,
           question: query,
+          pending_preview_id: preview?.preview_id,
+          history,
         }),
       });
       setConversation((current) => [...current, { question: query, answer: next }]);
+
+      if (next.intent === "disruption_preview" && next.data?.valid === true) {
+        setPreview(null);
+        const target = (next.data.scenario as Scenario) || scenario || "A";
+        const previewRes = await request<Preview>(`/api/ps1/jobs/${jobId}/scenarios/${target}/replans/preview`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(next.data),
+        });
+        setPreview(previewRes);
+      } else if (
+        next.approved_preview_id &&
+        next.approved_preview_id === preview?.preview_id
+      ) {
+        await executePreview();
+      }
     } catch (err) {
       setAssistantError(err instanceof Error ? err.message : "RailFlow AI Assistant could not answer.");
     } finally {
@@ -808,6 +899,143 @@ export function AIAssistantPanel({
             <div className="chat-bubble-row bot">
               <div className="chat-bubble bot error">
                 <p>{assistantError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Disruption Preview Action Card */}
+          {preview && (
+            <div className="preview-action-card">
+              <div className="preview-action-header">
+                <ShieldAlert size={14} color="var(--rose)" />
+                <strong>Scenario {preview.scenario} Disruption Re-plan Draft</strong>
+              </div>
+              <p className="preview-action-note">{preview.note || "A disruption draft has been prepared. Review parameters and approve to trigger bounded CP-SAT re-optimization."}</p>
+              <div className="preview-action-grid">
+                <div className="preview-action-item">
+                  <span>Location</span>
+                  <code>{preview.disruption.location_id}</code>
+                </div>
+                <div className="preview-action-item">
+                  <span>Capacity</span>
+                  <strong style={{ color: "var(--rose)" }}>{preview.nominal_capacity} → {preview.disruption.capacity}</strong>
+                </div>
+                <div className="preview-action-item">
+                  <span>Weeks</span>
+                  <strong>W{preview.disruption.start_week}–W{preview.disruption.end_week}</strong>
+                </div>
+              </div>
+              <div className="preview-action-btns">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={asking || executing}
+                  onClick={() => setPreview(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  style={{ background: "linear-gradient(135deg, var(--rose) 0%, #e11d48 100%)", borderColor: "var(--rose)" }}
+                  disabled={asking || executing}
+                  onClick={() => void executePreview()}
+                >
+                  {executing ? (
+                    <><LoaderCircle size={13} className="spin" /> Starting…</>
+                  ) : (
+                    <><Sparkles size={13} /> Approve & Run Re-plan</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Replan Running Spinner Card */}
+          {replan && ["queued", "running"].includes(replan.status) && (
+            <div className="replan-running-card">
+              <LoaderCircle size={16} className="spin" color="var(--cyan)" />
+              <div>
+                <strong>Re-planning Scenario {replan.scenario}…</strong>
+                <p>{replan.message || "Running CP-SAT solver with minimal churn objective"}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Replan Completed Results Card */}
+          {replan && replan.status === "completed" && (
+            <div className="replan-completed-card">
+              <div className="replan-completed-header">
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <CheckCircle2 size={14} color="var(--emerald)" />
+                  <strong>Scenario {replan.scenario} Re-plan Validated</strong>
+                </div>
+                <span className="replan-pill success">Verified</span>
+              </div>
+              {replan.diff?.summary && (
+                <div className="replan-metrics-row">
+                  <div className="replan-metric-box">
+                    <span>Moved</span>
+                    <strong>{replan.diff.summary.moved_activities}</strong>
+                  </div>
+                  <div className="replan-metric-box">
+                    <span>Preserved</span>
+                    <strong>{replan.diff.summary.preserved_percent}%</strong>
+                  </div>
+                  <div className="replan-metric-box">
+                    <span>Score Delta</span>
+                    <strong style={{ color: replan.diff.summary.score_delta > 0 ? "var(--rose)" : "var(--emerald)" }}>
+                      {replan.diff.summary.score_delta >= 0 ? "+" : ""}{replan.diff.summary.score_delta}
+                    </strong>
+                  </div>
+                </div>
+              )}
+              {replan.diff?.activity_changes && replan.diff.activity_changes.length > 0 && (
+                <div className="replan-diff-table-wrap">
+                  <table className="replan-diff-table">
+                    <thead>
+                      <tr>
+                        <th>Activity</th>
+                        <th>Contract</th>
+                        <th>Before</th>
+                        <th>After</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {replan.diff.activity_changes.slice(0, 5).map((chg) => (
+                        <tr key={chg.activity_id}>
+                          <td><strong>{chg.activity_id}</strong></td>
+                          <td>{chg.contract_number}</td>
+                          <td style={{ color: "var(--rose)" }}>W{chg.before[0]?.week ?? "—"}</td>
+                          <td style={{ color: "var(--emerald)" }}>W{chg.after[0]?.week ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {replan.diff.activity_changes.length > 5 && (
+                    <small className="muted" style={{ display: "block", marginTop: "4px" }}>
+                      +{replan.diff.activity_changes.length - 5} more activities moved
+                    </small>
+                  )}
+                </div>
+              )}
+              <div className="replan-downloads-row">
+                <a
+                  href={`/api/ps1/jobs/${jobId}/scenarios/${replan.scenario}/replans/${replan.replan_id}/files/SCHEDULE_ACCESS.csv`}
+                  download
+                  className="secondary-button"
+                  style={{ fontSize: "10.5px", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                >
+                  <Download size={11} /> Access CSV
+                </a>
+                <a
+                  href={`/api/ps1/jobs/${jobId}/scenarios/${replan.scenario}/replans/${replan.replan_id}/files/RESULTS.csv`}
+                  download
+                  className="secondary-button"
+                  style={{ fontSize: "10.5px", padding: "4px 8px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                >
+                  <Download size={11} /> Results CSV
+                </a>
               </div>
             </div>
           )}
