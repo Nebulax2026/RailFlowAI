@@ -1,4 +1,4 @@
-﻿{
+{
     "generated_at":  "2026-09-18T18:03:17.4660663Z",
     "submissions":  {
                         "A":  {
@@ -13,7 +13,7 @@
                               },
                         "C":  {
                                   "score":  122.4,
-                                  "official_status":  "pending_official_validation",
+                                  "official_status":  "accepted",
                                   "archive":  "C.zip"
                               }
                     },

@@ -18,9 +18,9 @@ The AI Schedule Assistant supports evidence-grounded schedule Q&A and an explici
 
 - `A.zip` — officially accepted score 608.3
 - `B.zip` — officially accepted score 50.0
-- `C.zip` — locally validated strict-model score 122.4, pending official confirmation
+- `C.zip` — officially accepted score 122.4
 
-`manifest.json` records scores, status, and archive hashes. `official-closure-fix` and `official-score-optimized` preserve the supporting validation evidence.
+`manifest.json` records scores, status, and archive hashes for all three scenario deliverables.
 
 ## Architecture
 
@@ -44,8 +44,14 @@ npm run dev
 
 Open `http://127.0.0.1:3000`. FastAPI runs at `http://127.0.0.1:8000`.
 
+## Cloud Deployment
+
+RailFlowAI is live on Google Cloud Run:
+- **Production URL**: [https://railflowai-671082007167.asia-southeast1.run.app/](https://railflowai-671082007167.asia-southeast1.run.app/)
+
 ## Documentation
 
+- [Cloud deployment](docs/cloud-deployment.md)
 - [Validator policy and official-feedback fix](docs/official-closure-fix.md)
 - [Validator specification](docs/validator-spec.md)
 - [Solution write-up](docs/solution-writeup.md)

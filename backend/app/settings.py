@@ -21,8 +21,4 @@ def cors_origins() -> list[str]:
 
 
 def allowed_hosts() -> list[str]:
-    hosts = _csv_env("RAILFLOW_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "testserver"])
-    render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
-    if render_hostname and render_hostname not in hosts:
-        hosts.append(render_hostname)
-    return hosts
+    return _csv_env("RAILFLOW_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "testserver", "*.run.app"])

@@ -1,19 +1,36 @@
 # RailFlowAI Cloud Deployment
 
-RailFlowAI ships as one Docker service. The image builds the Next.js workspace as static assets, copies them into FastAPI, and serves the UI and API from one origin. PS1 uploads and generated results remain in memory and expire after 60 minutes, so no database is required.
+RailFlowAI ships as a single containerized Docker service deployed on **Google Cloud Run**. The container builds Next.js as static assets, mounts them inside FastAPI, and serves both the frontend UI and REST API from a single unified origin. All uploaded CSVs and generated possession schedules reside safely in ephemeral memory (TTL: 60 minutes), requiring zero database (SQLite/Postgres) or persistent disk dependencies.
 
-## Render Blueprint
+## Live Deployment
 
-The root `render.yaml` defines a Docker web service with `/api/health` as its health check. Connect the GitHub repository to Render and create a Blueprint from that file.
+- **Production URL**: [https://railflowai-671082007167.asia-southeast1.run.app/](https://railflowai-671082007167.asia-southeast1.run.app/)
+- **GCP Region**: `asia-southeast1` (Singapore)
+- **Health Check Endpoint**: `GET /api/health` → `{"status":"ok"}`
 
-Set these values for the final hostname:
+## Architecture & Configuration
+
+The service leverages Google Cloud Run's container execution environment:
 
 ```text
-RAILFLOW_ALLOWED_HOSTS=<render-hostname>,localhost,127.0.0.1
-RAILFLOW_CORS_ORIGINS=https://<render-hostname>
+Google Cloud Run (asia-southeast1)
+└── Single Docker Container
+    ├── Static UI (Next.js 16 + React 19 Static Export)
+    ├── FastAPI 1.0 (Port 8000 via $PORT)
+    ├── OR-Tools CP-SAT Solver (Multi-threaded)
+    └── Vertex AI / Gemini Integration (Optional AI Assistant mode)
 ```
 
-Scheduling needs no external service credentials. Its inputs are the eight PS1 CSV files.
+### Environment Variables
+
+| Variable | Recommended Cloud Run Value | Purpose |
+|---|---|---|
+| `PORT` | `8000` (injected automatically by Cloud Run) | Port for FastAPI / Uvicorn server |
+| `RAILFLOW_ALLOWED_HOSTS` | `*.run.app,localhost,127.0.0.1` | Host header security check |
+| `RAILFLOW_CORS_ORIGINS` | `https://railflowai-671082007167.asia-southeast1.run.app` | CORS origins |
+| `GOOGLE_CLOUD_PROJECT` | GCP Project ID | Enables Gemini Agent Schedule Assistant via Vertex AI |
+| `GOOGLE_CLOUD_LOCATION` | `asia-southeast1` | Vertex AI model region |
+| `RAILFLOW_GEMINI_MODEL` | `gemini-2.5-flash` | Model for plain-English schedule queries |
 
 ## Local Container Check
 
@@ -26,11 +43,10 @@ Open `http://127.0.0.1:8000` and verify `GET /api/health` returns `{"status":"ok
 
 ## Production Verification
 
-1. Load the bundled public dataset and start a solve job.
-2. Confirm Scenarios A, B, and C expose partial results as each completes.
-3. Inspect the score, contract table, timeline, heatmap, and occupancy views.
-4. Download the combined ZIP and confirm all three scenario directories and `validation_summary.json` are present.
-5. Refresh the page and start another job to verify the single-origin API route.
-6. Confirm an expired job returns no downloadable uploaded data or output after 60 minutes.
-
-The service intentionally has no persistent disk or Supabase dependency. Uploaded challenge data is ephemeral and must not be written to logs.
+1. Open `https://railflowai-671082007167.asia-southeast1.run.app/`.
+2. Load the bundled public dataset and start a solve job.
+3. Confirm Scenarios A, B, and C expose live progress and verified metrics.
+4. Inspect the score trajectory, contract table, timeline, heatmap, and occupancy views.
+5. Download the final submission ZIP and confirm all scenario files and `manifest.json` are present.
+6. Verify the AI Schedule Assistant answers natural-language queries grounded on schedule facts.
+7. Confirm expired jobs cleanly purge in-memory caches without data leakage.

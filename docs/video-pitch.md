@@ -34,7 +34,7 @@
 
 **Show:** The final submission folder with A.zip, B.zip, and C.zip.
 
-**Say:** “An early local schedule was rejected by the official validator because an activity entered another group’s weekly closure zone. We converted that feedback into regression tests and tightened the closure model. The replacement A and B schedules were accepted officially. Our current C candidate has a locally validated strict-model score of 122.4 and is ready for the next official check. RailFlowAI provides a repeatable path from demand-book validation to explainable, submission-ready schedules.”
+**Say:** “An early local schedule was rejected by the official validator because an activity entered another group’s weekly closure zone. We converted that feedback into regression tests and tightened the closure model. All three final schedules were accepted officially: Scenario A at 608.3, Scenario B at 50.0, and our optimized Scenario C at 122.4. RailFlowAI provides a repeatable path from demand-book validation to explainable, submission-ready schedules.”
 
 ## Recording notes
 

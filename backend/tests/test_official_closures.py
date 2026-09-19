@@ -4,6 +4,7 @@ import ast
 import json
 import re
 from pathlib import Path
+import zipfile
 
 import pytest
 
@@ -102,10 +103,11 @@ def test_every_reported_official_location_is_covered(public):
         assert reserve == closure_locations(public, activity)
 
 
-@pytest.mark.parametrize("scenario,expected", [(Scenario.A, 608.3), (Scenario.B, 50.0), (Scenario.C, 173.5)])
+@pytest.mark.parametrize("scenario,expected", [(Scenario.A, 608.3), (Scenario.B, 50.0), (Scenario.C, 122.4)])
 def test_replacement_scores_match_official_validator(public, scenario, expected):
-    root = Path(__file__).resolve().parents[2] / "submission/official-closure-fix" / f"scenario_{scenario.value}"
-    files = {name: (root / name).read_bytes() for name in ("SCHEDULE_ACCESS.csv", "SCHEDULE_OCCUPANCY.csv", "RESULTS.csv")}
+    root = Path(__file__).resolve().parents[2] / "submission/final-submission"
+    with zipfile.ZipFile(root / f"{scenario.value}.zip") as z:
+        files = {name: z.read(name) for name in ("SCHEDULE_ACCESS.csv", "SCHEDULE_OCCUPANCY.csv", "RESULTS.csv")}
     report = validate_exported_csvs(public, scenario, files)
     assert report.feasible
     assert report.soft_scores["objective_score"] == expected
