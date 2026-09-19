@@ -784,9 +784,6 @@ function ScenarioWorkspace({
                       <span className="indicator-chip">
                         <strong>Quota:</strong> {supplyHeadroomMetrics.quotaUsedPct}%
                       </span>
-                      <span className={`indicator-chip ${excessNights > 0 ? "amber" : "emerald"}`}>
-                        <strong>Excess:</strong> {excessNights}n
-                      </span>
                       <span className={`indicator-chip ${supplyHeadroomMetrics.hotspotCount > 20 ? "rose" : supplyHeadroomMetrics.hotspotCount > 0 ? "amber" : "emerald"}`}>
                         <strong>Hotspots:</strong> {supplyHeadroomMetrics.hotspotCount}
                       </span>
