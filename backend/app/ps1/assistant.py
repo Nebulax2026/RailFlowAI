@@ -87,7 +87,7 @@ def _parse_deterministic(question):
     range_match = re.search(r"\bweeks?\s+(\d+)\s*(?:to|-|through)\s*(\d+)\b", lower)
     if range_match: weeks = [int(range_match.group(1)), int(range_match.group(2))]
     entities = {"activity_ids": [a.upper() for a in aids], "contract_ids": [c.upper() for c in contracts],
-                "location_id": locations[0].upper() if locations else None, "weeks": weeks}
+                "location_id": locations[0].rstrip(":,;").upper() if locations else None, "weeks": weeks}
     if any(token in lower for token in ("compare scenario", "scenarios a", "scenarios b", "scenarios c")): intent = "scenario_comparison"
     elif "milestone" in lower or ("late" in lower and contracts): intent = "milestone_risk"
     elif "what changed" in lower or "unaffected" in lower or "replan impact" in lower: intent = "replan_impact_summary"
