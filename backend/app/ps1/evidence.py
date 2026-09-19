@@ -25,6 +25,8 @@ def activity_details(instance, solution):
                         for peer in groups[row.location_id, row.week, row.co_share_group] if peer != aid})
         predecessor_rows = [r for r in solution.accesses if r.activity_id == activity.predecessor_activity_id]
         output.append({"activity_id": aid, "contract_number": activity.contract_number,
+                       "contract_priority": contract.contract_priority,
+                       "activity_priority": activity.activity_priority,
                        "line": instance.supply[activity.start_location_id].line_code,
                        "access_type": contract.access_type, "required_workload": activity.total_accesses,
                        "delivered_workload": sum(2 + r.eclo for r in rows) / 2,

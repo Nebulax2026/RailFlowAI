@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Download, Gauge, Info, LoaderCircle, MoreVertical, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Clock3, Download, Gauge, Info, LoaderCircle, MoreVertical, Scale, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Inspection } from "./inspection";
 import { AIAssistantPanel } from "./bonus-tools";
-import { POLICIES, TABS, formatLocationName, type Scenario, type Job, type ScenarioDetail, type RunState, type DetailTab, type ReplanState } from "./schedule-types";
+import { POLICIES, TABS, formatLocationName, type Scenario, type Job, type ScenarioDetail, type RunState, type DetailTab, type ReplanState, type PreventiveScenario, type PreventiveDetail } from "./schedule-types";
+
+const PM_LABELS: Record<PreventiveScenario, string> = {
+  D: "PM Priority",
+  E: "PM Flexible",
+};
 
 export function ScheduleResults({
   job,
   details,
   onSandboxStateChange,
+  preventiveJob,
+  preventiveDetails,
 }: {
   job: Job;
   details: Partial<Record<Scenario, ScenarioDetail>>;
   onSandboxStateChange?: (active: boolean) => void;
+  preventiveJob?: Job;
+  preventiveDetails?: Partial<Record<PreventiveScenario, PreventiveDetail>>;
 }) {
   const [choice, setSelectedScenario] = useState<Scenario>("A");
   const selectedScenario = job.scenarios[choice] ? choice : ((Object.keys(job.scenarios)[0] as Scenario) ?? "A");
@@ -24,6 +33,15 @@ export function ScheduleResults({
   const [replanViewMode, setReplanViewMode] = useState<"baseline" | "replan">("replan");
   const [appliedReplans, setAppliedReplans] = useState<Partial<Record<Scenario, ReplanState>>>({});
   const [replanDownloadMenuOpen, setReplanDownloadMenuOpen] = useState(false);
+
+  // D/E preventive tab state
+  const [selectedPMScenario, setSelectedPMScenario] = useState<PreventiveScenario | null>(null);
+  const [pmTradeoff, setPmTradeoff] = useState<Record<string, unknown> | null>(null);
+  const [pmTradeoffOpen, setPmTradeoffOpen] = useState(false);
+  const tradeoffFetched = useRef<string | null>(null);
+
+  // Active tab: null = standard scenario, PreventiveScenario = D or E
+  const isPMTabActive = selectedPMScenario !== null;
 
   const handleReplanCreated = (newReplan: ReplanState) => {
     setActiveReplan(newReplan);
@@ -47,6 +65,22 @@ export function ScheduleResults({
   const isApplied = !!(currentReplanForScenario && appliedReplans[selectedScenario]?.replan_id === currentReplanForScenario.replan_id);
 
   const isSandboxActive = !!(currentReplanForScenario && currentReplanForScenario.status === "completed");
+
+  // Auto-fetch tradeoff when both D/E complete
+  useEffect(() => {
+    if (!preventiveJob) return;
+    const d = preventiveJob.scenarios["D" as PreventiveScenario];
+    const e = preventiveJob.scenarios["E" as PreventiveScenario];
+    const bothDone = d?.feasible && e?.feasible
+      && preventiveDetails?.["D" as PreventiveScenario]
+      && preventiveDetails?.["E" as PreventiveScenario];
+    if (!bothDone || tradeoffFetched.current === preventiveJob.job_id) return;
+    tradeoffFetched.current = preventiveJob.job_id;
+    fetch(`/api/ps1/jobs/${preventiveJob.job_id}/preventive-tradeoff`)
+      .then((r) => r.json())
+      .then((data) => setPmTradeoff(data))
+      .catch(() => {});
+  }, [preventiveJob, preventiveDetails]);
 
   useEffect(() => {
     onSandboxStateChange?.(isSandboxActive);
@@ -75,7 +109,7 @@ export function ScheduleResults({
           {(["A", "B", "C"] as Scenario[]).map((scenario) => {
             const run = job.scenarios[scenario];
             if (!run) return null;
-            const isSelected = selectedScenario === scenario;
+            const isSelected = !isPMTabActive && selectedScenario === scenario;
 
             return (
               <div
@@ -83,8 +117,8 @@ export function ScheduleResults({
                 role="tab"
                 tabIndex={0}
                 className={`top-policy-card policy-${scenario.toLowerCase()} ${isSelected ? "selected" : ""}`}
-                onClick={() => setSelectedScenario(scenario)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedScenario(scenario); }}
+                onClick={() => { setSelectedPMScenario(null); setSelectedScenario(scenario); }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setSelectedPMScenario(null); setSelectedScenario(scenario); } }}
                 aria-selected={isSelected}
               >
                 <div className="top-policy-left">
@@ -105,6 +139,42 @@ export function ScheduleResults({
                   className="top-policy-progress-line"
                   style={{ width: `${run.progress}%`, opacity: run.progress > 0 ? 1 : 0 }}
                 />
+              </div>
+            );
+          })}
+
+          {/* D/E Preventive tabs — only shown when preventiveJob exists */}
+          {preventiveJob && (["D", "E"] as PreventiveScenario[]).map((pmScenario) => {
+            const run = preventiveJob.scenarios[pmScenario];
+            if (!run) return null;
+            const isSelected = isPMTabActive && selectedPMScenario === pmScenario;
+            const isPending = run.status === "queued" || run.status === "running";
+            return (
+              <div
+                key={pmScenario}
+                role="tab"
+                tabIndex={0}
+                className={`top-policy-card policy-pm policy-${pmScenario.toLowerCase()} ${isSelected ? "selected" : ""}`}
+                onClick={() => setSelectedPMScenario(pmScenario)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedPMScenario(pmScenario); }}
+                aria-selected={isSelected}
+              >
+                <div className="top-policy-left">
+                  <span className="top-policy-letter pm-letter">{pmScenario}</span>
+                  <div className="top-policy-meta">
+                    <div className="top-policy-name-row">
+                      <strong>Policy {pmScenario}</strong>
+                      <span className="top-policy-subtitle pm-subtitle">({PM_LABELS[pmScenario]})</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="top-policy-right">
+                  <span className={`top-policy-pill ${isPending ? "running" : run.feasible ? "completed" : ""}`}>
+                    {isPending ? <LoaderCircle size={10} className="spin" style={{display:"inline"}} /> : null}
+                    {isPending ? "Optimizing" : run.feasible ? "Feasible" : run.status}
+                  </span>
+                </div>
+                <div className="top-policy-progress-line pm-progress" style={{ width: `${run.progress}%`, opacity: run.progress > 0 ? 1 : 0 }} />
               </div>
             );
           })}
@@ -234,21 +304,33 @@ export function ScheduleResults({
             </div>
           )}
 
-          <ScenarioWorkspace
-            detail={selected}
-            run={job.scenarios[selectedScenario]!}
-            scenario={selectedScenario}
-            jobId={job.job_id}
-            job={job}
-            details={details}
-            tab={tab}
-            onTabChange={setTab}
-            weekFilter={weekFilter}
-            onSelectWeek={handleBarClick}
-            onClearWeekFilter={() => setWeekFilter(null)}
-            activeReplan={currentReplanForScenario}
-            replanViewMode={replanViewMode}
-          />
+          {isPMTabActive && selectedPMScenario && preventiveJob ? (
+            <PreventiveScenarioPanel
+              scenario={selectedPMScenario}
+              job={preventiveJob}
+              detail={preventiveDetails?.[selectedPMScenario]}
+              tradeoff={pmTradeoff}
+              tradeoffOpen={pmTradeoffOpen}
+              onOpenTradeoff={() => setPmTradeoffOpen(true)}
+              onCloseTradeoff={() => setPmTradeoffOpen(false)}
+            />
+          ) : (
+            <ScenarioWorkspace
+              detail={selected}
+              run={job.scenarios[selectedScenario]!}
+              scenario={selectedScenario}
+              jobId={job.job_id}
+              job={job}
+              details={details}
+              tab={tab}
+              onTabChange={setTab}
+              weekFilter={weekFilter}
+              onSelectWeek={handleBarClick}
+              onClearWeekFilter={() => setWeekFilter(null)}
+              activeReplan={currentReplanForScenario}
+              replanViewMode={replanViewMode}
+            />
+          )}
         </main>
       </div>
 
@@ -264,6 +346,201 @@ export function ScheduleResults({
         onReplanCreated={handleReplanCreated}
       />
     </section>
+  );
+}
+
+function PreventiveScenarioPanel({
+  scenario,
+  job,
+  detail,
+  tradeoff,
+  tradeoffOpen,
+  onOpenTradeoff,
+  onCloseTradeoff,
+}: {
+  scenario: PreventiveScenario;
+  job: Job;
+  detail?: PreventiveDetail;
+  tradeoff: Record<string, unknown> | null;
+  tradeoffOpen: boolean;
+  onOpenTradeoff: () => void;
+  onCloseTradeoff: () => void;
+}) {
+  const run = job.scenarios[scenario];
+  const scores = detail?.validation.soft_scores;
+  const isPending = run?.status === "queued" || run?.status === "running";
+  const bothReady = (["D", "E"] as PreventiveScenario[]).every((s) => job.scenarios[s]?.feasible);
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+
+  return (
+    <div className="preventive-workspace-panel">
+      {/* PM Banner */}
+      <div className="preventive-inline-banner">
+        <div className="preventive-inline-left">
+          <span className="pm-eyebrow">PREVENTIVE MAINTENANCE · Policy {scenario}</span>
+          <h2 className="pm-title">{scenario === "D" ? "PM Priority — Fixed Windows" : "PM Flexible — Project Protected"}</h2>
+          <p className="pm-desc">
+            {scenario === "D"
+              ? "Every maintenance occurrence is scheduled at its planned window. Project activities work around maintenance."
+              : "Project delivery is prioritised. Maintenance may be deferred by up to 7 days when windows conflict."}
+          </p>
+        </div>
+        <div className="preventive-inline-actions">
+          {bothReady && (
+            <button
+              className="secondary-button"
+              onClick={onOpenTradeoff}
+              disabled={!tradeoff}
+              title={tradeoff ? "View D vs E trade-off comparison" : "Waiting for both scenarios to complete…"}
+            >
+              <Scale size={14} /> D vs E Trade-off
+            </button>
+          )}
+          {detail?.validation.feasible && (
+            <a
+              className="split-button-main"
+              href={`${API_BASE}/api/ps1/jobs/${job.job_id}/scenarios/${scenario}/files/MAINTENANCE_SCHEDULE.csv`}
+              download
+            >
+              <Download size={13} /> Maintenance Schedule
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Status / Progress */}
+      {isPending && (
+        <div className="pm-progress-row">
+          <LoaderCircle size={15} className="spin" />
+          <span>{run?.message ?? "Optimizing…"}</span>
+          <div className="pm-progress-bar"><div style={{ width: `${run?.progress ?? 0}%` }} /></div>
+        </div>
+      )}
+
+      {/* Metrics Grid */}
+      {scores && (
+        <div className="pm-metrics-grid">
+          <div className="pm-metric-card">
+            <span>Project Overrun</span>
+            <strong style={{ color: Number(scores.total_project_overrun_days ?? 0) > 0 ? "var(--rose)" : "var(--emerald)" }}>
+              {scores.total_project_overrun_days ?? 0}d
+            </strong>
+          </div>
+          <div className="pm-metric-card">
+            <span>On-time Maintenance</span>
+            <strong style={{ color: "var(--emerald)" }}>{scores.on_time_maintenance_count ?? "—"}</strong>
+          </div>
+          <div className="pm-metric-card">
+            <span>Deferred Maintenance</span>
+            <strong style={{ color: Number(scores.deferred_maintenance_count ?? 0) > 0 ? "var(--amber)" : "var(--emerald)" }}>
+              {scores.deferred_maintenance_count ?? 0}
+            </strong>
+          </div>
+          <div className="pm-metric-card">
+            <span>Total Deferral</span>
+            <strong style={{ color: Number(scores.total_maintenance_deferral_days ?? 0) > 0 ? "var(--amber)" : "var(--emerald)" }}>
+              {scores.total_maintenance_deferral_days ?? 0}
+            </strong>
+          </div>
+          <div className="pm-metric-card">
+            <span>Max Deferral</span>
+            <strong style={{ color: Number(scores.maximum_maintenance_deferral_days ?? 0) > 0 ? "var(--amber)" : "var(--emerald)" }}>
+              {scores.maximum_maintenance_deferral_days ?? 0}
+            </strong>
+          </div>
+          <div className="pm-metric-card">
+            <span>Objective Score</span>
+            <strong>{scores.project_objective_score ?? "—"}</strong>
+          </div>
+        </div>
+      )}
+
+      {/* Maintenance schedule table */}
+      {detail?.maintenance && detail.maintenance.length > 0 && (
+        <div className="pm-maintenance-table-wrap">
+          <div className="subheading"><h3>Maintenance Schedule</h3><span>{detail.maintenance.length} occurrences</span></div>
+          <div className="milestone-table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Occurrence</th>
+                  <th>Location</th>
+                  <th>Day</th>
+                  <th>Planned</th>
+                  <th>Actual</th>
+                  <th>Deferral</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.maintenance.slice(0, 40).map((m) => (
+                  <tr key={m.occurrence_id}>
+                    <td><strong style={{ fontSize: "11px" }}>{m.occurrence_id}</strong></td>
+                    <td style={{ fontSize: "11px", color: "var(--text-muted)" }}>{m.location_id}</td>
+                    <td style={{ fontSize: "11px" }}>{m.start_time}–{m.end_time}</td>
+                    <td style={{ fontSize: "11px" }}>{m.planned_date}</td>
+                    <td style={{ fontSize: "11px", color: m.deferred ? "var(--amber)" : "var(--emerald)", fontWeight: 600 }}>
+                      {m.actual_date}
+                    </td>
+                    <td>
+                      {m.deferral_days > 0
+                        ? <span style={{ fontSize: "10px", padding: "1px 5px", borderRadius: "3px", background: "rgba(245,158,11,0.2)", color: "var(--amber)", fontWeight: 700 }}>+{m.deferral_days}d</span>
+                        : <span style={{ fontSize: "10px", color: "var(--emerald)" }}>On time</span>}
+                    </td>
+                    <td>
+                      <span style={{ fontSize: "10px", color: m.conflict_driven ? "var(--rose)" : m.deferred ? "var(--amber)" : "var(--emerald)" }}>
+                        {m.conflict_driven ? "Conflict" : m.deferred ? "Deferred" : "On time"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tradeoff Modal */}
+      {tradeoffOpen && tradeoff && (
+        <div className="tradeoff-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onCloseTradeoff(); }}>
+          <section className="tradeoff-modal" role="dialog" aria-modal="true" aria-labelledby="pm-tradeoff-title">
+            <header>
+              <div>
+                <span className="eyebrow">Validated D vs E comparison</span>
+                <h2 id="pm-tradeoff-title">{String(tradeoff.title ?? "D vs E Trade-off")}</h2>
+              </div>
+              <button className="icon-button" aria-label="Close" onClick={onCloseTradeoff}><X size={19} /></button>
+            </header>
+            <div className="tradeoff-policy-copy">
+              <p><strong>D</strong> fixes every maintenance occurrence at its planned window.</p>
+              <p><strong>E</strong> protects the project objective first and may defer maintenance by up to seven days.</p>
+            </div>
+            {tradeoff.metrics ? (
+              <div className="tradeoff-table-wrap">
+                <table>
+                  <thead><tr><th>Metric</th><th>D</th><th>E</th><th>Δ E−D</th></tr></thead>
+                  <tbody>
+                    {Object.entries(tradeoff.metrics as Record<string, { D: number; E: number; delta_E_minus_D: number | null }>).map(([name, values]) => (
+                      <tr key={name}>
+                        <th style={{ fontSize: "11px", textAlign: "left", fontWeight: 500 }}>{name.replace(/_/g, " ")}</th>
+                        <td>{values.D?.toLocaleString()}</td>
+                        <td>{values.E?.toLocaleString()}</td>
+                        <td style={{ color: values.delta_E_minus_D == null ? undefined : values.delta_E_minus_D > 0 ? "var(--rose)" : values.delta_E_minus_D < 0 ? "var(--emerald)" : undefined }}>
+                          {values.delta_E_minus_D == null ? "—" : `${values.delta_E_minus_D > 0 ? "+" : ""}${values.delta_E_minus_D}`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+            <p className="tradeoff-conclusion">{String(tradeoff.summary ?? "")}</p>
+            <footer><button className="primary-button" onClick={onCloseTradeoff}>Close</button></footer>
+          </section>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -310,11 +587,43 @@ function ScenarioWorkspace({
   activeReplan?: ReplanState | null;
   replanViewMode?: "baseline" | "replan";
 }) {
-  const scores = detail?.validation.soft_scores;
-  const hotspots = detail?.validation.detail.capacity_hotspots ?? [];
+  const isReplanActive = replanViewMode === "replan" && !!activeReplan && activeReplan.status === "completed";
+  const replanSummary = isReplanActive ? activeReplan.diff.summary : undefined;
+
+  const currentDetail = useMemo((): ScenarioDetail | undefined => {
+    if (!detail) return undefined;
+    if (!isReplanActive || !activeReplan?.solution) return detail;
+    const sol = activeReplan.solution;
+    return {
+      ...detail,
+      activity_details: sol.activity_details ?? detail.activity_details,
+      accesses: sol.accesses ?? detail.accesses,
+      results: (sol.results as any) ?? detail.results,
+      score_breakdown: sol.score_breakdown ?? detail.score_breakdown,
+      solver_stats: sol.solver_stats ?? detail.solver_stats,
+      validation: {
+        ...detail.validation,
+        feasible: sol.validation.feasible,
+        hard_violations: sol.validation.hard_violations ?? detail.validation.hard_violations,
+        soft_scores: {
+          ...detail.validation.soft_scores,
+          ...sol.validation.soft_scores,
+        },
+        detail: {
+          ...detail.validation.detail,
+          ...sol.validation.detail,
+          location_usage: sol.validation.detail?.location_usage ?? detail.validation.detail.location_usage,
+          capacity_hotspots: sol.validation.detail?.capacity_hotspots ?? detail.validation.detail.capacity_hotspots,
+        },
+      },
+    };
+  }, [detail, isReplanActive, activeReplan]);
+
+  const scores = currentDetail?.validation.soft_scores;
+  const hotspots = currentDetail?.validation.detail.capacity_hotspots ?? [];
   const strainedBottlenecks = useMemo(() => {
-    if (!detail) return [];
-    const allUsage = detail.validation.detail.location_usage ?? [];
+    if (!currentDetail) return [];
+    const allUsage = currentDetail.validation.detail.location_usage ?? [];
     if (allUsage.length > 0) {
       const items = allUsage
         .filter((u) => u.used > 0)
@@ -338,7 +647,7 @@ function ScenarioWorkspace({
       saturation: h.capacity > 0 ? h.used / h.capacity : 1,
       pct: h.capacity > 0 ? Math.round((h.used / h.capacity) * 100) : 100,
     }));
-  }, [detail, hotspots]);
+  }, [currentDetail, hotspots]);
   const [hoveredWeek, setHoveredWeek] = useState<{ week: number; count: number; eclo: number } | null>(null);
   const [hoveredFormulaTerm, setHoveredFormulaTerm] = useState<string | null>(null);
   const [hoveredSCurveWeek, setHoveredSCurveWeek] = useState<number | null>(null);
@@ -347,14 +656,14 @@ function ScenarioWorkspace({
   // Group scheduled accesses by week for the active policy
   const weekStats = useMemo(() => {
     const map = new Map<number, { count: number; eclo: number }>();
-    detail?.accesses.forEach((item) => {
+    currentDetail?.accesses.forEach((item) => {
       const current = map.get(item.week) || { count: 0, eclo: 0 };
       current.count += 1;
       if (item.eclo) current.eclo += 1;
       map.set(item.week, current);
     });
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
-  }, [detail?.accesses]);
+  }, [currentDetail?.accesses]);
 
   // Global maximum across all policies (active scenario + compared scenarios) to ensure no curve shoots off the top
   const maxWeekAccess = useMemo(() => {
@@ -439,15 +748,15 @@ function ScenarioWorkspace({
 
   // Exact mathematical breakdown matching activity delay_cost
   const exactDelayBreakdown = useMemo(() => {
-    if (!detail) return [];
+    if (!currentDetail) return [];
     // Group delay_cost by contract
     const contractDelayMap = new Map<string, { days: number; cost: number; tier: string }>();
-    detail.activity_details.forEach((act) => {
+    currentDetail.activity_details.forEach((act) => {
       if (act.contract_overrun_days > 0 && act.delay_cost > 0) {
         const existing = contractDelayMap.get(act.contract_number) || {
           days: act.contract_overrun_days,
           cost: 0,
-          tier: act.contract_number.includes("1") ? "P1 (100×)" : act.contract_number.includes("2") ? "P2 (10×)" : "P3 (1×)"
+          tier: act.contract_priority === 1 ? "P1 (100×)" : act.contract_priority === 2 ? "P2 (10×)" : "P3 (1×)"
         };
         existing.cost += act.delay_cost;
         contractDelayMap.set(act.contract_number, existing);
@@ -459,7 +768,7 @@ function ScenarioWorkspace({
       tier: data.tier,
       cost: Number(data.cost.toFixed(1))
     }));
-  }, [detail]);
+  }, [currentDetail]);
 
   // PS1 Priority-tiered breakdown (§2.5 & §2.7: 100× / 10× / 1×)
   const priorityTierSummary = useMemo(() => {
@@ -498,16 +807,16 @@ function ScenarioWorkspace({
     };
   }, [exactDelayBreakdown]);
 
-  const totalDelayScore = detail?.score_breakdown.delay ?? 0;
-  const excessNights = Number(detail?.validation.soft_scores?.excess_access_nights_total ?? 0);
-  const totalExcessScore = detail?.score_breakdown.excess_supply ?? (excessNights * 7);
-  const totalEcloScore = detail?.score_breakdown.eclo ?? 0;
-  const ecloNights = detail?.validation.detail.eclo_nights ?? 0;
+  const totalDelayScore = currentDetail?.score_breakdown.delay ?? 0;
+  const excessNights = Number(currentDetail?.validation.soft_scores?.excess_access_nights_total ?? 0);
+  const totalExcessScore = currentDetail?.score_breakdown.excess_supply ?? (excessNights * 7);
+  const totalEcloScore = currentDetail?.score_breakdown.eclo ?? 0;
+  const ecloNights = currentDetail?.validation.detail.eclo_nights ?? 0;
   const totalScoreVal = Number((totalDelayScore + totalExcessScore + totalEcloScore).toFixed(1));
 
   // Cumulative Milestone Completion & Delay Slip Curves (PS1 Target vs Simulated)
   const sCurveData = useMemo(() => {
-    if (!detail) {
+    if (!currentDetail) {
       return {
         weeks: [] as number[],
         targetPoints: [] as { week: number; count: number; pct: number }[],
@@ -531,8 +840,8 @@ function ScenarioWorkspace({
       };
     }
 
-    const contractRows = detail.results.map((r) => {
-      const contractActs = detail.activity_details.filter((a) => a.contract_number === r.contract_number);
+    const contractRows = currentDetail.results.map((r) => {
+      const contractActs = currentDetail.activity_details.filter((a) => a.contract_number === r.contract_number);
       const actIds = new Set(contractActs.map((a) => a.activity_id));
       const plannedTarget = contractActs[0]?.planned_completion_date ?? r.simulated_completion_date;
       const targetWk = Math.max(
@@ -545,7 +854,7 @@ function ScenarioWorkspace({
       const scenarioOverrun: Record<Scenario, number> = { A: 0, B: 0, C: 0 };
 
       (["A", "B", "C"] as Scenario[]).forEach((sc) => {
-        const scDetail = details[sc];
+        const scDetail = sc === scenario && isReplanActive && activeReplan?.solution ? currentDetail : details[sc];
         if (scDetail) {
           const scAccesses = scDetail.accesses.filter((acc) => actIds.has(acc.activity_id));
           if (scAccesses.length > 0) {
@@ -565,8 +874,9 @@ function ScenarioWorkspace({
         }
       });
 
-      const tier = r.contract_number.includes("1") ? "P1 (100×)" : r.contract_number.includes("2") ? "P2 (10×)" : "P3 (1×)";
-      const tierClass = r.contract_number.includes("1") ? "tier-1" : r.contract_number.includes("2") ? "tier-2" : "tier-3";
+      const contractPriority = contractActs[0]?.contract_priority ?? 3;
+      const tier = contractPriority === 1 ? "P1 (100×)" : contractPriority === 2 ? "P2 (10×)" : "P3 (1×)";
+      const tierClass = contractPriority === 1 ? "tier-1" : contractPriority === 2 ? "tier-2" : "tier-3";
 
       return {
         contract: r.contract_number,
@@ -631,7 +941,7 @@ function ScenarioWorkspace({
       totalContracts,
       contractRows,
     };
-  }, [detail, details]);
+  }, [currentDetail, details, scenario, isReplanActive, activeReplan]);
 
   const activeAuditStats = useMemo(() => {
     const rows = sCurveData.contractRows;
@@ -734,38 +1044,42 @@ function ScenarioWorkspace({
     };
   }, [milestoneChartMode, sCurveData, scenario]);
 
-  const isReplanActive = replanViewMode === "replan" && !!activeReplan && activeReplan.status === "completed";
-  const replanSummary = isReplanActive ? activeReplan.diff.summary : undefined;
-
   // 1. Penalty Score
-  const baselineScore = totalScoreVal;
+  const baselineScore = detail ? Number(((detail.score_breakdown.delay ?? 0) + (detail.score_breakdown.excess_supply ?? (Number(detail.validation.soft_scores?.excess_access_nights_total ?? 0) * 7)) + (detail.score_breakdown.eclo ?? 0)).toFixed(1)) : 0;
   const scoreDelta = replanSummary?.score_delta ?? 0;
-  const revisedScore = replanSummary?.revised_score ?? (isReplanActive && replanSummary?.score_delta != null ? Number((baselineScore + replanSummary.score_delta).toFixed(1)) : baselineScore);
-  const displayScore = isReplanActive ? revisedScore : baselineScore;
+  const displayScore = isReplanActive ? totalScoreVal : baselineScore;
 
   // 2. Total Overrun Days
-  const baselineOverrun = Number(scores?.overrun_days_total ?? 0);
-  const revisedOverrun = replanSummary?.revised_overrun ?? Number(activeReplan?.solution?.validation?.soft_scores?.overrun_days_total ?? baselineOverrun);
+  const baselineOverrun = Number(detail?.validation.soft_scores?.overrun_days_total ?? 0);
+  const revisedOverrun = Number(currentDetail?.validation.soft_scores?.overrun_days_total ?? baselineOverrun);
   const overrunDelta = replanSummary?.overrun_delta ?? (isReplanActive ? revisedOverrun - baselineOverrun : 0);
   const displayOverrun = isReplanActive ? revisedOverrun : baselineOverrun;
 
   // 3. ECLO Nights
-  const baselineEclo = ecloNights;
-  const revisedEclo = replanSummary?.revised_eclo ?? Number(activeReplan?.solution?.validation?.soft_scores?.eclo_nights_total ?? activeReplan?.solution?.validation?.detail?.eclo_nights ?? baselineEclo);
+  const baselineEclo = detail?.validation.detail.eclo_nights ?? 0;
+  const revisedEclo = currentDetail?.validation.detail.eclo_nights ?? baselineEclo;
   const ecloDelta = replanSummary?.eclo_delta ?? (isReplanActive ? revisedEclo - baselineEclo : 0);
   const displayEclo = isReplanActive ? revisedEclo : baselineEclo;
 
   // 4. Excess Access Nights
-  const baselineExcess = excessNights;
-  const revisedExcess = replanSummary?.revised_excess ?? Number(activeReplan?.solution?.validation?.soft_scores?.excess_access_nights_total ?? baselineExcess);
+  const baselineExcess = Number(detail?.validation.soft_scores?.excess_access_nights_total ?? 0);
+  const revisedExcess = Number(currentDetail?.validation.soft_scores?.excess_access_nights_total ?? baselineExcess);
   const excessDelta = replanSummary?.excess_delta ?? (isReplanActive ? revisedExcess - baselineExcess : 0);
   const displayExcess = isReplanActive ? revisedExcess : baselineExcess;
 
   // 5. Possession Accesses Count
   const baselineAccesses = detail?.accesses.length ?? 0;
-  const revisedAccesses = replanSummary?.revised_accesses ?? (activeReplan?.solution?.accesses ? activeReplan.solution.accesses.length : baselineAccesses);
+  const revisedAccesses = currentDetail?.accesses.length ?? baselineAccesses;
   const accessesDelta = replanSummary?.accesses_delta ?? (isReplanActive ? revisedAccesses - baselineAccesses : 0);
   const displayAccesses = isReplanActive ? revisedAccesses : baselineAccesses;
+
+  const contractChangeMap = useMemo(() => {
+    const map = new Map<string, { overrun_delta: number; after_completion: string }>();
+    if (isReplanActive && activeReplan?.diff.contract_changes) {
+      activeReplan.diff.contract_changes.forEach((c) => map.set(c.contract_number, c));
+    }
+    return map;
+  }, [isReplanActive, activeReplan]);
 
   return (
     <>
@@ -1286,8 +1600,8 @@ function ScenarioWorkspace({
             {/* TAB 2: ACTIVITIES */}
             {tab === "activities" && (
               <Inspection
-                activities={detail.activity_details ?? []}
-                usage={detail.validation.detail.location_usage ?? []}
+                activities={currentDetail?.activity_details ?? []}
+                usage={currentDetail?.validation.detail.location_usage ?? []}
                 view="activities"
                 initialWeekFilter={weekFilter}
                 onClearWeekFilter={onClearWeekFilter}
@@ -1298,8 +1612,8 @@ function ScenarioWorkspace({
             {/* TAB 3: LOCATIONS */}
             {tab === "locations" && (
               <Inspection
-                activities={detail.activity_details ?? []}
-                usage={detail.validation.detail.location_usage ?? []}
+                activities={currentDetail?.activity_details ?? []}
+                usage={currentDetail?.validation.detail.location_usage ?? []}
                 view="locations"
                 initialWeekFilter={weekFilter}
                 onClearWeekFilter={onClearWeekFilter}
@@ -1715,7 +2029,26 @@ function ScenarioWorkspace({
                           const isLate = overrun > 0;
                           return (
                             <tr key={row.contract}>
-                              <td style={{ whiteSpace: "nowrap" }}><strong>{row.contract}</strong></td>
+                              <td style={{ whiteSpace: "nowrap" }}>
+                                <strong>{row.contract}</strong>
+                                {contractChangeMap.has(row.contract) && (
+                                  <span
+                                    style={{
+                                      marginLeft: "6px",
+                                      fontSize: "10px",
+                                      fontWeight: 700,
+                                      padding: "1px 5px",
+                                      borderRadius: "3px",
+                                      background: "rgba(245, 158, 11, 0.2)",
+                                      color: "var(--amber)",
+                                      border: "1px solid rgba(245, 158, 11, 0.4)",
+                                    }}
+                                    title={`Re-plan finish: ${contractChangeMap.get(row.contract)!.after_completion} (Δ: ${contractChangeMap.get(row.contract)!.overrun_delta > 0 ? `+${contractChangeMap.get(row.contract)!.overrun_delta}d` : `${contractChangeMap.get(row.contract)!.overrun_delta}d`})`}
+                                  >
+                                    Re-plan Δ
+                                  </span>
+                                )}
+                              </td>
                               <td style={{ whiteSpace: "nowrap" }}><span className={`tier-badge ${row.tierClass}`}>{row.tier}</span></td>
                               <td style={{ whiteSpace: "nowrap", color: "var(--text-secondary)" }}>{row.plannedTarget}</td>
                               <td style={{ whiteSpace: "nowrap", color: isLate ? "var(--rose)" : "var(--emerald)", fontWeight: 600 }}>

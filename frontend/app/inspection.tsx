@@ -7,6 +7,8 @@ import { formatLocationName } from "./schedule-types";
 export type EvidenceActivity = {
   activity_id: string;
   contract_number: string;
+  contract_priority: number;
+  activity_priority: number;
   line: string;
   access_type: string;
   required_workload: number;
@@ -76,7 +78,7 @@ export function Inspection({
 
   // Locations states
   const [locLine, setLocLine] = useState("");
-  const [locType, setLocType] = useState<"all" | "SEC" | "STN" | "BUF">("all");
+  const [locType, setLocType] = useState<"all" | "SEC" | "PLAT" | "HUB">("all");
   const [locContract, setLocContract] = useState<string>("all");
   const [locQuery, setLocQuery] = useState("");
   const [locWeek, setLocWeek] = useState(initialWeekFilter ? String(initialWeekFilter) : "");
@@ -169,8 +171,12 @@ export function Inspection({
           if (locLineCode !== locLine) return false;
         }
         if (locType !== "all") {
-          const prefix = u.location_id.split(":")[0];
-          if (prefix !== locType) return false;
+          if (locType === "HUB") {
+            if (!u.location_id.includes("H01") && !u.location_id.includes("H02")) return false;
+          } else {
+            const prefix = u.location_id.split(":")[0];
+            if (prefix !== locType) return false;
+          }
         }
         if (locContract !== "all") {
           const hasContract = u.activities.some((aid) => activityContractMap.get(aid) === locContract);
@@ -516,7 +522,9 @@ export function Inspection({
                       const loc = formatLocationName(p.location_id);
                       return (
                         <div key={i} style={{ fontSize: "11.5px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                          <span className="facility-tag">{loc.typeTag}</span>
+                          <span className={`facility-tag ${loc.typeTag === "Platform" ? "facility-badge-platform" : "facility-badge-tunnel"}`}>
+                            {loc.typeTag}
+                          </span>
                           <span style={{ color: "var(--text-dim)", fontWeight: 600 }}>W{p.week}</span>
                           <strong style={{ color: "var(--text-primary)" }}>{loc.primary}</strong>
                           <span className="muted" style={{ fontSize: "10px" }}>({p.co_share_group})</span>
@@ -585,13 +593,13 @@ export function Inspection({
                 ))}
               </select>
             </label>
-            <label style={{ flex: 1.5, minWidth: "155px" }}>
-              Type
+            <label style={{ flex: 1.5, minWidth: "165px" }}>
+              Facility Type
               <select value={locType} onChange={(e) => setLocType(e.target.value as any)}>
-                <option value="all">All Types</option>
-                <option value="SEC">Tunnel Sector (SEC)</option>
-                <option value="STN">Station Platform (STN)</option>
-                <option value="BUF">Buffer Track (BUF)</option>
+                <option value="all">All Types (76 locs)</option>
+                <option value="SEC">Tunnel Sector (SEC · 36)</option>
+                <option value="PLAT">Station Platform (PLAT · 40)</option>
+                <option value="HUB">Interchange Hub (H01/H02 · 20)</option>
               </select>
             </label>
             <label style={{ flex: 1, minWidth: "105px" }}>
@@ -668,9 +676,16 @@ export function Inspection({
                       <div className="muted" style={{ fontSize: "10px" }}>{u.location_id}</div>
                     </td>
                     <td>
-                      <span className="tier-badge" style={{ background: "var(--bg-shell)" }}>
-                        {loc.typeTag}
-                      </span>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <span className={`tier-badge ${loc.typeTag === "Platform" ? "facility-badge-platform" : "facility-badge-tunnel"}`}>
+                          {loc.typeTag}
+                        </span>
+                        {loc.isHub && (
+                          <span className="tier-badge facility-badge-hub">
+                            Hub
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>Week {u.week}</td>
                     <td>
@@ -681,7 +696,34 @@ export function Inspection({
                         {isSaturated ? "100% Full" : `${Math.round((u.used / u.capacity) * 100)}%`}
                       </span>
                     </td>
-                    <td>{u.activities.join(", ") || "Protection footprint only"}</td>
+                    <td>
+                      {u.activities.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
+                          {u.activities.map((aid) => {
+                            const isMoved = movedMap.has(aid);
+                            return (
+                              <span
+                                key={aid}
+                                style={{
+                                  padding: isMoved ? "1px 5px" : "0",
+                                  borderRadius: isMoved ? "3px" : "0",
+                                  background: isMoved ? "rgba(245, 158, 11, 0.2)" : "transparent",
+                                  border: isMoved ? "1px solid rgba(245, 158, 11, 0.4)" : "none",
+                                  color: isMoved ? "var(--amber)" : "inherit",
+                                  fontWeight: isMoved ? 700 : "normal",
+                                  fontSize: "11px",
+                                }}
+                                title={isMoved ? `${aid} shifted in this re-plan` : undefined}
+                              >
+                                {aid}{isMoved ? " ⚡" : ""}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        "Protection footprint only"
+                      )}
+                    </td>
                     <td>
                       {Object.entries(u.groups)
                         .map(([g, ids]) => `${g}: ${ids.join(", ")}`)

@@ -60,11 +60,36 @@ export type ReplanState = {
       revised_accesses?: number;
     };
     activity_changes?: { activity_id: string; contract_number: string; before: { week: number; eclo: number; access_night: number }[]; after: { week: number; eclo: number; access_night: number }[]; reason: string }[];
+    contract_changes?: { contract_number: string; before_completion: string; after_completion: string; before_overrun: number; after_overrun: number; overrun_delta: number }[];
   };
   solution?: {
-    validation: { feasible: boolean; detail: { safety_status?: string; eclo_nights?: number }; soft_scores: { objective_score?: number; completion_percent?: number; overrun_days_total?: number; excess_access_nights_total?: number; eclo_nights_total?: number } };
-    results: ContractResult[];
+    validation: {
+      feasible: boolean;
+      detail: {
+        safety_status?: string;
+        eclo_nights?: number;
+        location_usage?: LocationUsage[];
+        capacity_hotspots?: LocationUsage[];
+        nights_scheduled?: number;
+      };
+      soft_scores: {
+        objective_score?: number;
+        completion_percent?: number;
+        overrun_days_total?: number;
+        excess_access_nights_total?: number;
+        eclo_nights_total?: number;
+        delay?: number;
+        excess_supply?: number;
+        eclo?: number;
+      };
+      hard_violations?: { rule: string; severity: string; detail: string }[];
+    };
+    results: { scenario: string; contract_number: string; simulated_completion_date: string; overrun_days: number }[];
     accesses?: { activity_id: string; week: number; eclo: number; access_night: number }[];
+    occupancy?: { activity_id: string; week: number; location_id: string; co_share_group: string }[];
+    activity_details?: EvidenceActivity[];
+    score_breakdown?: { delay: number; excess_supply: number; eclo: number };
+    solver_stats?: SolverStats;
   };
 };
 export type ScenarioDetail = {
@@ -134,8 +159,10 @@ export function formatLocationName(locId: string): { primary: string; secondary:
   if (!locId) return { primary: "Unknown Location", secondary: locId, isHub: false, typeTag: "Track" };
   const parts = locId.split(":");
   if (parts.length >= 3) {
-    const kind = parts[0] === "SEC" ? "Tunnel Sector" : parts[0] === "STN" ? "Station Platform" : parts[0] === "BUF" ? "Buffer Track" : parts[0];
-    const typeTag = parts[0] === "SEC" ? "Tunnel" : parts[0] === "STN" ? "Platform" : parts[0] === "BUF" ? "Buffer" : "Track";
+    const isPlatform = parts[0] === "PLAT" || parts[0] === "STN";
+    const isTunnel = parts[0] === "SEC";
+    const kind = isTunnel ? "Tunnel Sector" : isPlatform ? "Platform Sector" : parts[0];
+    const typeTag = isTunnel ? "Tunnel" : isPlatform ? "Platform" : "Track";
     const line = parts[1] === "ALP" ? "Alpha Line" : parts[1] === "BET" ? "Beta Line" : parts[1];
     const section = parts[2].replace("_", " ↔ ");
     const isHub = parts[2].includes("H01") || parts[2].includes("H02");
