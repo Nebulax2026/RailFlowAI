@@ -3624,13 +3624,50 @@ tr:hover td {
 .replan-banner-stats {
   display: flex;
   align-items: center;
-  gap: 16px;
-  font-size: 11.5px;
-  color: var(--text-dim);
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
-.replan-stat-item strong {
-  color: var(--text-primary);
+.replan-banner-stat-chip {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px 14px;
+  min-width: 105px;
+}
+
+.replan-banner-stat-chip .chip-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+
+.replan-banner-stat-chip .chip-value {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.replan-banner-stat-chip .chip-value.cyan {
+  color: var(--cyan);
+}
+
+.replan-banner-stat-chip .chip-value.amber {
+  color: var(--amber);
+}
+
+.replan-banner-stat-chip .chip-value.emerald {
+  color: var(--emerald);
+}
+
+.replan-banner-stat-chip .chip-value.rose {
+  color: var(--rose);
 }
 
 .replan-banner-controls {

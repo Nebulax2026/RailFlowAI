@@ -101,17 +101,22 @@ export function ScheduleResults({
                   </span>
                 </div>
                 <div className="replan-banner-stats">
-                  <span className="replan-stat-item">
-                    Preserved: <strong>{currentReplanForScenario.diff.summary?.preserved_percent ?? 100}%</strong>
-                  </span>
-                  <span className="replan-stat-item">
-                    Moved Activities: <strong>{currentReplanForScenario.diff.summary?.moved_activities ?? 0}</strong>
-                  </span>
-                  <span className="replan-stat-item">
-                    Score Delta: <strong style={{ color: Number(currentReplanForScenario.diff.summary?.score_delta ?? 0) <= 0 ? "var(--emerald)" : "var(--rose)" }}>
+                  <div className="replan-banner-stat-chip">
+                    <span className="chip-label">Preserved Plan</span>
+                    <strong className="chip-value cyan">{currentReplanForScenario.diff.summary?.preserved_percent ?? 100}%</strong>
+                  </div>
+                  <div className="replan-banner-stat-chip">
+                    <span className="chip-label">Moved Activities</span>
+                    <strong className={`chip-value ${(currentReplanForScenario.diff.summary?.moved_activities ?? 0) > 0 ? "amber" : "emerald"}`}>
+                      {currentReplanForScenario.diff.summary?.moved_activities ?? 0}
+                    </strong>
+                  </div>
+                  <div className="replan-banner-stat-chip">
+                    <span className="chip-label">Score Delta</span>
+                    <strong className={`chip-value ${Number(currentReplanForScenario.diff.summary?.score_delta ?? 0) <= 0 ? "emerald" : "rose"}`}>
                       {Number(currentReplanForScenario.diff.summary?.score_delta ?? 0) >= 0 ? `+${currentReplanForScenario.diff.summary?.score_delta ?? 0}` : currentReplanForScenario.diff.summary?.score_delta} pts
                     </strong>
-                  </span>
+                  </div>
                 </div>
               </div>
 
@@ -691,20 +696,6 @@ function ScenarioWorkspace({
             )}
           </div>
         </div>
-        {replanSummary && (
-          <>
-            <div className="prominent-metric-card replan-highlight">
-              <span>Preserved Plan</span>
-              <strong style={{ color: "var(--cyan)" }}>{replanSummary.preserved_percent}%</strong>
-            </div>
-            <div className="prominent-metric-card replan-highlight">
-              <span>Moved Activities</span>
-              <strong style={{ color: (replanSummary.moved_activities ?? 0) > 0 ? "var(--amber)" : "var(--emerald)" }}>
-                {replanSummary.moved_activities}
-              </strong>
-            </div>
-          </>
-        )}
         <div className="prominent-metric-card">
           <span>Total Overrun</span>
           <strong style={{ color: Number(scores?.overrun_days_total) > 0 ? "var(--rose)" : "var(--text-primary)" }}>
