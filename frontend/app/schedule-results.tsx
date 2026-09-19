@@ -293,6 +293,43 @@ function ScenarioWorkspace({
     }));
   }, [detail]);
 
+  // PS1 Priority-tiered breakdown (§2.5 & §2.7: 100× / 10× / 1×)
+  const priorityTierSummary = useMemo(() => {
+    const p1 = { days: 0, cost: 0, contracts: [] as string[] };
+    const p2 = { days: 0, cost: 0, contracts: [] as string[] };
+    const p3 = { days: 0, cost: 0, contracts: [] as string[] };
+
+    exactDelayBreakdown.forEach((item) => {
+      if (item.tier.includes("P1")) {
+        p1.days += item.days;
+        p1.cost += item.cost;
+        p1.contracts.push(item.contract);
+      } else if (item.tier.includes("P2")) {
+        p2.days += item.days;
+        p2.cost += item.cost;
+        p2.contracts.push(item.contract);
+      } else {
+        p3.days += item.days;
+        p3.cost += item.cost;
+        p3.contracts.push(item.contract);
+      }
+    });
+
+    const totalDays = p1.days + p2.days + p3.days;
+    const totalCost = Number((p1.cost + p2.cost + p3.cost).toFixed(1));
+
+    return {
+      p1: { days: p1.days, cost: Number(p1.cost.toFixed(1)), contracts: p1.contracts },
+      p2: { days: p2.days, cost: Number(p2.cost.toFixed(1)), contracts: p2.contracts },
+      p3: { days: p3.days, cost: Number(p3.cost.toFixed(1)), contracts: p3.contracts },
+      totalDays,
+      totalCost,
+      p1Pct: totalCost > 0 ? Math.round((p1.cost / totalCost) * 100) : 0,
+      p2Pct: totalCost > 0 ? Math.round((p2.cost / totalCost) * 100) : 0,
+      p3Pct: totalCost > 0 ? Math.round((p3.cost / totalCost) * 100) : 0,
+    };
+  }, [exactDelayBreakdown]);
+
   const totalDelayScore = detail?.score_breakdown.delay ?? 0;
   const totalEcloScore = detail?.score_breakdown.eclo ?? 0;
   const ecloNights = detail?.validation.detail.eclo_nights ?? 0;
@@ -650,35 +687,117 @@ function ScenarioWorkspace({
                   </div>
                 </div>
 
-                {/* Supply Headroom & Capacity Hotspots Indicator (PS1 Standard) */}
+                {/* Visual Operational Indicators Grid (PS1 §2.5 & §2.7: Minimal text, maximum visual clarity) */}
                 <div className="indicator-grid">
+                  {/* Card 1: Priority Overrun Breakdown (100× / 10× / 1×) */}
                   <div className="indicator-card">
-                    <Activity size={24} color={supplyHeadroomMetrics.color} />
-                    <div>
-                      <h4>Supply Headroom & Hotspot Risk</h4>
-                      <p style={{ color: supplyHeadroomMetrics.color }}>
-                        {supplyHeadroomMetrics.remainingHeadroomPct}% Remaining Headroom · {supplyHeadroomMetrics.hotspotCount} Capacity Hotspots
-                      </p>
-                      <small className="muted" style={{ fontSize: "11px" }}>
-                        {supplyHeadroomMetrics.usedSlots}/{supplyHeadroomMetrics.totalSlots} Location Supply slots used ({supplyHeadroomMetrics.quotaUsedPct}% quota)
-                        {supplyHeadroomMetrics.peakWeek
-                          ? ` · Peak strain in Week ${supplyHeadroomMetrics.peakWeek} (${supplyHeadroomMetrics.peakCount} zero-buffer sectors)`
-                          : " · 0 zero-headroom sectors"}
-                      </small>
+                    <div className="indicator-card-top">
+                      <div className="indicator-card-title">
+                        <AlertTriangle size={14} color={priorityTierSummary.p1.cost > 0 ? "var(--rose)" : priorityTierSummary.totalCost > 0 ? "var(--amber)" : "var(--emerald)"} />
+                        <span>Priority Overrun (§2.5)</span>
+                      </div>
+                      <span className={`indicator-status-badge ${priorityTierSummary.p1.cost > 0 ? "rose" : priorityTierSummary.totalCost > 0 ? "amber" : "emerald"}`}>
+                        {priorityTierSummary.totalDays > 0 ? `${priorityTierSummary.totalDays}d delay · ${priorityTierSummary.totalCost} pts` : "0d delay · On Plan"}
+                      </span>
+                    </div>
+
+                    {/* Proportional Multi-Segment Visual Bar */}
+                    <div className="indicator-bar-track">
+                      {priorityTierSummary.totalCost > 0 ? (
+                        <>
+                          <div style={{ width: `${priorityTierSummary.p1Pct}%`, backgroundColor: "var(--rose)" }} title={`P1 (100×): ${priorityTierSummary.p1Pct}% of penalty`} />
+                          <div style={{ width: `${priorityTierSummary.p2Pct}%`, backgroundColor: "var(--amber)" }} title={`P2 (10×): ${priorityTierSummary.p2Pct}% of penalty`} />
+                          <div style={{ width: `${priorityTierSummary.p3Pct}%`, backgroundColor: "var(--cyan)" }} title={`P3 (1×): ${priorityTierSummary.p3Pct}% of penalty`} />
+                        </>
+                      ) : (
+                        <div style={{ width: "100%", backgroundColor: "var(--emerald)" }} title="All priorities on time" />
+                      )}
+                    </div>
+
+                    {/* 3 Compact Chips for P1, P2, P3 */}
+                    <div className="indicator-chips-row">
+                      <span className={`indicator-chip ${priorityTierSummary.p1.days > 0 ? "rose" : "emerald"}`}>
+                        <strong>P1 (100×):</strong> {priorityTierSummary.p1.days > 0 ? `${priorityTierSummary.p1.days}d · ${priorityTierSummary.p1.cost}p` : "0d"}
+                      </span>
+                      <span className={`indicator-chip ${priorityTierSummary.p2.days > 0 ? "amber" : "emerald"}`}>
+                        <strong>P2 (10×):</strong> {priorityTierSummary.p2.days > 0 ? `${priorityTierSummary.p2.days}d · ${priorityTierSummary.p2.cost}p` : "0d"}
+                      </span>
+                      <span className={`indicator-chip ${priorityTierSummary.p3.days > 0 ? "cyan" : "emerald"}`}>
+                        <strong>P3 (1×):</strong> {priorityTierSummary.p3.days > 0 ? `${priorityTierSummary.p3.days}d · ${priorityTierSummary.p3.cost}p` : "0d"}
+                      </span>
                     </div>
                   </div>
 
+                  {/* Card 2: Supply Headroom & Capacity Hotspots */}
                   <div className="indicator-card">
-                    <ShieldCheck size={24} color={scenario === "C" ? "var(--cyan)" : "var(--text-muted)"} />
-                    <div>
-                      <h4>ECLO Continuous Window Rule</h4>
-                      <p>
-                        {scenario === "C"
-                          ? "Compliant (Max 2 consecutive calendar weeks per line)"
-                          : scenario === "A"
-                            ? "Compliant (ECLO Forbidden)"
-                            : "Exempt (Flexible placement allowed)"}
-                      </p>
+                    <div className="indicator-card-top">
+                      <div className="indicator-card-title">
+                        <Activity size={14} color={supplyHeadroomMetrics.color} />
+                        <span>Supply Headroom (§2.7)</span>
+                      </div>
+                      <span className={`indicator-status-badge ${supplyHeadroomMetrics.remainingHeadroomPct < 20 ? "rose" : supplyHeadroomMetrics.remainingHeadroomPct < 40 ? "amber" : "emerald"}`}>
+                        {supplyHeadroomMetrics.remainingHeadroomPct}% Headroom
+                      </span>
+                    </div>
+
+                    {/* Supply Usage Gauge Bar */}
+                    <div className="indicator-bar-track">
+                      <div
+                        style={{
+                          width: `${supplyHeadroomMetrics.quotaUsedPct}%`,
+                          backgroundColor: supplyHeadroomMetrics.color,
+                        }}
+                      />
+                    </div>
+
+                    {/* Headroom & Hotspots Chips */}
+                    <div className="indicator-chips-row">
+                      <span className="indicator-chip">
+                        <strong>Quota:</strong> {supplyHeadroomMetrics.quotaUsedPct}%
+                      </span>
+                      <span className={`indicator-chip ${supplyHeadroomMetrics.hotspotCount > 20 ? "rose" : supplyHeadroomMetrics.hotspotCount > 0 ? "amber" : "emerald"}`}>
+                        <strong>Hotspots:</strong> {supplyHeadroomMetrics.hotspotCount}
+                      </span>
+                      <span className="indicator-chip">
+                        <strong>Peak:</strong> {supplyHeadroomMetrics.peakWeek ? `Week ${supplyHeadroomMetrics.peakWeek}` : "Even"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Operational Policy Levers */}
+                  <div className="indicator-card">
+                    <div className="indicator-card-top">
+                      <div className="indicator-card-title">
+                        <Gauge size={14} color="var(--cyan)" />
+                        <span>Policy Levers (§2.5)</span>
+                      </div>
+                      <span className="indicator-status-badge cyan">
+                        Policy {scenario}
+                      </span>
+                    </div>
+
+                    {/* Levers Visual Status Chips */}
+                    <div className="indicator-chips-row" style={{ marginTop: "2px" }}>
+                      <span className={`indicator-chip ${totalDelayScore > 0 ? "rose" : "emerald"}`}>
+                        <strong>Delay:</strong> {totalDelayScore > 0 ? `${detail.validation.soft_scores?.overrun_days_total ?? 0}d` : "0d"}
+                      </span>
+                      <span className={`indicator-chip ${ecloNights > 0 ? "purple" : "emerald"}`}>
+                        <strong>ECLO:</strong> {ecloNights > 0 ? `${ecloNights}n (5×)` : "0n"}
+                      </span>
+                      <span className={`indicator-chip ${Number(detail.validation.soft_scores?.excess_access_nights_total ?? 0) > 0 ? "amber" : "emerald"}`}>
+                        <strong>Excess:</strong> {Number(detail.validation.soft_scores?.excess_access_nights_total ?? 0) > 0 ? `${detail.validation.soft_scores?.excess_access_nights_total}n (7×)` : "0n"}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: "10.5px", color: "var(--text-dim)", display: "flex", alignItems: "center", gap: "5px", marginTop: "2px" }}>
+                      <ShieldCheck size={12} color="var(--cyan)" />
+                      <span>
+                        {scenario === "A"
+                          ? "Strict Supply · Zero ECLO · Absorbs Delay"
+                          : scenario === "B"
+                          ? "Strict Schedule · 0d Overrun · Uses ECLO"
+                          : "Hybrid Multi-Objective Trade-off"}
+                      </span>
                     </div>
                   </div>
                 </div>
