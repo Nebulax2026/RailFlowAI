@@ -775,14 +775,15 @@ svg {
 
 /* Slim Top Policy Selector Bar */
 .top-policy-bar {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  display: flex;
+  gap: 8px;
   flex-shrink: 0;
   width: 100%;
 }
 
 .top-policy-card {
+  flex: 1;
+  min-width: 0;
   background: var(--bg-panel);
   border: 1px solid var(--border-card);
   border-radius: 8px;
@@ -818,6 +819,27 @@ svg {
   background: linear-gradient(135deg, #1e152e 0%, #120e1c 100%);
   border-color: var(--purple);
   box-shadow: 0 0 14px rgba(139, 92, 246, 0.22), inset 0 0 0 1px rgba(139, 92, 246, 0.4);
+}
+
+.top-policy-card.policy-d.selected {
+  background: linear-gradient(135deg, #2a1608 0%, #170d05 100%);
+  border-color: var(--orange);
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.22), inset 0 0 0 1px rgba(249, 115, 22, 0.4);
+}
+
+.top-policy-card.policy-e.selected {
+  background: linear-gradient(135deg, #1e1233 0%, #110c1c 100%);
+  border-color: var(--purple);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.22), inset 0 0 0 1px rgba(139, 92, 246, 0.4);
+}
+
+.top-policy-card.policy-pm {
+  border-color: rgba(139, 92, 246, 0.28);
+}
+
+.top-policy-card.policy-pm:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.06);
 }
 
 .top-policy-left {
@@ -860,12 +882,43 @@ svg {
   border-color: #a78bfa;
 }
 
+.top-policy-card.policy-d.selected .top-policy-letter {
+  background: var(--orange);
+  color: #ffffff;
+  border-color: #fb923c;
+}
+
+.top-policy-card.policy-e.selected .top-policy-letter {
+  background: var(--purple);
+  color: #ffffff;
+  border-color: #a78bfa;
+}
+
 .top-policy-card.policy-b .top-policy-progress-line {
   background: var(--pink);
 }
 
 .top-policy-card.policy-c .top-policy-progress-line {
   background: var(--purple);
+}
+
+.top-policy-card.policy-d .top-policy-progress-line {
+  background: var(--orange);
+}
+
+.top-policy-card.policy-e .top-policy-progress-line,
+.top-policy-progress-line.pm-progress {
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+}
+
+.pm-letter {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.35);
+  color: #c4b5fd;
+}
+
+.pm-subtitle {
+  color: #a78bfa;
 }
 
 .top-policy-meta {
@@ -928,6 +981,21 @@ svg {
   white-space: nowrap;
 }
 
+.top-policy-pill.completed {
+  color: var(--emerald);
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.top-policy-pill.running {
+  color: var(--cyan);
+  border-color: rgba(6, 182, 212, 0.3);
+  background: rgba(6, 182, 212, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .top-policy-progress-line {
   position: absolute;
   bottom: 0;
@@ -935,6 +1003,154 @@ svg {
   height: 2.5px;
   background: var(--emerald);
   transition: width 200ms ease;
+}
+
+/* Optional Preventive File Row in Demand Book Checklist */
+.optional-preventive-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px dashed rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.04);
+  grid-column: 1 / -1;
+  font-size: 11px;
+}
+
+.optional-preventive-row.ready {
+  border-style: solid;
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.09);
+}
+
+.pm-toggle-btn.active {
+  background: rgba(139, 92, 246, 0.15) !important;
+  border-color: var(--purple) !important;
+  color: #c4b5fd !important;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+/* Preventive Workspace Panel */
+.preventive-workspace-panel {
+  padding: 20px 24px;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.preventive-inline-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.09) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+}
+
+.preventive-inline-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.preventive-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pm-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a78bfa;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.pm-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.pm-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pm-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.pm-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pm-progress-bar > div {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.pm-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.pm-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg-panel-elevated);
+  border: 1px solid var(--border-card);
+}
+
+.pm-metric-card span {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pm-metric-card strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pm-maintenance-table-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 250px;
 }
 
 /* Column 2: Center Main Workspace */
@@ -2201,6 +2417,24 @@ tr:hover td {
   background: rgba(59, 130, 246, 0.2);
   color: #60a5fa;
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.facility-badge-tunnel {
+  background: rgba(59, 130, 246, 0.16);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.facility-badge-platform {
+  background: rgba(168, 85, 247, 0.16);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.facility-badge-hub {
+  background: rgba(6, 182, 212, 0.16);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.35);
 }
 
 /* Column 3: Permanent AI Assistant Sidebar */
