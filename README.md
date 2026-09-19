@@ -2,6 +2,8 @@
 
 RailFlowAI is a validator-first railway possession planner for NebulaX 2026 PS1. It accepts the official eight CSV files, generates complete schedules for Scenarios A, B, and C, validates the exported CSVs independently, and produces submission-ready ZIP files.
 
+An isolated experimental workflow runs Scenario D (fixed preventive-maintenance priority) and Scenario E (flexible maintenance). `PS1/01_data_preventive` preserves an exact eight-file public-data copy plus maintenance rules; the UI uses `PS1/01_data_preventive_tradeoff`, which adds one documented five-access demonstration contract so D and E necessarily make different choices. The separate job kind and API leave the official A/B/C dataset, solver loop, CSV schemas, and submission artifacts unchanged.
+
 ## Workflow
 
 1. Validate input schemas, references, dates, topology, capacities, and predecessors.
@@ -27,6 +29,8 @@ The AI Schedule Assistant supports evidence-grounded schedule Q&A and an explici
 ```text
 Next.js / React UI → FastAPI API → CP-SAT solver → CSV exporter → independent CSV validator → ZIP
 ```
+
+The preventive comparison endpoint is `POST /api/ps1/preventive/jobs?public=true`. One job contains D/E only, runs both policies with the same fixed eight-worker CP-SAT configuration, and exposes its validated comparison at `GET /api/ps1/jobs/{job_id}/preventive-tradeoff`. The comparison payload includes exact project-access and maintenance-occurrence date mappings, rendered by the UI as side-by-side D → E schedule tables.
 
 ## Development
 

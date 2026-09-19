@@ -267,7 +267,7 @@ def build_scenario_model(instance, scenario, time_limit_seconds, started, cancel
     return SimpleNamespace(model=model, x=x, eclo=eclo, local_nights=local_nights,
                            group_vars=group_vars, patterns=patterns, primary=primary,
                            work=work, footprint=footprint, starts=starts, finishes=finishes, extract=extract,
-                           churn=churn, incumbent=incumbent)
+                           physical=physical, churn=churn, incumbent=incumbent)
 
 
 def solve_scenario(instance, scenario, time_limit_seconds=30.0, *, incumbent=None, on_solution=None,

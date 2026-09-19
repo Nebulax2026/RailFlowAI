@@ -5,7 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
-from app.ps1.models import Disruption, JobStatus, ReplanRun, Scenario, ScenarioRun, SolveJob
+from app.ps1.models import (Disruption, JobKind, JobStatus, PreventiveScenario, ReplanRun,
+                            Scenario, ScenarioRun, SolveJob)
 from app.ps1.replanning import audit_disruption, solution_diff
 from app.ps1.exporter import scenario_csvs
 from app.ps1.parser import EXPECTED_FILES, parse_instance
@@ -14,6 +15,7 @@ from app.ps1.validator import validate_exported_csvs
 
 JOB_TTL_MINUTES = 60
 PUBLIC_DATA_DIR = Path(__file__).resolve().parents[3] / "PS1" / "01_data"
+PREVENTIVE_DATA_DIR = Path(__file__).resolve().parents[3] / "PS1" / "01_data_preventive_tradeoff"
 
 
 class JobManager:
@@ -36,6 +38,7 @@ class JobManager:
             scenarios={scenario: ScenarioRun() for scenario in Scenario},
             algorithm=algorithm, solver_config=solver_config or {},
             input_files=files if algorithm != "legacy" else {},
+            job_kind=JobKind.STANDARD,
         )
         with self._lock:
             self._jobs[job.job_id] = job; self._events[job.job_id] = threading.Event()
@@ -45,6 +48,26 @@ class JobManager:
     def create_public(self, algorithm: str = "legacy", solver_config: dict | None = None) -> SolveJob:
         files = {name: (PUBLIC_DATA_DIR / name).read_bytes() for name in EXPECTED_FILES}
         return self.create(files, "public", algorithm, solver_config)
+
+    def create_preventive_public(self, time_limit_seconds: float = 120, seed: int = 42) -> SolveJob:
+        from app.ps1.preventive import MAINTENANCE_FILE, parse_preventive_instance
+        self.cleanup()
+        files = {name: (PREVENTIVE_DATA_DIR / name).read_bytes() for name in (*EXPECTED_FILES, MAINTENANCE_FILE)}
+        instance, rules = parse_preventive_instance(files)
+        now = datetime.now(UTC)
+        job = SolveJob(
+            job_id=uuid4().hex, status=JobStatus.QUEUED, created_at=now,
+            expires_at=now + timedelta(minutes=JOB_TTL_MINUTES), source="preventive_tradeoff_public",
+            instance=instance, scenarios={scenario: ScenarioRun() for scenario in PreventiveScenario},
+            algorithm="preventive_cp_sat",
+            solver_config={"time_limit_seconds": time_limit_seconds, "seed": seed, "workers": 8},
+            job_kind=JobKind.PREVENTIVE, maintenance_rules=rules,
+        )
+        with self._lock:
+            self._jobs[job.job_id] = job
+            self._events[job.job_id] = threading.Event()
+        self._executor.submit(self._run, job.job_id)
+        return job
 
     def get(self, job_id):
         self.cleanup()
@@ -109,8 +132,11 @@ class JobManager:
         if job.algorithm == "strategies":
             self._run_strategies(job)
             return
+        if job.job_kind == JobKind.PREVENTIVE:
+            self._run_preventive(job)
+            return
         budget = self.first_seconds + self.improve_seconds
-        for scenario in Scenario:
+        for scenario in job.scenarios:
             with self._lock:
                 if event.is_set(): self._finish_cancel(job); return
                 run = job.scenarios[scenario]
@@ -138,6 +164,54 @@ class JobManager:
         with self._lock:
             job.status = JobStatus.COMPLETED if all(r.solution for r in job.scenarios.values()) else JobStatus.FAILED
             if job.status == JobStatus.FAILED: job.error = "Some scenarios have no validated output; available scenarios remain downloadable."
+
+    def _run_preventive(self, job: SolveJob) -> None:
+        from app.ps1.preventive import solve_preventive
+        event = self._events[job.job_id]
+        budget = float(job.solver_config["time_limit_seconds"])
+        seed = int(job.solver_config["seed"])
+        workers = int(job.solver_config["workers"])
+        for scenario, run in job.scenarios.items():
+            if event.is_set():
+                with self._lock: self._finish_cancel(job)
+                return
+            with self._lock:
+                run.status = JobStatus.RUNNING
+                run.phase = "first_search"
+                run.progress = 10
+                run.message = f"Solving Scenario {scenario.value} with preventive maintenance."
+            started = time.monotonic()
+            try:
+                solution = solve_preventive(job.instance, job.maintenance_rules, scenario, budget,
+                                            workers=workers, seed=seed, cancel_event=event)
+                solution.solution_revision = 1
+                with self._lock:
+                    run.solution = solution
+                    run.solver_stats = dict(solution.solver_stats)
+                    run.termination_reason = solution.solver_stats["termination_reason"]
+                    run.status = JobStatus.COMPLETED
+                    run.message = ("All lexicographic stages proved optimal." if solution.solver_stats["optimal"]
+                                   else "Validated result available; full optimality was not proved.")
+            except SolveFailure as error:
+                with self._lock:
+                    run.status = JobStatus.FAILED
+                    run.termination_reason = error.reason
+                    run.error = str(error)
+                    run.message = str(error)
+                    run.solver_stats = {"elapsed_seconds": time.monotonic() - started}
+            except Exception as error:
+                with self._lock:
+                    run.status = JobStatus.FAILED
+                    run.termination_reason = "error"
+                    run.error = f"{type(error).__name__}: preventive scheduling failed."
+                    run.message = run.error
+            with self._lock:
+                run.phase = "finished"
+                run.progress = 100
+        with self._lock:
+            job.status = JobStatus.COMPLETED if all(run.status == JobStatus.COMPLETED for run in job.scenarios.values()) else JobStatus.FAILED
+            if job.status == JobStatus.FAILED:
+                job.error = "One or more preventive scenarios failed; a trade-off is unavailable."
 
     def _run_replan(self, job_id, replan_id):
         with self._lock:

@@ -12,6 +12,16 @@ class Scenario(StrEnum):
     C = "C"
 
 
+class PreventiveScenario(StrEnum):
+    D = "D"
+    E = "E"
+
+
+class JobKind(StrEnum):
+    STANDARD = "standard"
+    PREVENTIVE = "preventive"
+
+
 class JobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
@@ -148,6 +158,65 @@ class ScenarioSolution:
 
 
 @dataclass(frozen=True)
+class PreventiveMaintenanceRule:
+    rule_id: str
+    location_id: str
+    weekday: str
+    start_time: str
+    end_time: str
+    recurrence_start_date: date
+    recurrence_end_date: date
+    max_deferral_days: int
+
+
+@dataclass(frozen=True)
+class PreventiveMaintenanceOccurrence:
+    occurrence_id: str
+    rule_id: str
+    location_id: str
+    planned_date: date
+    start_time: str
+    end_time: str
+    max_deferral_days: int
+
+
+@dataclass(frozen=True)
+class ProjectAccessDetail:
+    activity_id: str
+    access_seq: int
+    week: int
+    physical_day: int
+    access_date: date
+    start_time: str = "01:00"
+    end_time: str = "04:00"
+
+
+@dataclass(frozen=True)
+class MaintenanceAssignment:
+    occurrence_id: str
+    rule_id: str
+    location_id: str
+    planned_date: date
+    actual_date: date
+    start_time: str
+    end_time: str
+    deferral_days: int
+    deferred: bool
+    conflict_driven: bool
+
+
+@dataclass
+class PreventiveSolution:
+    scenario: PreventiveScenario
+    project_solution: ScenarioSolution
+    project_accesses: list[ProjectAccessDetail]
+    maintenance: list[MaintenanceAssignment]
+    validation: ValidationReport
+    solver_stats: dict[str, Any] = field(default_factory=dict)
+    solution_revision: int = 0
+
+
+@dataclass(frozen=True)
 class Disruption:
     location_id: str
     start_week: int
@@ -184,7 +253,7 @@ class ScenarioRun:
     status: JobStatus = JobStatus.QUEUED
     progress: int = 0
     message: str = "Waiting to run."
-    solution: ScenarioSolution | None = None
+    solution: ScenarioSolution | PreventiveSolution | None = None
     error: str | None = None
     phase: str = "queued"
     termination_reason: str | None = None
@@ -200,10 +269,12 @@ class SolveJob:
     expires_at: datetime
     source: str
     instance: Instance
-    scenarios: dict[Scenario, ScenarioRun]
+    scenarios: dict[Scenario | PreventiveScenario, ScenarioRun]
     replans: dict[str, ReplanRun] = field(default_factory=dict)
     cancel_requested: bool = False
     error: str | None = None
     algorithm: str = "legacy"
     solver_config: dict[str, Any] = field(default_factory=dict)
     input_files: dict[str, bytes] = field(default_factory=dict, repr=False)
+    job_kind: JobKind = JobKind.STANDARD
+    maintenance_rules: list[PreventiveMaintenanceRule] = field(default_factory=list)

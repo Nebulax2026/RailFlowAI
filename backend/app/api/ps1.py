@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from app.ps1.exporter import scenario_csvs, solutions_zip
 from app.ps1.jobs import job_manager
-from app.ps1.models import Disruption, JobStatus, Scenario, SolveJob
+from app.ps1.models import Disruption, JobKind, JobStatus, PreventiveScenario, Scenario, SolveJob
 from app.ps1.parser import EXPECTED_FILES, InstanceValidationError
 from app.ps1.evidence import activity_details
 from app.ps1.assistant import enforce_query_rate
@@ -104,6 +104,18 @@ async def create_job(files: list[UploadFile] | None = File(default=None), public
     return _job_payload(job)
 
 
+@router.post("/preventive/jobs", status_code=202)
+def create_preventive_job(public: bool = True,
+                          time_limit_seconds: float = Query(default=120, ge=5, le=120),
+                          seed: int = Query(default=42, ge=0, le=2147483647)) -> dict:
+    if not public:
+        raise HTTPException(status_code=422, detail="Preventive comparison currently supports only the preventive public dataset.")
+    try:
+        return _job_payload(job_manager.create_preventive_public(time_limit_seconds, seed))
+    except InstanceValidationError as error:
+        raise HTTPException(status_code=422, detail=error.errors) from error
+
+
 @router.get("/jobs/{job_id}")
 def get_job(job_id: str) -> dict:
     return _job_payload(_require_job(job_id))
@@ -118,14 +130,26 @@ def cancel_job(job_id: str) -> dict:
 
 
 @router.get("/jobs/{job_id}/scenarios/{scenario}")
-def get_scenario(job_id: str, scenario: Scenario) -> dict:
+def get_scenario(job_id: str, scenario: str) -> dict:
     job = _require_job(job_id)
+    scenario = _scenario_key(job, scenario)
     if scenario not in job.scenarios:
         raise HTTPException(status_code=404, detail="Unknown scenario.")
     run = job.scenarios[scenario]
     if not run.solution:
         raise HTTPException(status_code=409, detail=run.error or f"Scenario {scenario.value} is not complete.")
     solution = run.solution
+    if job.job_kind == JobKind.PREVENTIVE:
+        from app.ps1.preventive import preventive_solution_files
+        files = preventive_solution_files(solution)
+        return {
+            "scenario": scenario.value, "job_kind": job.job_kind.value, "status": run.status.value,
+            "validation": asdict(solution.validation), "project_results": [asdict(item) for item in solution.project_solution.results],
+            "project_accesses": [asdict(item) for item in solution.project_accesses],
+            "maintenance": [asdict(item) for item in solution.maintenance], "downloads": list(files),
+            "phase": run.phase, "termination_reason": run.termination_reason,
+            "solution_revision": solution.solution_revision, "solver_stats": run.solver_stats,
+        }
     files = scenario_csvs(solution)
     return {
         "scenario": scenario.value,
@@ -300,16 +324,24 @@ def download_job(job_id: str) -> Response:
     solutions = [run.solution for run in job.scenarios.values() if run.solution and run.solution.validation.feasible]
     if not solutions:
         raise HTTPException(status_code=409, detail="No validated scenario outputs are available.")
+    if job.job_kind == JobKind.PREVENTIVE:
+        from app.ps1.preventive import preventive_zip
+        payload = preventive_zip(solutions)
+        filename = f"railflow-{job.job_id[:8]}-preventive-results.zip"
+    else:
+        payload = solutions_zip(solutions)
+        filename = f"railflow-{job.job_id[:8]}-results.zip"
     return Response(
-        solutions_zip(solutions),
+        payload,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="railflow-{job.job_id[:8]}-results.zip"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
 @router.get("/jobs/{job_id}/scenarios/{scenario}/files/{filename}")
-def download_scenario_file(job_id: str, scenario: Scenario, filename: str, revision: int | None = None) -> Response:
+def download_scenario_file(job_id: str, scenario: str, filename: str, revision: int | None = None) -> Response:
     job = _require_job(job_id)
+    scenario = _scenario_key(job, scenario)
     if scenario not in job.scenarios:
         raise HTTPException(status_code=404, detail="Unknown scenario.")
     solution = job.scenarios[scenario].solution
@@ -317,10 +349,28 @@ def download_scenario_file(job_id: str, scenario: Scenario, filename: str, revis
         raise HTTPException(status_code=409, detail="A validated scenario output is not available.")
     if revision is not None and revision != solution.solution_revision:
         raise HTTPException(status_code=409, detail="A newer result is available. Refresh the scenario before downloading.")
-    files = scenario_csvs(solution)
+    if job.job_kind == JobKind.PREVENTIVE:
+        from app.ps1.preventive import preventive_solution_files
+        files = preventive_solution_files(solution)
+    else:
+        files = scenario_csvs(solution)
     if filename not in files:
         raise HTTPException(status_code=404, detail="Unknown scenario output file.")
-    return Response(files[filename], media_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+    media_type = "application/json" if filename.endswith(".json") else "text/csv"
+    return Response(files[filename], media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.get("/jobs/{job_id}/preventive-tradeoff")
+def get_preventive_tradeoff(job_id: str) -> dict:
+    job = _require_job(job_id)
+    if job.job_kind != JobKind.PREVENTIVE:
+        raise HTTPException(status_code=409, detail="This is not a preventive comparison job.")
+    d = job.scenarios[PreventiveScenario.D].solution
+    e = job.scenarios[PreventiveScenario.E].solution
+    if not d or not e or not d.validation.feasible or not e.validation.feasible:
+        raise HTTPException(status_code=409, detail="Both independently validated preventive scenarios are required.")
+    from app.ps1.preventive import preventive_tradeoff
+    return preventive_tradeoff(d, e)
 
 
 def _require_job(job_id: str) -> SolveJob:
@@ -330,11 +380,22 @@ def _require_job(job_id: str) -> SolveJob:
     return job
 
 
+def _scenario_key(job: SolveJob, value: str):
+    try:
+        key = PreventiveScenario(value) if job.job_kind == JobKind.PREVENTIVE else Scenario(value)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail="Unknown scenario for this job.") from error
+    if key not in job.scenarios:
+        raise HTTPException(status_code=404, detail="Unknown scenario for this job.")
+    return key
+
+
 def _job_payload(job: SolveJob) -> dict:
     return {
         "job_id": job.job_id,
         "status": job.status.value,
         "source": job.source,
+        "job_kind": job.job_kind.value,
         "algorithm": job.algorithm,
         "solver_config": job.solver_config,
         "created_at": job.created_at,
@@ -358,7 +419,7 @@ def _job_payload(job: SolveJob) -> dict:
                 "message": run.message,
                 "error": run.error,
                 "feasible": run.solution.validation.feasible if run.solution else None,
-                "objective_score": run.solution.validation.soft_scores.get("objective_score") if run.solution else None,
+                "objective_score": (run.solution.validation.soft_scores.get("objective_score", run.solution.validation.soft_scores.get("project_objective_score")) if run.solution else None),
                 "phase": run.phase,
                 "termination_reason": run.termination_reason,
                 "solution_revision": run.solution.solution_revision if run.solution else 0,

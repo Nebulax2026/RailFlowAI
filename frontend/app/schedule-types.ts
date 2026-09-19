@@ -1,6 +1,9 @@
 import type { EvidenceActivity, LocationUsage } from "./inspection";
 
-export type Scenario = "A" | "B" | "C";
+export type StandardScenario = "A" | "B" | "C";
+export type PreventiveScenario = "D" | "E";
+export type Scenario = StandardScenario;
+export type AnyScenario = StandardScenario | PreventiveScenario;
 export const POLICIES: Record<Scenario, string> = {
   A: "Strict supply",
   B: "Strict schedule",
@@ -18,15 +21,16 @@ export type DetailTab = typeof TABS[number]["id"];
 export type Status = "queued" | "running" | "completed" | "failed" | "cancelled";
 export type SolverConfig = { strategy?: string; initialization?: string; workers?: number | "auto"; time_limit_seconds?: number; seed?: number };
 export type Diagnostics = { status?: string; strategy?: string; config?: SolverConfig; objective?: number | null; global_lower_bound?: number | null; absolute_gap?: number | null; elapsed_seconds?: number; trajectory?: { seconds: number; objective: number }[] };
-export type SolverStats = { elapsed_seconds?: number; optimal?: boolean; relative_gap?: number };
+export type SolverStats = { elapsed_seconds?: number; optimal?: boolean; relative_gap?: number; search_workers?: number };
 export type RunState = { status: Status; progress: number; message: string; error?: string | null; feasible?: boolean | null; objective_score?: number | null; diagnostics?: Diagnostics; phase: string; termination_reason?: string; solution_revision: number; solver_stats: SolverStats; scores?: Record<string, number> };
 
 export type Job = {
   job_id: string; status: Status; source: string; expires_at: string; error?: string | null;
-  algorithm: "legacy" | "strategies";
+  job_kind: "standard" | "preventive";
+  algorithm: "legacy" | "strategies" | "preventive_cp_sat";
   solver_config: SolverConfig;
   instance: { lines: number; stations: number; sectors: number; locations: number; contracts: number; activities: number; total_accesses: number; horizon_start: string; horizon_weeks: number };
-  scenarios: Partial<Record<Scenario, RunState>>;
+  scenarios: Partial<Record<AnyScenario, RunState>>;
 };
 export type ContractResult = { contract_number: string; simulated_completion_date: string; overrun_days: number };
 export type ReplanState = {
@@ -79,6 +83,51 @@ export type ScenarioDetail = {
   results: { scenario: string; contract_number: string; simulated_completion_date: string; overrun_days: number }[];
   accesses: { activity_id: string; week: number; eclo: number; access_night: number }[];
   diagnostics?: Diagnostics;
+};
+
+export type MaintenanceAssignment = {
+  occurrence_id: string; rule_id: string; location_id: string;
+  planned_date: string; actual_date: string; start_time: string; end_time: string;
+  deferral_days: number; deferred: boolean; conflict_driven: boolean;
+};
+
+export type PreventiveDetail = {
+  scenario: PreventiveScenario; job_kind: "preventive"; status: Status;
+  solution_revision: number; phase: string; termination_reason?: string;
+  solver_stats: SolverStats & { objective_hierarchy?: { name: string; value: number; optimal: boolean }[] };
+  validation: {
+    feasible: boolean;
+    hard_violations: { rule: string; severity: string; detail: string }[];
+    soft_scores: Record<string, number | string>;
+    detail: { safety_status?: string; experimental?: boolean };
+  };
+  project_results: ContractResult[];
+  project_accesses: { activity_id: string; access_seq: number; week: number; physical_day: number; access_date: string; start_time: string; end_time: string }[];
+  maintenance: MaintenanceAssignment[];
+  downloads: string[];
+};
+
+export type TradeoffMetric = { D: number | null; E: number | null; delta_E_minus_D: number | null };
+export type PreventiveTradeoff = {
+  title: string;
+  metrics: Record<string, TradeoffMetric>;
+  project_schedule_impact: string;
+  preventive_maintenance_impact: string;
+  summary: string;
+  optimality_proved: { D: boolean; E: boolean };
+  schedule_difference_summary: { project_accesses_changed: number; maintenance_occurrences_changed: number };
+  project_schedule_differences: {
+    activity_id: string; access_seq: number;
+    D: { week: number; physical_day: number; access_date: string };
+    E: { week: number; physical_day: number; access_date: string };
+    moved_days_E_minus_D: number;
+  }[];
+  maintenance_schedule_differences: {
+    occurrence_id: string; location_id: string; planned_date: string;
+    D: { actual_date: string; deferral_days: number };
+    E: { actual_date: string; deferral_days: number };
+    moved_days_E_minus_D: number;
+  }[];
 };
 
 export function formatLocationName(locId: string): { primary: string; secondary: string; isHub: boolean; typeTag: string } {

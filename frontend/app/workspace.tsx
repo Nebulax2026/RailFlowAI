@@ -17,8 +17,9 @@ import {
 } from "lucide-react";
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import { ScheduleResults } from "./schedule-results";
+import { PreventiveComparisonResults } from "./preventive-results";
 import { api, ApiError } from "./api-client";
-import type { Job, Scenario, ScenarioDetail } from "./schedule-types";
+import type { AnyScenario, Job, PreventiveDetail, PreventiveScenario, Scenario, ScenarioDetail } from "./schedule-types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 const REQUIRED_FILES = [
@@ -38,6 +39,7 @@ export default function Workspace() {
   const [publicDatasetSelected, setPublicDatasetSelected] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
   const [details, setDetails] = useState<Partial<Record<Scenario, ScenarioDetail>>>({});
+  const [preventiveDetails, setPreventiveDetails] = useState<Partial<Record<PreventiveScenario, PreventiveDetail>>>({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [intake, setIntake] = useState(true);
@@ -87,13 +89,20 @@ export default function Workspace() {
       try {
         const next = await api<Job>(`/api/ps1/jobs/${jobId}`);
         if (disposed) return;
-        for (const scenario of Object.keys(next.scenarios) as Scenario[]) {
+        for (const scenario of Object.keys(next.scenarios) as AnyScenario[]) {
           const run = next.scenarios[scenario]!;
           const version = `${run.solution_revision}-${run.phase}-${run.termination_reason}`;
           if (run.feasible && loaded.get(scenario) !== version) {
-            const detail = await api<ScenarioDetail>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}`);
+            if (next.job_kind === "preventive") {
+              const detail = await api<PreventiveDetail>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}`);
+              if (disposed) return;
+              setPreventiveDetails((current) => ({ ...current, [scenario]: detail }));
+            } else {
+              const detail = await api<ScenarioDetail>(`/api/ps1/jobs/${jobId}/scenarios/${scenario}`);
+              if (disposed) return;
+              setDetails((current) => ({ ...current, [scenario]: detail }));
+            }
             if (disposed) return;
-            setDetails((current) => ({ ...current, [scenario]: detail }));
             loaded.set(scenario, version);
           }
         }
@@ -105,6 +114,7 @@ export default function Workspace() {
           try { window.localStorage.removeItem(JOB_STORAGE_KEY); } catch {}
           setJob(null);
           setDetails({});
+          setPreventiveDetails({});
           setIntake(true);
           setError("This job expired or is no longer available. Load a demand book to begin.");
           return;
@@ -121,7 +131,7 @@ export default function Workspace() {
   const allFilesReady = publicDatasetSelected || (REQUIRED_FILES.every((name) => files.has(name)) && files.size === REQUIRED_FILES.length);
   const canDownload = Boolean(
     job &&
-    Object.values(job.scenarios).some((run) => run.feasible) &&
+    Object.values(job.scenarios).some((run) => run?.feasible) &&
     !isSandboxActive
   );
 
@@ -165,6 +175,7 @@ export default function Workspace() {
       }
       const created = await api<Job>(`/api/ps1/jobs?${params}`, init);
       setDetails({});
+      setPreventiveDetails({});
       setJob(created);
       setIntake(false);
       try {
@@ -174,6 +185,27 @@ export default function Workspace() {
       }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "The solve job could not be started.");
+    } finally {
+      setBusy(false);
+      requestPending.current = false;
+    }
+  }
+
+  async function startPreventive() {
+    if (requestPending.current || active) return;
+    requestPending.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const created = await api<Job>("/api/ps1/preventive/jobs?public=true", { method: "POST" });
+      setDetails({});
+      setPreventiveDetails({});
+      setJob(created);
+      setIntake(false);
+      try { window.localStorage.setItem(JOB_STORAGE_KEY, created.job_id); }
+      catch { setError("Job started, but this browser could not save it for re-entry."); }
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "The preventive comparison could not be started.");
     } finally {
       setBusy(false);
       requestPending.current = false;
@@ -205,7 +237,7 @@ export default function Workspace() {
         {!intake && job ? (
           <>
             <div className="dataset-summary">
-              <strong>{job.source === "public" ? "Public Dataset" : "Demand Book"}</strong>
+              <strong>{job.job_kind === "preventive" ? "Preventive Trade-off Dataset" : job.source === "public" ? "Public Dataset" : "Demand Book"}</strong>
               <span>
                 {job.instance.activities} activities · {job.instance.total_accesses} accesses · {job.instance.horizon_weeks} weeks
               </span>
@@ -250,7 +282,7 @@ export default function Workspace() {
                   <MoreVertical size={14} />
                 </button>
 
-                {downloadMenuOpen && canDownload && (
+                {downloadMenuOpen && canDownload && job.job_kind === "standard" && (
                   <div className="dropdown-menu" onMouseLeave={() => setDownloadMenuOpen(false)}>
                     <a
                       className="dropdown-item"
@@ -365,6 +397,10 @@ export default function Workspace() {
               <Activity size={16} />
               Load Public Dataset
             </button>
+            <button className="secondary-button preventive-run-button" disabled={busy || active} onClick={() => void startPreventive()}>
+              <Activity size={16} />
+              Run Preventive Maintenance Comparison
+            </button>
           </div>
         </div>
       </section>
@@ -372,12 +408,16 @@ export default function Workspace() {
       {/* Main Results Dashboard (3-Column Layout) */}
       {job && (
         <div className="results-host" hidden={intake}>
-          <ScheduleResults
-            key={job.job_id}
-            job={job}
-            details={details}
-            onSandboxStateChange={setIsSandboxActive}
-          />
+          {job.job_kind === "preventive"
+            ? <PreventiveComparisonResults key={job.job_id} job={job} details={preventiveDetails} />
+            : (
+              <ScheduleResults
+                key={job.job_id}
+                job={job}
+                details={details}
+                onSandboxStateChange={setIsSandboxActive}
+              />
+            )}
         </div>
       )}
     </main>
