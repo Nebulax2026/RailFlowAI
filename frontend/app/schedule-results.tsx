@@ -331,9 +331,11 @@ function ScenarioWorkspace({
   }, [exactDelayBreakdown]);
 
   const totalDelayScore = detail?.score_breakdown.delay ?? 0;
+  const excessNights = Number(detail?.validation.soft_scores?.excess_access_nights_total ?? 0);
+  const totalExcessScore = detail?.score_breakdown.excess_supply ?? (excessNights * 7);
   const totalEcloScore = detail?.score_breakdown.eclo ?? 0;
   const ecloNights = detail?.validation.detail.eclo_nights ?? 0;
-  const totalScoreVal = totalDelayScore + totalEcloScore;
+  const totalScoreVal = Number((totalDelayScore + totalExcessScore + totalEcloScore).toFixed(1));
 
   // Cumulative Milestone Completion & Delay Slip Curves (PS1 Target vs Simulated)
   const sCurveData = useMemo(() => {
@@ -585,6 +587,12 @@ function ScenarioWorkspace({
           </strong>
         </div>
         <div className="prominent-metric-card">
+          <span>Excess Access</span>
+          <strong style={{ color: excessNights > 0 ? "var(--amber)" : "var(--text-primary)" }}>
+            {excessNights}n
+          </strong>
+        </div>
+        <div className="prominent-metric-card">
           <span>Possession Accesses</span>
           <strong>{detail?.accesses.length ?? 0}</strong>
         </div>
@@ -625,10 +633,10 @@ function ScenarioWorkspace({
             {/* TAB 1: OVERVIEW & METRICS */}
             {tab === "overview" && (
               <div className="overview-tab-wrap">
-                {/* Score Formulation Breakdown (Excess removed; hover breakdown math matches) */}
+                {/* Score Formulation Breakdown (§2.5: Delay + Excess Supply + ECLO) */}
                 <div className="score-formula-card">
                   <div className="score-formula-header">
-                    <h4><Sparkles size={14} /> Penalty Formulation Breakdown</h4>
+                    <h4><Sparkles size={14} /> Penalty Formulation Breakdown (§2.5)</h4>
                   </div>
 
                   <div className="score-formula-blocks">
@@ -654,6 +662,27 @@ function ScenarioWorkspace({
                           )}
                           <div style={{ marginTop: "4px", borderTop: "1px solid var(--border-subtle)", paddingTop: "4px", color: "var(--emerald)" }}>
                             Total Delay Cost = {totalDelayScore} pts
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <span className="formula-op">+</span>
+
+                    {/* Excess Supply Term (7×) */}
+                    <div
+                      className="formula-block"
+                      onMouseEnter={() => setHoveredFormulaTerm("excess")}
+                      onMouseLeave={() => setHoveredFormulaTerm(null)}
+                    >
+                      <span>Excess Supply (7×):</span>
+                      <strong>{totalExcessScore} pts</strong>
+                      {hoveredFormulaTerm === "excess" && (
+                        <div className="formula-popover">
+                          <strong>Excess Access Nights (§2.5):</strong>
+                          <div>{excessNights} excess nights × 7 pts/night = <strong>{totalExcessScore} pts</strong></div>
+                          <div style={{ marginTop: "4px", fontSize: "11px", color: "var(--emerald)" }}>
+                            {excessNights === 0 ? "Nominal supply respected (0 excess nights)" : "Flexible supply buffer utilized"}
                           </div>
                         </div>
                       )}
@@ -754,6 +783,9 @@ function ScenarioWorkspace({
                     <div className="indicator-chips-row">
                       <span className="indicator-chip">
                         <strong>Quota:</strong> {supplyHeadroomMetrics.quotaUsedPct}%
+                      </span>
+                      <span className={`indicator-chip ${excessNights > 0 ? "amber" : "emerald"}`}>
+                        <strong>Excess:</strong> {excessNights}n
                       </span>
                       <span className={`indicator-chip ${supplyHeadroomMetrics.hotspotCount > 20 ? "rose" : supplyHeadroomMetrics.hotspotCount > 0 ? "amber" : "emerald"}`}>
                         <strong>Hotspots:</strong> {supplyHeadroomMetrics.hotspotCount}

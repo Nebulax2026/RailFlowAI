@@ -697,7 +697,7 @@ svg {
 /* Prominent Top KPI Metric Bar */
 .prominent-metric-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   padding: 14px 20px;
   background: rgba(18, 24, 38, 0.7);
