@@ -763,43 +763,6 @@ function ScenarioWorkspace({
                       </span>
                     </div>
                   </div>
-
-                  {/* Card 3: Operational Policy Levers */}
-                  <div className="indicator-card">
-                    <div className="indicator-card-top">
-                      <div className="indicator-card-title">
-                        <Gauge size={14} color="var(--cyan)" />
-                        <span>Policy Levers (§2.5)</span>
-                      </div>
-                      <span className="indicator-status-badge cyan">
-                        Policy {scenario}
-                      </span>
-                    </div>
-
-                    {/* Levers Visual Status Chips */}
-                    <div className="indicator-chips-row" style={{ marginTop: "2px" }}>
-                      <span className={`indicator-chip ${totalDelayScore > 0 ? "rose" : "emerald"}`}>
-                        <strong>Delay:</strong> {totalDelayScore > 0 ? `${detail.validation.soft_scores?.overrun_days_total ?? 0}d` : "0d"}
-                      </span>
-                      <span className={`indicator-chip ${ecloNights > 0 ? "purple" : "emerald"}`}>
-                        <strong>ECLO:</strong> {ecloNights > 0 ? `${ecloNights}n (5×)` : "0n"}
-                      </span>
-                      <span className={`indicator-chip ${Number(detail.validation.soft_scores?.excess_access_nights_total ?? 0) > 0 ? "amber" : "emerald"}`}>
-                        <strong>Excess:</strong> {Number(detail.validation.soft_scores?.excess_access_nights_total ?? 0) > 0 ? `${detail.validation.soft_scores?.excess_access_nights_total}n (7×)` : "0n"}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: "10.5px", color: "var(--text-dim)", display: "flex", alignItems: "center", gap: "5px", marginTop: "2px" }}>
-                      <ShieldCheck size={12} color="var(--cyan)" />
-                      <span>
-                        {scenario === "A"
-                          ? "Strict Supply · Zero ECLO · Absorbs Delay"
-                          : scenario === "B"
-                          ? "Strict Schedule · 0d Overrun · Uses ECLO"
-                          : "Hybrid Multi-Objective Trade-off"}
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Charts & Hotspots Visual Grid */}
