@@ -1,8 +1,8 @@
 # Submission Short Answers
 
-## What does your solution do? (110 words)
+## What does your solution do? (105 words)
 
-RailFlowAI transforms the eight PS1 demand-book CSVs into fully audited, optimal railway possession schedules for Scenarios A, B, and C. Powered by OR-Tools CP-SAT and an independent validator, it strictly enforces network topology, weekly closures, and co-sharing rules. Beyond solving, RailFlowAI serves as an operational command center for 2 AM works controllers: interactive visual dashboards deliver real-time **fragility scoring** (supply headroom and zero-buffer bottleneck risks) and **contractor negotiation support** (priority-tiered milestone overrun audits). A grounded AI Assistant powered by Google Gemini provides plain-English schedule querying and **what-if digital-twin sandboxing**—allowing dispatchers to simulate capacity disruptions, execute bounded re-planning on the fly with minimal churn, and export submission-ready CSV packages.
+RailFlowAI transforms the eight PS1 demand-book CSVs into fully audited, optimal railway possession schedules for Scenarios A, B, and C. Powered by OR-Tools CP-SAT and an independent CSV validator, it strictly enforces network topology, weekly closures, and co-sharing rules. Designed to solve beyond-the-schedule operational challenges, RailFlowAI provides works controllers with a production-grade command center: interactive dashboards visualize real-time supply headroom, network bottlenecks, and priority-tiered contract milestone delivery audits. An evidence-grounded AI Assistant powered by Google Gemini handles plain-English schedule queries, downstream risk checks, and live disruption re-planning—allowing dispatchers to test capacity cuts, re-optimize schedules on the fly with minimal churn, and export submission-ready CSV packages.
 
 ## What tech stack was used to build this solution? (62 words)
 
