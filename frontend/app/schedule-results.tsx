@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, Gauge, Info, LoaderCircle, ShieldAlert, ShieldCheck, Sparkles, X } from "lucide-react";
 import { Inspection } from "./inspection";
 import { AIAssistantPanel } from "./bonus-tools";
-import { POLICIES, TABS, formatLocationName, type Scenario, type Job, type ScenarioDetail, type RunState, type DetailTab } from "./schedule-types";
+import { POLICIES, TABS, formatLocationName, type Scenario, type Job, type ScenarioDetail, type RunState, type DetailTab, type ReplanState } from "./schedule-types";
 
 export function ScheduleResults({
   job,
@@ -18,6 +18,18 @@ export function ScheduleResults({
   const [tab, setTab] = useState<DetailTab>("overview");
   const [weekFilter, setWeekFilter] = useState<number | null>(null);
 
+  const [activeReplan, setActiveReplan] = useState<ReplanState | null>(null);
+  const [replanViewMode, setReplanViewMode] = useState<"baseline" | "replan">("replan");
+  const [appliedReplans, setAppliedReplans] = useState<Partial<Record<Scenario, ReplanState>>>({});
+
+  const handleReplanCreated = (newReplan: ReplanState) => {
+    setActiveReplan(newReplan);
+    setReplanViewMode("replan");
+    if (newReplan.scenario && newReplan.scenario !== selectedScenario) {
+      setSelectedScenario(newReplan.scenario);
+    }
+  };
+
   const selected = details[selectedScenario];
   if (!job.scenarios[selectedScenario]) {
     return <div className="empty-result">No policies available for this job.</div>;
@@ -27,6 +39,9 @@ export function ScheduleResults({
     setWeekFilter(week);
     setTab("activities");
   };
+
+  const currentReplanForScenario = activeReplan && activeReplan.scenario === selectedScenario ? activeReplan : null;
+  const isApplied = !!(currentReplanForScenario && appliedReplans[selectedScenario]?.replan_id === currentReplanForScenario.replan_id);
 
   return (
     <section className="dashboard-2col-layout" aria-label="Command Center Dashboard">
@@ -74,6 +89,90 @@ export function ScheduleResults({
 
         {/* Center Main Active Workspace */}
         <main className="center-workspace" key={job.job_id}>
+          {/* Top Sticky Re-plan Sandbox Banner */}
+          {currentReplanForScenario && currentReplanForScenario.status === "completed" && (
+            <div className="replan-sandbox-banner" role="region" aria-label="Re-plan Sandbox Controls">
+              <div className="replan-banner-left">
+                <div className="replan-banner-title-row">
+                  <span className="replan-badge-sandbox">RE-PLAN SANDBOX</span>
+                  <span className="replan-scenario-badge">Scenario {currentReplanForScenario.scenario}</span>
+                  <span className="replan-disruption-tag">
+                    {currentReplanForScenario.disruption.location_id} · W{currentReplanForScenario.disruption.start_week}–W{currentReplanForScenario.disruption.end_week} (Cap: {currentReplanForScenario.disruption.capacity})
+                  </span>
+                </div>
+                <div className="replan-banner-stats">
+                  <span className="replan-stat-item">
+                    Preserved: <strong>{currentReplanForScenario.diff.summary?.preserved_percent ?? 100}%</strong>
+                  </span>
+                  <span className="replan-stat-item">
+                    Moved Activities: <strong>{currentReplanForScenario.diff.summary?.moved_activities ?? 0}</strong>
+                  </span>
+                  <span className="replan-stat-item">
+                    Score Delta: <strong style={{ color: Number(currentReplanForScenario.diff.summary?.score_delta ?? 0) <= 0 ? "var(--emerald)" : "var(--rose)" }}>
+                      {Number(currentReplanForScenario.diff.summary?.score_delta ?? 0) >= 0 ? `+${currentReplanForScenario.diff.summary?.score_delta ?? 0}` : currentReplanForScenario.diff.summary?.score_delta} pts
+                    </strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="replan-banner-controls">
+                {/* Baseline vs Replan Toggle */}
+                <div className="replan-view-toggle">
+                  <button
+                    type="button"
+                    className={`replan-toggle-btn ${replanViewMode === "baseline" ? "active" : ""}`}
+                    onClick={() => setReplanViewMode("baseline")}
+                  >
+                    Baseline
+                  </button>
+                  <button
+                    type="button"
+                    className={`replan-toggle-btn ${replanViewMode === "replan" ? "active" : ""}`}
+                    onClick={() => setReplanViewMode("replan")}
+                  >
+                    Re-plan (Revised)
+                  </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="replan-action-group">
+                  <button
+                    type="button"
+                    className={`replan-btn-apply ${isApplied ? "applied" : ""}`}
+                    onClick={() => {
+                      setAppliedReplans((prev) => ({ ...prev, [selectedScenario]: currentReplanForScenario }));
+                      setReplanViewMode("replan");
+                    }}
+                    title={isApplied ? "Schedule applied to active view" : "Apply this re-planned schedule as the active view"}
+                  >
+                    {isApplied ? "✓ Applied to Schedule" : "Apply to Schedule"}
+                  </button>
+
+                  <a
+                    href={`/api/ps1/jobs/${job.job_id}/scenarios/${currentReplanForScenario.scenario}/replans/${currentReplanForScenario.replan_id}/files/SCHEDULE_ACCESS.csv`}
+                    download
+                    className="replan-btn-download"
+                    title="Download Re-optimized SCHEDULE_ACCESS.csv"
+                  >
+                    Download CSV
+                  </a>
+
+                  <button
+                    type="button"
+                    className="replan-btn-discard"
+                    onClick={() => {
+                      setActiveReplan(null);
+                      setReplanViewMode("baseline");
+                    }}
+                    title="Close sandbox and discard preview"
+                  >
+                    ✕ Discard
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <ScenarioWorkspace
             detail={selected}
             run={job.scenarios[selectedScenario]!}
@@ -86,6 +185,8 @@ export function ScheduleResults({
             weekFilter={weekFilter}
             onSelectWeek={handleBarClick}
             onClearWeekFilter={() => setWeekFilter(null)}
+            activeReplan={currentReplanForScenario}
+            replanViewMode={replanViewMode}
           />
         </main>
       </div>
@@ -98,6 +199,8 @@ export function ScheduleResults({
         usage={selected?.validation.detail.location_usage ?? []}
         hotspots={selected?.validation.detail.capacity_hotspots ?? []}
         locations={selected?.locations ?? []}
+        activeReplan={activeReplan}
+        onReplanCreated={handleReplanCreated}
       />
     </section>
   );
@@ -128,7 +231,9 @@ function ScenarioWorkspace({
   onTabChange,
   weekFilter,
   onSelectWeek,
-  onClearWeekFilter
+  onClearWeekFilter,
+  activeReplan,
+  replanViewMode,
 }: {
   job: Job;
   details: Partial<Record<Scenario, ScenarioDetail>>;
@@ -141,6 +246,8 @@ function ScenarioWorkspace({
   weekFilter: number | null;
   onSelectWeek: (week: number) => void;
   onClearWeekFilter: () => void;
+  activeReplan?: ReplanState | null;
+  replanViewMode?: "baseline" | "replan";
 }) {
   const scores = detail?.validation.soft_scores;
   const hotspots = detail?.validation.detail.capacity_hotspots ?? [];
@@ -566,14 +673,38 @@ function ScenarioWorkspace({
     };
   }, [milestoneChartMode, sCurveData, scenario]);
 
+  const isReplanActive = replanViewMode === "replan" && !!activeReplan && activeReplan.status === "completed";
+  const replanSummary = isReplanActive ? activeReplan.diff.summary : undefined;
+
   return (
     <>
       {/* Prominent Top KPI Metric Bar (Restored & Large) */}
       <div className="prominent-metric-strip">
         <div className="prominent-metric-card">
           <span>Penalty Score</span>
-          <strong style={{ color: "var(--emerald)" }}>{totalScoreVal}</strong>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+            <strong style={{ color: "var(--emerald)" }}>{totalScoreVal}</strong>
+            {replanSummary && (
+              <span className="replan-kpi-delta" title={`Re-plan score delta: ${replanSummary.score_delta} pts`}>
+                {Number(replanSummary.score_delta) >= 0 ? `+${replanSummary.score_delta}` : replanSummary.score_delta}
+              </span>
+            )}
+          </div>
         </div>
+        {replanSummary && (
+          <>
+            <div className="prominent-metric-card replan-highlight">
+              <span>Preserved Plan</span>
+              <strong style={{ color: "var(--cyan)" }}>{replanSummary.preserved_percent}%</strong>
+            </div>
+            <div className="prominent-metric-card replan-highlight">
+              <span>Moved Activities</span>
+              <strong style={{ color: (replanSummary.moved_activities ?? 0) > 0 ? "var(--amber)" : "var(--emerald)" }}>
+                {replanSummary.moved_activities}
+              </strong>
+            </div>
+          </>
+        )}
         <div className="prominent-metric-card">
           <span>Total Overrun</span>
           <strong style={{ color: Number(scores?.overrun_days_total) > 0 ? "var(--rose)" : "var(--text-primary)" }}>
@@ -856,7 +987,6 @@ function ScenarioWorkspace({
                         <div className="chart-bars-row">
                           {weekStats.map(([week, stat]) => {
                             const heightPct = Math.max(6, (stat.count / maxWeekAccess) * 80 + 8);
-                            const isHovered = hoveredWeek?.week === week;
                             return (
                               <div
                                 key={week}
@@ -866,17 +996,60 @@ function ScenarioWorkspace({
                                 onClick={() => onSelectWeek(week)}
                                 title={`Click to inspect Week ${week}`}
                               >
-                                {isHovered && (
-                                  <div className="chart-tooltip">
-                                    <strong>Week {week}</strong>: {stat.count} nights
-                                    {stat.eclo > 0 && <span style={{ color: "var(--orange)", marginLeft: "4px" }}>({stat.eclo} ECLO)</span>}
-                                  </div>
-                                )}
                                 <div className={`chart-bar ${stat.eclo > 0 ? "has-eclo" : ""}`} style={{ height: `${heightPct}%` }} />
                               </div>
                             );
                           })}
                         </div>
+
+                        {/* Interactive Floating Tooltip right above hovered bar */}
+                        {hoveredWeek !== null && (() => {
+                          const w = hoveredWeek.week;
+                          const wIdx = weekStats.findIndex(([wk]) => wk === w);
+                          const pctX = ((wIdx + 0.5) / weekStats.length) * 100;
+                          const barHeightPct = Math.max(6, (hoveredWeek.count / maxWeekAccess) * 80 + 8);
+                          const topPct = 100 - barHeightPct;
+
+                          const countA = details.A?.accesses.filter((a) => a.week === w).length ?? 0;
+                          const countB = details.B?.accesses.filter((a) => a.week === w).length ?? 0;
+                          const countC = details.C?.accesses.filter((a) => a.week === w).length ?? 0;
+
+                          return (
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: `${pctX}%`,
+                                top: `${Math.max(8, topPct)}%`,
+                                transform: `translate(${pctX < 18 ? "0%" : pctX > 82 ? "-100%" : "-50%"}, -120%)`,
+                                pointerEvents: "none",
+                                zIndex: 20,
+                                background: "rgba(15, 23, 42, 0.95)",
+                                border: "1px solid var(--cyan)",
+                                borderRadius: "6px",
+                                padding: "5px 9px",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.5)",
+                                whiteSpace: "nowrap",
+                                backdropFilter: "blur(6px)",
+                                fontSize: "11px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "2px",
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ color: "var(--cyan)" }}>Week {w}</span>
+                                <span style={{ color: activeColor }}>
+                                  Pol {scenario}: {hoveredWeek.count} nights{hoveredWeek.eclo > 0 ? ` (${hoveredWeek.eclo} ECLO)` : ""}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: "10px", display: "flex", gap: "8px" }}>
+                                <span style={{ color: "#10b981" }}>Pol A: {countA}n</span>
+                                <span style={{ color: "#ec4899" }}>Pol B: {countB}n</span>
+                                <span style={{ color: "#8b5cf6" }}>Pol C: {countC}n</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Week labels aligned with bars */}
@@ -993,6 +1166,7 @@ function ScenarioWorkspace({
                 view="activities"
                 initialWeekFilter={weekFilter}
                 onClearWeekFilter={onClearWeekFilter}
+                activityChanges={isReplanActive ? activeReplan?.diff.activity_changes : undefined}
               />
             )}
 
@@ -1004,6 +1178,7 @@ function ScenarioWorkspace({
                 view="locations"
                 initialWeekFilter={weekFilter}
                 onClearWeekFilter={onClearWeekFilter}
+                activityChanges={isReplanActive ? activeReplan?.diff.activity_changes : undefined}
               />
             )}
 
@@ -1012,32 +1187,12 @@ function ScenarioWorkspace({
               <div className="milestone-workspace tab-full-panel" role="tabpanel" id="panel-contracts" aria-labelledby="tab-contracts">
                 {/* Chart Panel */}
                 <section className="scurve-chart-panel">
-                  <div className="subheading" style={{ marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                  <div className="subheading" style={{ marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <h3 style={{ margin: 0 }}>
                           {milestoneChartMode === "delay" ? "Cumulative Schedule Delay Slip Trajectory" : "Cumulative Milestone Completion S-Curve"}
                         </h3>
-                        <span className="chip" style={{ background: "var(--bg-shell)", color: "var(--text-dim)", fontSize: "10.5px" }}>
-                          Horizon: 30 Weeks (Jan – Jul 2027)
-                        </span>
-                      </div>
-                      <div className="muted" style={{ fontSize: "11px", marginTop: "3px" }}>
-                        {hoveredSCurveWeek !== null ? (
-                          milestoneChartMode === "delay" ? (
-                            <span style={{ color: "var(--cyan)", fontWeight: 600 }}>
-                              Week {hoveredSCurveWeek}: Pol A: +{sCurveData.policyDelayPoints.A[hoveredSCurveWeek - 1]?.delay ?? 0}d · Pol B: {sCurveData.policyDelayPoints.B[hoveredSCurveWeek - 1]?.delay ?? 0}d · Pol C: +{sCurveData.policyDelayPoints.C[hoveredSCurveWeek - 1]?.delay ?? 0}d (Active: {scenario})
-                            </span>
-                          ) : (
-                            <span style={{ color: "var(--cyan)", fontWeight: 600 }}>
-                              Week {hoveredSCurveWeek}: Target {sCurveData.targetPoints[hoveredSCurveWeek - 1]?.pct ?? 0}% · Pol A: {sCurveData.policyPoints.A[hoveredSCurveWeek - 1]?.pct ?? 0}% · Pol B: {sCurveData.policyPoints.B[hoveredSCurveWeek - 1]?.pct ?? 0}% · Pol C: {sCurveData.policyPoints.C[hoveredSCurveWeek - 1]?.pct ?? 0}%
-                            </span>
-                          )
-                        ) : (
-                          milestoneChartMode === "delay"
-                            ? "Policy B enforces 0d slip · Policy C moderate · Policy A high · Hover week to inspect"
-                            : "Hover week coordinate on chart to inspect cross-policy trajectory"
-                        )}
                       </div>
                     </div>
 
@@ -1278,6 +1433,72 @@ function ScenarioWorkspace({
                             );
                           })}
                         </svg>
+
+                        {/* Interactive Floating Tooltip right above hovered points */}
+                        {hoveredSCurveWeek !== null && (() => {
+                          const w = hoveredSCurveWeek;
+                          const activePt = chartCoordinates.activeVertices.find((p) => p.week === w);
+                          const pctX = (chartCoordinates.getX(w) / 500) * 100;
+                          const activeDelay = sCurveData.policyDelayPoints[scenario][w - 1]?.delay ?? 0;
+                          const activePct = sCurveData.policyPoints[scenario][w - 1]?.pct ?? 0;
+                          const pctY = activePt ? (activePt.y / 200) * 100 : 50;
+
+                          const delA = sCurveData.policyDelayPoints.A[w - 1]?.delay ?? 0;
+                          const delB = sCurveData.policyDelayPoints.B[w - 1]?.delay ?? 0;
+                          const delC = sCurveData.policyDelayPoints.C[w - 1]?.delay ?? 0;
+
+                          const targetPct = sCurveData.targetPoints[w - 1]?.pct ?? 0;
+                          const pA = sCurveData.policyPoints.A[w - 1]?.pct ?? 0;
+                          const pB = sCurveData.policyPoints.B[w - 1]?.pct ?? 0;
+                          const pC = sCurveData.policyPoints.C[w - 1]?.pct ?? 0;
+
+                          return (
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: `${pctX}%`,
+                                top: `${Math.max(10, pctY)}%`,
+                                transform: `translate(${pctX < 18 ? "0%" : pctX > 82 ? "-100%" : "-50%"}, -120%)`,
+                                pointerEvents: "none",
+                                zIndex: 20,
+                                background: "rgba(15, 23, 42, 0.95)",
+                                border: "1px solid var(--cyan)",
+                                borderRadius: "6px",
+                                padding: "5px 9px",
+                                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.5)",
+                                whiteSpace: "nowrap",
+                                backdropFilter: "blur(6px)",
+                                fontSize: "11px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "2px",
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ color: "var(--cyan)" }}>Week {w}</span>
+                                <span style={{ color: activeColor }}>
+                                  Pol {scenario}: {milestoneChartMode === "delay" ? (activeDelay > 0 ? `+${activeDelay}d` : `${activeDelay}d`) : `${activePct}%`}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: "10px", display: "flex", gap: "8px" }}>
+                                {milestoneChartMode === "delay" ? (
+                                  <>
+                                    <span style={{ color: "#10b981" }}>Pol A: +{delA}d</span>
+                                    <span style={{ color: "#ec4899" }}>Pol B: {delB}d</span>
+                                    <span style={{ color: "#8b5cf6" }}>Pol C: +{delC}d</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ color: "#94a3b8" }}>Target: {targetPct}%</span>
+                                    <span style={{ color: "#10b981" }}>A: {pA}%</span>
+                                    <span style={{ color: "#ec4899" }}>B: {pB}%</span>
+                                    <span style={{ color: "#8b5cf6" }}>C: {pC}%</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* X-axis HTML Labels (Never stretched) */}
@@ -1321,12 +1542,6 @@ function ScenarioWorkspace({
                         </span>
                       </div>
                     </div>
-
-                    {milestoneChartMode === "delay" && (
-                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                        Policy B guarantees 0d delay slip
-                      </span>
-                    )}
                   </div>
                 </section>
 

@@ -1605,12 +1605,19 @@ svg {
 /* Activities & Locations Workspace */
 .inspection-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 14px;
-  align-items: flex-end;
 }
 
+.inspection-filters-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+.inspection-filters-row label,
 .inspection-filters label {
   display: flex;
   flex-direction: column;
@@ -1631,18 +1638,23 @@ select option {
 }
 
 .inspection-filters select,
-.inspection-filters input {
+.inspection-filters input,
+.inspection-filters-row select,
+.inspection-filters-row input {
   background: var(--bg-panel);
   border: 1px solid var(--border-card);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 12px;
   color: var(--text-primary);
-  min-width: 130px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   color-scheme: dark;
 }
 
-.inspection-filters select option {
+.inspection-filters select option,
+.inspection-filters-row select option {
   background-color: #141c2e;
   color: #f1f5f9;
 }
@@ -1654,9 +1666,13 @@ select option {
   border-radius: 6px;
   background: var(--bg-panel);
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .sort-combo-control select {
+  flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   padding: 6px 8px;
@@ -3537,5 +3553,300 @@ tr:hover td {
   font-size: 12px;
   color: var(--text-primary);
   overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   Re-plan Sandbox Banner & Interactive Diff Styles
+   ========================================================================== */
+
+.replan-sandbox-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.96) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 15px rgba(245, 158, 11, 0.1);
+  backdrop-filter: blur(12px);
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.replan-banner-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.replan-banner-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.replan-badge-sandbox {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.replan-scenario-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.replan-disruption-tag {
+  font-size: 11.5px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+.replan-banner-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.replan-stat-item strong {
+  color: var(--text-primary);
+}
+
+.replan-banner-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Baseline vs Replan Toggle */
+.replan-view-toggle {
+  display: flex;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.replan-toggle-btn {
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.replan-toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.replan-toggle-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--amber);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Action Group */
+.replan-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replan-btn-apply {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  transition: all 0.15s ease;
+}
+
+.replan-btn-apply:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.replan-btn-apply.applied,
+.replan-btn-apply:disabled {
+  background: rgba(16, 185, 129, 0.18);
+  color: var(--emerald);
+  border-color: rgba(16, 185, 129, 0.4);
+  cursor: default;
+  box-shadow: none;
+}
+
+.replan-btn-download {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid var(--border-card);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.replan-btn-download:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.replan-btn-discard {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  padding: 5px 9px;
+  font-size: 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.replan-btn-discard:hover {
+  color: var(--rose);
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.25);
+}
+
+/* KPI Delta Badges */
+.replan-kpi-delta {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.prominent-metric-card.replan-highlight {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(245, 158, 11, 0.08) 100%);
+}
+
+/* Activity Moved Tag & Filter */
+.replan-moved-pill {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--amber);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.replan-filter-moved-btn {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.replan-filter-moved-btn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--amber);
+}
+
+.replan-filter-moved-btn.active {
+  background: var(--amber);
+  color: #0f172a;
+  border-color: var(--amber);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+/* Re-plan Evidence Callout */
+.replan-evidence-callout {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.replan-callout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+}
+
+.replan-callout-header strong {
+  color: var(--amber);
+}
+
+.replan-callout-reason {
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.replan-callout-reason code {
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.replan-callout-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.replan-callout-body .callout-lbl {
+  color: var(--text-dim);
+  margin-right: 4px;
+}
+
+.replan-callout-body .callout-sep {
+  color: var(--amber);
+  font-weight: bold;
 }
 

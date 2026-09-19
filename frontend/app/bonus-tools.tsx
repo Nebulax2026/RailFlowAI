@@ -557,6 +557,8 @@ export function AIAssistantPanel({
   usage: _usage,
   hotspots: _hotspots,
   locations: _locations,
+  activeReplan,
+  onReplanCreated,
   onOpenAgentMode,
 }: {
   jobId: string;
@@ -565,20 +567,34 @@ export function AIAssistantPanel({
   usage?: LocationUsage[];
   hotspots?: LocationUsage[];
   locations?: { location_id: string; capacity: number }[];
+  activeReplan?: ReplanState | null;
+  onReplanCreated?: (replan: ReplanState) => void;
   onOpenAgentMode?: () => void;
 }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState<{ question: string; answer: Answer }[]>([]);
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [assistantError, setAssistantError] = useState("");
   const askingRef = useRef(false);
   const [showLocationGuide, setShowLocationGuide] = useState(false);
+  const [policyScope, setPolicyScope] = useState<Scenario | "ALL">(scenario);
+
+  useEffect(() => {
+    setPolicyScope(scenario);
+  }, [scenario]);
 
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [replan, setReplan] = useState<ReplanState | null>(null);
+  const [replan, setReplan] = useState<ReplanState | null>(activeReplan ?? null);
   const [executing, setExecuting] = useState(false);
   const executingRef = useRef(false);
   const mounted = useRef(true);
+
+  useEffect(() => {
+    if (activeReplan && (!replan || activeReplan.replan_id !== replan.replan_id)) {
+      setReplan(activeReplan);
+    }
+  }, [activeReplan]);
 
   useEffect(() => {
     mounted.current = true;
@@ -595,13 +611,18 @@ export function AIAssistantPanel({
           `/api/ps1/jobs/${jobId}/scenarios/${replan.scenario}/replans/${replan.replan_id}`
         )
           .then((updated) => {
-            if (mounted.current) setReplan(updated);
+            if (mounted.current) {
+              setReplan(updated);
+              if (updated.status === "completed") {
+                onReplanCreated?.(updated);
+              }
+            }
           })
           .catch(() => {}),
       1200
     );
     return () => window.clearInterval(timer);
-  }, [jobId, replan]);
+  }, [jobId, replan, onReplanCreated]);
 
   async function executePreview() {
     if (!preview || executingRef.current || !mounted.current) return;
@@ -643,6 +664,7 @@ export function AIAssistantPanel({
     if (!query || askingRef.current || executingRef.current) return;
     askingRef.current = true;
     setAsking(true);
+    setPendingQuestion(query);
     setAssistantError("");
     setQuestion("");
 
@@ -655,21 +677,25 @@ export function AIAssistantPanel({
       ]);
 
     try {
+      const targetScenario = policyScope === "ALL" ? undefined : policyScope;
+      const activeReplanId = (replan?.status === "completed" ? replan.replan_id : activeReplan?.replan_id) || undefined;
       const next = await request<Answer>(`/api/ps1/jobs/${jobId}/assistant/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          scenario,
+          scenario: targetScenario,
+          replan_id: activeReplanId,
           question: query,
           pending_preview_id: preview?.preview_id,
           history,
         }),
       });
       setConversation((current) => [...current, { question: query, answer: next }]);
+      setPendingQuestion(null);
 
       if (next.intent === "disruption_preview" && next.data?.valid === true) {
         setPreview(null);
-        const target = (next.data.scenario as Scenario) || scenario || "A";
+        const target = (next.data.scenario as Scenario) || (policyScope !== "ALL" ? policyScope : scenario) || "A";
         const previewRes = await request<Preview>(`/api/ps1/jobs/${jobId}/scenarios/${target}/replans/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -683,7 +709,21 @@ export function AIAssistantPanel({
         await executePreview();
       }
     } catch (err) {
-      setAssistantError(err instanceof Error ? err.message : "RailFlow AI Assistant could not answer.");
+      const errorMsg = err instanceof Error ? err.message : "RailFlow AI Assistant could not answer.";
+      setAssistantError(errorMsg);
+      setConversation((current) => [
+        ...current,
+        {
+          question: query,
+          answer: {
+            answer: `⚠️ ${errorMsg}`,
+            intent: "error",
+            mode: "system",
+            evidence: [],
+          },
+        },
+      ]);
+      setPendingQuestion(null);
     } finally {
       setAsking(false);
       askingRef.current = false;
@@ -694,7 +734,7 @@ export function AIAssistantPanel({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation, asking]);
+  }, [conversation, asking, pendingQuestion]);
 
   return (
     <aside className="permanent-ai-sidebar" aria-label="RailFlow AI Assistant">
@@ -779,7 +819,7 @@ export function AIAssistantPanel({
 
         {/* Scrollable Chat Stream (Grows upwards from bottom) */}
         <div className="messenger-stream" role="log">
-          {!conversation.length ? (
+          {!conversation.length && !pendingQuestion ? (
             <div className="messenger-empty-state">
               <div className="empty-avatar">
                 <Sparkles size={22} color="var(--cyan)" />
@@ -880,7 +920,33 @@ export function AIAssistantPanel({
             ))
           )}
 
-          {asking && (
+          {/* Pending In-Flight Question Exchange: User bubble appears instantly! */}
+          {pendingQuestion && (
+            <div className="message-exchange pending">
+              <div className="chat-bubble-row user">
+                <div className="chat-bubble user">
+                  <p>{pendingQuestion}</p>
+                  <span className="bubble-meta">You</span>
+                </div>
+              </div>
+
+              {/* Thinking Bubble right beneath user's question */}
+              <div className="chat-bubble-row bot">
+                <div className="bot-avatar-icon">
+                  <Sparkles size={13} color="var(--cyan)" />
+                </div>
+                <div className="chat-bubble bot thinking">
+                  <span className="bot-sender-title">RailFlow AI Assistant</span>
+                  <div className="typing-indicator">
+                    <LoaderCircle size={13} className="spin" />
+                    <span>Analyzing schedule data…</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!pendingQuestion && asking && (
             <div className="chat-bubble-row bot">
               <div className="bot-avatar-icon">
                 <Sparkles size={13} color="var(--cyan)" />
@@ -895,7 +961,7 @@ export function AIAssistantPanel({
             </div>
           )}
 
-          {assistantError && (
+          {assistantError && !pendingQuestion && (
             <div className="chat-bubble-row bot">
               <div className="chat-bubble bot error">
                 <p>{assistantError}</p>
@@ -1058,6 +1124,67 @@ export function AIAssistantPanel({
             ))}
           </div>
         )}
+
+        {/* Policy Context Pill Bar (Docked above composer) */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "5px 12px",
+            background: "rgba(15, 23, 42, 0.65)",
+            borderTop: "1px solid var(--border-subtle)",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+            fontSize: "11px",
+          }}
+        >
+          <span style={{ color: "var(--text-dim)", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            Policy Context:
+          </span>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {(["A", "B", "C"] as Scenario[]).map((p) => {
+              const active = policyScope === p;
+              const color = p === "A" ? "#10b981" : p === "B" ? "#ec4899" : "#8b5cf6";
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPolicyScope(p)}
+                  style={{
+                    background: active ? `${color}25` : "transparent",
+                    color: active ? color : "var(--text-dim)",
+                    border: `1px solid ${active ? color : "var(--border-subtle)"}`,
+                    borderRadius: "4px",
+                    padding: "2px 7px",
+                    fontSize: "10px",
+                    fontWeight: active ? 700 : 500,
+                    cursor: "pointer",
+                  }}
+                  title={`Scope queries to Policy ${p}`}
+                >
+                  Pol {p}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setPolicyScope("ALL")}
+              style={{
+                background: policyScope === "ALL" ? "rgba(6, 182, 212, 0.2)" : "transparent",
+                color: policyScope === "ALL" ? "var(--cyan)" : "var(--text-dim)",
+                border: `1px solid ${policyScope === "ALL" ? "var(--cyan)" : "var(--border-subtle)"}`,
+                borderRadius: "4px",
+                padding: "2px 7px",
+                fontSize: "10px",
+                fontWeight: policyScope === "ALL" ? 700 : 500,
+                cursor: "pointer",
+              }}
+              title="Scope queries across all policies (Global comparison)"
+            >
+              All Policies
+            </button>
+          </div>
+        </div>
 
         {/* Fixed Bottom Composer Dock */}
         <form

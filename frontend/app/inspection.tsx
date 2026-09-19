@@ -39,42 +39,97 @@ export type LocationUsage = {
   protection_groups: string[][];
 };
 
+export type ActivityChange = {
+  activity_id: string;
+  contract_number: string;
+  before: { week: number; eclo: number; access_night: number }[];
+  after: { week: number; eclo: number; access_night: number }[];
+  reason: string;
+};
+
 export function Inspection({
   activities,
   usage,
   view,
   initialWeekFilter,
-  onClearWeekFilter
+  onClearWeekFilter,
+  activityChanges,
 }: {
   activities: EvidenceActivity[];
   usage: LocationUsage[];
   view: "overview" | "activities" | "locations" | "contracts" | null;
   initialWeekFilter?: number | null;
   onClearWeekFilter?: () => void;
+  activityChanges?: ActivityChange[];
 }) {
   // Activities states
   const [contract, setContract] = useState("");
   const [line, setLine] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "delayed" | "ontime">("all");
-  const [sortBy, setSortBy] = useState<"id" | "overrun" | "date">("id");
+  const [showMovedOnly, setShowMovedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"id" | "start" | "end" | "overrun" | "eclo">("id");
   const [sortAsc, setSortAsc] = useState(true);
   const [selectedId, setSelectedId] = useState("");
   const [showTimeline, setShowTimeline] = useState(true);
 
   // Locations states
   const [locLine, setLocLine] = useState("");
+  const [locType, setLocType] = useState<"all" | "SEC" | "STN" | "BUF">("all");
+  const [locContract, setLocContract] = useState<string>("all");
   const [locQuery, setLocQuery] = useState("");
   const [locWeek, setLocWeek] = useState(initialWeekFilter ? String(initialWeekFilter) : "");
   const [locSaturation, setLocSaturation] = useState<"all" | "saturated" | "available">("all");
   const [locSortBy, setLocSortBy] = useState<"name" | "week" | "saturation">("name");
   const [locSortAsc, setLocSortAsc] = useState(true);
 
+  // Activity to contract mapping for location filtering
+  const activityContractMap = useMemo(() => {
+    const map = new Map<string, string>();
+    activities.forEach((a) => {
+      map.set(a.activity_id, a.contract_number);
+    });
+    return map;
+  }, [activities]);
+
+  const contractOptions = useMemo(() => {
+    const set = new Set<string>();
+    activities.forEach((a) => {
+      if (a.contract_number) set.add(a.contract_number);
+    });
+    return Array.from(set).sort();
+  }, [activities]);
+
+  // Unique locations for activity filtering
+  const locationOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    activities.forEach((a) => {
+      a.possessions?.forEach((p) => {
+        if (p.location_id && !map.has(p.location_id)) {
+          const formatted = formatLocationName(p.location_id);
+          map.set(p.location_id, `${formatted.primary} (${p.location_id})`);
+        }
+      });
+    });
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [activities]);
+
+  const movedMap = useMemo(() => {
+    const map = new Map<string, ActivityChange>();
+    activityChanges?.forEach((c) => map.set(c.activity_id, c));
+    return map;
+  }, [activityChanges]);
+
   const filteredActivities = useMemo(() => {
     return activities
       .filter((a) => {
+        if (showMovedOnly && !movedMap.has(a.activity_id)) return false;
         if (contract && a.contract_number !== contract) return false;
         if (line && a.line !== line) return false;
+        if (locationFilter && !a.possessions?.some((p) => p.location_id === locationFilter)) return false;
         if (query && !a.activity_id.toLowerCase().includes(query.toLowerCase())) return false;
         if (statusFilter === "delayed" && a.contract_overrun_days <= 0) return false;
         if (statusFilter === "ontime" && a.contract_overrun_days > 0) return false;
@@ -83,12 +138,22 @@ export function Inspection({
       })
       .sort((a, b) => {
         let diff = 0;
-        if (sortBy === "overrun") diff = a.contract_overrun_days - b.contract_overrun_days;
-        else if (sortBy === "date") diff = a.planned_start_date.localeCompare(b.planned_start_date);
-        else diff = a.activity_id.localeCompare(b.activity_id);
+        if (sortBy === "id") {
+          diff = a.activity_id.localeCompare(b.activity_id);
+        } else if (sortBy === "start") {
+          diff = (a.planned_start_date || "").localeCompare(b.planned_start_date || "");
+        } else if (sortBy === "end") {
+          diff = (a.completion_date || "").localeCompare(b.completion_date || "");
+        } else if (sortBy === "overrun") {
+          diff = a.contract_overrun_days - b.contract_overrun_days;
+        } else if (sortBy === "eclo") {
+          const ecloA = a.accesses?.reduce((sum, acc) => sum + (acc.eclo > 0 ? 1 : 0), 0) ?? 0;
+          const ecloB = b.accesses?.reduce((sum, acc) => sum + (acc.eclo > 0 ? 1 : 0), 0) ?? 0;
+          diff = ecloA - ecloB;
+        }
         return sortAsc ? diff : -diff;
       });
-  }, [activities, contract, line, query, statusFilter, sortBy, sortAsc, initialWeekFilter]);
+  }, [activities, contract, line, locationFilter, query, statusFilter, sortBy, sortAsc, initialWeekFilter, showMovedOnly, movedMap]);
 
   const selected = filteredActivities.find((a) => a.activity_id === selectedId) ?? filteredActivities[0];
 
@@ -102,6 +167,14 @@ export function Inspection({
         if (locLine) {
           const locLineCode = u.location_id.split(":")[1];
           if (locLineCode !== locLine) return false;
+        }
+        if (locType !== "all") {
+          const prefix = u.location_id.split(":")[0];
+          if (prefix !== locType) return false;
+        }
+        if (locContract !== "all") {
+          const hasContract = u.activities.some((aid) => activityContractMap.get(aid) === locContract);
+          if (!hasContract) return false;
         }
         if (locQuery) {
           const formatted = formatLocationName(u.location_id);
@@ -117,7 +190,7 @@ export function Inspection({
         else diff = a.location_id.localeCompare(b.location_id);
         return locSortAsc ? diff : -diff;
       });
-  }, [usage, locLine, locQuery, locWeek, locSaturation, locSortBy, locSortAsc]);
+  }, [usage, locLine, locType, locContract, locQuery, locWeek, locSaturation, locSortBy, locSortAsc, activityContractMap]);
 
   // Tab 2: ACTIVITIES
   if (view === "activities") {
@@ -137,61 +210,88 @@ export function Inspection({
         </div>
 
         <div className="inspection-filters">
-          <label>
-            Contract
-            <select value={contract} onChange={(e) => setContract(e.target.value)}>
-              <option value="">All contracts</option>
-              {[...new Set(activities.map((a) => a.contract_number))].sort().map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Line
-            <select value={line} onChange={(e) => setLine(e.target.value)}>
-              <option value="">All lines</option>
-              {[...new Set(activities.map((a) => a.line))].sort().map((l) => (
-                <option key={l} value={l}>{l === "ALP" ? "Alpha Line" : l === "BET" ? "Beta Line" : l}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Status
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
-              <option value="all">All statuses</option>
-              <option value="delayed">Contract Delayed</option>
-              <option value="ontime">Contract On-Time</option>
-            </select>
-          </label>
-
-          {/* Unified Sort By Control */}
-          <label>
-            Sort By
-            <div className="sort-combo-control">
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
-                <option value="id">Activity ID</option>
-                <option value="overrun">Overrun Days</option>
-                <option value="date">Start Date</option>
+          {/* Row 1: 4 Primary Filters (Proportional to Value Lengths) */}
+          <div className="inspection-filters-row">
+            <label style={{ flex: 1, minWidth: "110px" }}>
+              Contract
+              <select value={contract} onChange={(e) => setContract(e.target.value)}>
+                <option value="">All contracts</option>
+                {[...new Set(activities.map((a) => a.contract_number))].sort().map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
               </select>
+            </label>
+            <label style={{ flex: 1, minWidth: "110px" }}>
+              Line
+              <select value={line} onChange={(e) => setLine(e.target.value)}>
+                <option value="">All lines</option>
+                {[...new Set(activities.map((a) => a.line))].sort().map((l) => (
+                  <option key={l} value={l}>{l === "ALP" ? "Alpha Line" : l === "BET" ? "Beta Line" : l}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ flex: 2.8, minWidth: "250px" }}>
+              Location
+              <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
+                <option value="">All locations</option>
+                {locationOptions.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ flex: 1.25, minWidth: "135px" }}>
+              Status
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
+                <option value="all">All statuses</option>
+                <option value="delayed">Contract Delayed</option>
+                <option value="ontime">Contract On-Time</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Row 2: Search + Sort By Side-by-Side */}
+          <div className="inspection-filters-row">
+            <label style={{ flex: 1 }}>
+              Search
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search Activity ID (e.g. A001)"
+              />
+            </label>
+            {activityChanges && activityChanges.length > 0 && (
               <button
                 type="button"
-                className="sort-toggle-dir"
-                onClick={() => setSortAsc(!sortAsc)}
-                title={sortAsc ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
+                className={`replan-filter-moved-btn ${showMovedOnly ? "active" : ""}`}
+                onClick={() => setShowMovedOnly(!showMovedOnly)}
+                title="Filter to activities whose scheduled weeks shifted in this re-plan"
               >
-                {sortAsc ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+                ⚡ Moved Only ({activityChanges.length})
               </button>
-            </div>
-          </label>
-
-          <label style={{ flex: 1 }}>
-            Search
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search Activity ID (e.g. A001)"
-            />
-          </label>
+            )}
+            <label style={{ width: "240px", flexShrink: 0 }}>
+              Sort By
+              <div className="sort-combo-control">
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+                  <option value="id">Activity ID</option>
+                  <option value="start">Planned Start</option>
+                  <option value="end">Projected Finish</option>
+                  <option value="overrun">Overrun Days</option>
+                  <option value="eclo">ECLO Nights</option>
+                </select>
+                <button
+                  type="button"
+                  className="sort-toggle-dir"
+                  onClick={() => setSortAsc(!sortAsc)}
+                  title={sortAsc ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
+                >
+                  {sortAsc ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+                </button>
+              </div>
+            </label>
+          </div>
         </div>
 
         <div className="activity-browser">
@@ -199,21 +299,31 @@ export function Inspection({
             {filteredActivities.map((a) => {
               const isSelected = selected?.activity_id === a.activity_id;
               const hasContractDelay = a.contract_overrun_days > 0;
+              const moved = movedMap.get(a.activity_id);
               return (
                 <button
                   key={a.activity_id}
                   aria-pressed={isSelected}
                   onClick={() => setSelectedId(a.activity_id)}
-                  style={{ borderLeft: hasContractDelay ? "3px solid var(--rose)" : "3px solid var(--emerald)" }}
+                  style={{ borderLeft: moved ? "3px solid var(--amber)" : hasContractDelay ? "3px solid var(--rose)" : "3px solid var(--emerald)" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong>{a.activity_id}</strong>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <strong>{a.activity_id}</strong>
+                      {moved && <span className="replan-moved-pill">Moved</span>}
+                    </div>
                     <span className={`tier-badge ${hasContractDelay ? "tier-1" : "tier-3"}`}>
                       {hasContractDelay ? `+${a.contract_overrun_days}d late` : "On plan"}
                     </span>
                   </div>
                   <span>{a.contract_number} · {a.line === "ALP" ? "Alpha Line" : "Beta Line"}</span>
-                  <small>{a.delivered_workload}/{a.required_workload} work units · Projected: {a.completion_date}</small>
+                  {moved ? (
+                    <small style={{ color: "var(--amber)", fontWeight: 600 }}>
+                      Shifted: {moved.before.map((b) => `W${b.week}`).join(",")} → {moved.after.map((af) => `W${af.week}`).join(",")}
+                    </small>
+                  ) : (
+                    <small>{a.delivered_workload}/{a.required_workload} work units · Projected: {a.completion_date}</small>
+                  )}
                 </button>
               );
             })}
@@ -226,6 +336,7 @@ export function Inspection({
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <h4>{selected.activity_id}</h4>
+                    {movedMap.has(selected.activity_id) && <span className="replan-moved-pill">Moved in Re-plan</span>}
                     <span className="tier-badge" style={{ background: "var(--cyan-soft)", color: "var(--cyan)" }}>
                       {selected.line === "ALP" ? "Alpha Line" : "Beta Line"}
                     </span>
@@ -245,6 +356,30 @@ export function Inspection({
                   {showTimeline ? "Table View" : "Timeline View"}
                 </button>
               </div>
+
+              {/* Re-plan Shift Callout if Moved */}
+              {movedMap.has(selected.activity_id) && (() => {
+                const m = movedMap.get(selected.activity_id)!;
+                return (
+                  <div className="replan-evidence-callout">
+                    <div className="replan-callout-header">
+                      <strong>Re-plan Schedule Shift Analysis</strong>
+                      <span className="replan-callout-reason">Cause: <code>{m.reason}</code></span>
+                    </div>
+                    <div className="replan-callout-body">
+                      <div>
+                        <span className="callout-lbl">Baseline:</span>
+                        <strong>{m.before.map((b) => `W${b.week} (N${b.access_night})`).join(", ") || "Unassigned"}</strong>
+                      </div>
+                      <span className="callout-sep">→</span>
+                      <div>
+                        <span className="callout-lbl">Revised:</span>
+                        <strong style={{ color: "var(--amber)" }}>{m.after.map((af) => `W${af.week} (N${af.access_night})`).join(", ") || "Unassigned"}</strong>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Clean Key-Value Date Grids without verbose text */}
               <div className="dates-disambiguation-grid">
@@ -431,60 +566,82 @@ export function Inspection({
         </div>
 
         <div className="inspection-filters">
-          <label>
-            Line
-            <select value={locLine} onChange={(e) => setLocLine(e.target.value)}>
-              <option value="">All Lines</option>
-              <option value="ALP">Alpha Line</option>
-              <option value="BET">Beta Line</option>
-            </select>
-          </label>
-          <label>
-            Week
-            <select value={locWeek} onChange={(e) => setLocWeek(e.target.value)}>
-              <option value="">All weeks</option>
-              {[...new Set(usage.map((u) => u.week))].sort((a, b) => a - b).map((w) => (
-                <option key={w} value={w}>Week {w}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Saturation
-            <select value={locSaturation} onChange={(e) => setLocSaturation(e.target.value as any)}>
-              <option value="all">All levels</option>
-              <option value="saturated">100% Saturated (Full)</option>
-              <option value="available">Available Headroom</option>
-            </select>
-          </label>
-
-          {/* Unified Sort By Control for Locations */}
-          <label>
-            Sort By
-            <div className="sort-combo-control">
-              <select value={locSortBy} onChange={(e) => setLocSortBy(e.target.value as any)}>
-                <option value="name">Location Name</option>
-                <option value="week">Week Number</option>
-                <option value="saturation">Saturation %</option>
+          {/* Row 1: 5 Primary Filters (Proportional to Value Lengths) */}
+          <div className="inspection-filters-row">
+            <label style={{ flex: 1, minWidth: "110px" }}>
+              Line
+              <select value={locLine} onChange={(e) => setLocLine(e.target.value)}>
+                <option value="">All Lines</option>
+                <option value="ALP">Alpha Line</option>
+                <option value="BET">Beta Line</option>
               </select>
-              <button
-                type="button"
-                className="sort-toggle-dir"
-                onClick={() => setLocSortAsc(!locSortAsc)}
-                title={locSortAsc ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
-              >
-                {locSortAsc ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
-              </button>
-            </div>
-          </label>
+            </label>
+            <label style={{ flex: 1, minWidth: "110px" }}>
+              Contract
+              <select value={locContract} onChange={(e) => setLocContract(e.target.value)}>
+                <option value="all">All Contracts</option>
+                {contractOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ flex: 1.5, minWidth: "155px" }}>
+              Type
+              <select value={locType} onChange={(e) => setLocType(e.target.value as any)}>
+                <option value="all">All Types</option>
+                <option value="SEC">Tunnel Sector (SEC)</option>
+                <option value="STN">Station Platform (STN)</option>
+                <option value="BUF">Buffer Track (BUF)</option>
+              </select>
+            </label>
+            <label style={{ flex: 1, minWidth: "105px" }}>
+              Week
+              <select value={locWeek} onChange={(e) => setLocWeek(e.target.value)}>
+                <option value="">All weeks</option>
+                {[...new Set(usage.map((u) => u.week))].sort((a, b) => a - b).map((w) => (
+                  <option key={w} value={w}>Week {w}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ flex: 1.5, minWidth: "155px" }}>
+              Saturation
+              <select value={locSaturation} onChange={(e) => setLocSaturation(e.target.value as any)}>
+                <option value="all">All levels</option>
+                <option value="saturated">100% Saturated (Full)</option>
+                <option value="available">Available Headroom</option>
+              </select>
+            </label>
+          </div>
 
-          <label style={{ flex: 1 }}>
-            Search Location
-            <input
-              value={locQuery}
-              onChange={(e) => setLocQuery(e.target.value)}
-              placeholder="Search by name or code (e.g. S01, H01)"
-            />
-          </label>
+          {/* Row 2: Search + Sort By Side-by-Side */}
+          <div className="inspection-filters-row">
+            <label style={{ flex: 1 }}>
+              Search Location
+              <input
+                value={locQuery}
+                onChange={(e) => setLocQuery(e.target.value)}
+                placeholder="Search by name or code (e.g. S01, H01)"
+              />
+            </label>
+            <label style={{ width: "240px", flexShrink: 0 }}>
+              Sort By
+              <div className="sort-combo-control">
+                <select value={locSortBy} onChange={(e) => setLocSortBy(e.target.value as any)}>
+                  <option value="name">Location Name</option>
+                  <option value="week">Week Number</option>
+                  <option value="saturation">Saturation %</option>
+                </select>
+                <button
+                  type="button"
+                  className="sort-toggle-dir"
+                  onClick={() => setLocSortAsc(!locSortAsc)}
+                  title={locSortAsc ? "Ascending (Click for Descending)" : "Descending (Click for Ascending)"}
+                >
+                  {locSortAsc ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+                </button>
+              </div>
+            </label>
+          </div>
         </div>
 
         <div className="table-wrap flex-scroll-table">

@@ -133,14 +133,29 @@ Extract only explicit IDs and numeric facts; leave unknown values null or empty.
 
 def _move_reason(instance, solution, entities, diff):
     aid = next(iter(entities.get("activity_ids") or []), None)
-    if not aid or not diff: return "Ask about a moved activity ID in a revised schedule.", []
-    item = next((row for row in diff["activity_changes"] if row["activity_id"] == aid), None)
-    if not item: return f"{aid} did not change between the baseline and revised schedules.", [aid]
+    if not aid:
+        return "Please specify an activity ID (e.g. A025) to check its move reason.", []
+    if not diff:
+        scheduled_weeks = sorted({row.week for row in solution.accesses if row.activity_id == aid})
+        w_str = ", ".join(f"W{w}" for w in scheduled_weeks) if scheduled_weeks else "unscheduled"
+        return f"{aid} is currently scheduled at {w_str} in the baseline. To explain move reasons, prepare and approve a disruption re-plan first.", [aid]
+
+    activity_changes = diff.get("activity_changes") or []
+    item = next((row for row in activity_changes if row.get("activity_id") == aid), None)
+    if not item:
+        scheduled_weeks = sorted({row.week for row in solution.accesses if row.activity_id == aid})
+        w_str = ", ".join(f"W{w}" for w in scheduled_weeks) if scheduled_weeks else "unscheduled"
+        preserved_pct = diff.get("summary", {}).get("preserved_percent", 100)
+        return (f"{aid} was not moved in this re-plan. It remained scheduled at {w_str} (part of the {preserved_pct}% "
+                f"preserved schedule) because its assigned location and possessions were unaffected by the capacity reduction.", [aid])
+
     labels = {"direct_disruption": "its baseline possession intersects the disrupted location and weeks",
               "predecessor_impact": "an upstream predecessor is in the disruption impact chain",
-              "optimizer_rebalance": "the optimiser rebalanced unaffected future work while preserving the best policy score"}
-    before = ", ".join(f'W{x["week"]}' for x in item["before"]); after = ", ".join(f'W{x["week"]}' for x in item["after"])
-    return f"{aid} moved from {before} to {after} because {labels.get(item['reason'], item['reason'])}.", [aid, item["contract_number"]]
+              "optimizer_rebalance": "the optimizer rebalanced work while preserving the best policy score"}
+    before = ", ".join(f'W{x["week"]}' for x in item.get("before", [])) or "unassigned"
+    after = ", ".join(f'W{x["week"]}' for x in item.get("after", [])) or "unassigned"
+    reason_label = labels.get(item.get("reason"), item.get("reason", "schedule re-optimization"))
+    return f"{aid} moved from {before} to {after} because {reason_label}.", [aid, item.get("contract_number", "")]
 
 
 def _downstream(instance, solution, entities, diff):
@@ -586,8 +601,8 @@ def chat(job, scenario, solution, question, history, diff=None, pending_preview=
                 for call in calls:
                     try:
                         output = allowed[call.name](**dict(call.args or {}))
-                    except (KeyError, TypeError, ValueError):
-                        output = {"error": "Unknown tool or invalid arguments"}
+                    except Exception as tool_err:
+                        output = {"error": f"Tool execution error: {tool_err}"}
                     outputs.append(types.Part.from_function_response(name=call.name, response=output))
                 contents.append(types.Content(role="tool", parts=outputs))
         raise HTTPException(502, "Gemini reached its tool limit. Please narrow the question.")
