@@ -57,9 +57,25 @@ def solution_diff(instance, baseline, revised, disruption):
                         if old_results[cid].simulated_completion_date != new_results[cid].simulated_completion_date]
     old_score = baseline.validation.soft_scores["objective_score"]
     new_score = revised.validation.soft_scores["objective_score"]
+    old_overrun = int(baseline.validation.soft_scores.get("overrun_days_total", 0))
+    new_overrun = int(revised.validation.soft_scores.get("overrun_days_total", 0))
+    old_eclo = int(baseline.validation.soft_scores.get("eclo_nights_total", 0) or baseline.validation.detail.get("eclo_nights", 0))
+    new_eclo = int(revised.validation.soft_scores.get("eclo_nights_total", 0) or revised.validation.detail.get("eclo_nights", 0))
+    old_excess = int(baseline.validation.soft_scores.get("excess_access_nights_total", 0))
+    new_excess = int(revised.validation.soft_scores.get("excess_access_nights_total", 0))
+    old_accesses = len(baseline.accesses)
+    new_accesses = len(revised.accesses)
     return {"summary": {"moved_activities": len(activity_changes),
                          "preserved_percent": round(100 * unchanged / max(1, len(instance.activities)), 1),
                          "contracts_impacted": len(contract_changes), "score_delta": new_score - old_score,
-                         "baseline_score": old_score, "revised_score": new_score},
+                         "baseline_score": old_score, "revised_score": new_score,
+                         "overrun_delta": new_overrun - old_overrun,
+                         "baseline_overrun": old_overrun, "revised_overrun": new_overrun,
+                         "eclo_delta": new_eclo - old_eclo,
+                         "baseline_eclo": old_eclo, "revised_eclo": new_eclo,
+                         "excess_delta": new_excess - old_excess,
+                         "baseline_excess": old_excess, "revised_excess": new_excess,
+                         "accesses_delta": new_accesses - old_accesses,
+                         "baseline_accesses": old_accesses, "revised_accesses": new_accesses},
             "activity_changes": activity_changes, "contract_changes": contract_changes,
             "directly_affected_activities": sorted(direct)}

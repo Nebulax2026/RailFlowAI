@@ -35,12 +35,32 @@ export type ReplanState = {
   disruption: { location_id: string; start_week: number; end_week: number; capacity: number; reason: string };
   disruption_audit?: { feasible?: boolean };
   diff: {
-    summary?: { moved_activities: number; preserved_percent: number; score_delta: number };
+    summary?: {
+      moved_activities: number;
+      preserved_percent: number;
+      score_delta: number;
+      contracts_impacted?: number;
+      baseline_score?: number;
+      revised_score?: number;
+      overrun_delta?: number;
+      baseline_overrun?: number;
+      revised_overrun?: number;
+      eclo_delta?: number;
+      baseline_eclo?: number;
+      revised_eclo?: number;
+      excess_delta?: number;
+      baseline_excess?: number;
+      revised_excess?: number;
+      accesses_delta?: number;
+      baseline_accesses?: number;
+      revised_accesses?: number;
+    };
     activity_changes?: { activity_id: string; contract_number: string; before: { week: number; eclo: number; access_night: number }[]; after: { week: number; eclo: number; access_night: number }[]; reason: string }[];
   };
   solution?: {
-    validation: { feasible: boolean; detail: { safety_status?: string }; soft_scores: { objective_score?: number; completion_percent?: number; overrun_days_total?: number; excess_access_nights_total?: number; eclo_nights_total?: number } };
+    validation: { feasible: boolean; detail: { safety_status?: string; eclo_nights?: number }; soft_scores: { objective_score?: number; completion_percent?: number; overrun_days_total?: number; excess_access_nights_total?: number; eclo_nights_total?: number } };
     results: ContractResult[];
+    accesses?: { activity_id: string; week: number; eclo: number; access_night: number }[];
   };
 };
 export type ScenarioDetail = {

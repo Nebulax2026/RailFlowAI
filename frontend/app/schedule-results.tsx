@@ -230,6 +230,7 @@ export function ScheduleResults({
                   </button>
                 </div>
               </div>
+              <div className="replan-sandbox-highlight-line" aria-hidden="true" />
             </div>
           )}
 
@@ -736,43 +737,121 @@ function ScenarioWorkspace({
   const isReplanActive = replanViewMode === "replan" && !!activeReplan && activeReplan.status === "completed";
   const replanSummary = isReplanActive ? activeReplan.diff.summary : undefined;
 
+  // 1. Penalty Score
+  const baselineScore = totalScoreVal;
+  const scoreDelta = replanSummary?.score_delta ?? 0;
+  const revisedScore = replanSummary?.revised_score ?? (isReplanActive && replanSummary?.score_delta != null ? Number((baselineScore + replanSummary.score_delta).toFixed(1)) : baselineScore);
+  const displayScore = isReplanActive ? revisedScore : baselineScore;
+
+  // 2. Total Overrun Days
+  const baselineOverrun = Number(scores?.overrun_days_total ?? 0);
+  const revisedOverrun = replanSummary?.revised_overrun ?? Number(activeReplan?.solution?.validation?.soft_scores?.overrun_days_total ?? baselineOverrun);
+  const overrunDelta = replanSummary?.overrun_delta ?? (isReplanActive ? revisedOverrun - baselineOverrun : 0);
+  const displayOverrun = isReplanActive ? revisedOverrun : baselineOverrun;
+
+  // 3. ECLO Nights
+  const baselineEclo = ecloNights;
+  const revisedEclo = replanSummary?.revised_eclo ?? Number(activeReplan?.solution?.validation?.soft_scores?.eclo_nights_total ?? activeReplan?.solution?.validation?.detail?.eclo_nights ?? baselineEclo);
+  const ecloDelta = replanSummary?.eclo_delta ?? (isReplanActive ? revisedEclo - baselineEclo : 0);
+  const displayEclo = isReplanActive ? revisedEclo : baselineEclo;
+
+  // 4. Excess Access Nights
+  const baselineExcess = excessNights;
+  const revisedExcess = replanSummary?.revised_excess ?? Number(activeReplan?.solution?.validation?.soft_scores?.excess_access_nights_total ?? baselineExcess);
+  const excessDelta = replanSummary?.excess_delta ?? (isReplanActive ? revisedExcess - baselineExcess : 0);
+  const displayExcess = isReplanActive ? revisedExcess : baselineExcess;
+
+  // 5. Possession Accesses Count
+  const baselineAccesses = detail?.accesses.length ?? 0;
+  const revisedAccesses = replanSummary?.revised_accesses ?? (activeReplan?.solution?.accesses ? activeReplan.solution.accesses.length : baselineAccesses);
+  const accessesDelta = replanSummary?.accesses_delta ?? (isReplanActive ? revisedAccesses - baselineAccesses : 0);
+  const displayAccesses = isReplanActive ? revisedAccesses : baselineAccesses;
+
   return (
     <>
       {/* Prominent Top KPI Metric Bar (Restored & Large) */}
       <div className="prominent-metric-strip">
-        <div className="prominent-metric-card">
+        <div className={`prominent-metric-card ${isReplanActive && scoreDelta !== 0 ? "replan-highlight" : ""}`}>
           <span>Penalty Score</span>
           <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-            <strong style={{ color: "var(--emerald)" }}>{totalScoreVal}</strong>
+            <strong style={{ color: "var(--emerald)" }}>{displayScore}</strong>
             {replanSummary && (
-              <span className="replan-kpi-delta" title={`Re-plan score delta: ${replanSummary.score_delta} pts`}>
-                {Number(replanSummary.score_delta) >= 0 ? `+${replanSummary.score_delta}` : replanSummary.score_delta}
+              <span
+                className={`replan-kpi-delta ${Number(scoreDelta) > 0 ? "rose" : Number(scoreDelta) < 0 ? "emerald" : "neutral"}`}
+                title={`Re-plan score delta: ${scoreDelta} pts`}
+              >
+                {Number(scoreDelta) >= 0 ? `+${scoreDelta}` : scoreDelta}
               </span>
             )}
           </div>
         </div>
-        <div className="prominent-metric-card">
+
+        <div className={`prominent-metric-card ${isReplanActive && overrunDelta !== 0 ? "replan-highlight" : ""}`}>
           <span>Total Overrun</span>
-          <strong style={{ color: Number(scores?.overrun_days_total) > 0 ? "var(--rose)" : "var(--text-primary)" }}>
-            {String(scores?.overrun_days_total ?? "0")}d
-          </strong>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+            <strong style={{ color: displayOverrun > 0 ? "var(--rose)" : "var(--text-primary)" }}>
+              {displayOverrun}d
+            </strong>
+            {isReplanActive && overrunDelta !== 0 && (
+              <span
+                className={`replan-kpi-delta ${overrunDelta > 0 ? "rose" : "emerald"}`}
+                title={`Re-plan overrun delta: ${overrunDelta > 0 ? `+${overrunDelta}` : overrunDelta} days`}
+              >
+                {overrunDelta > 0 ? `+${overrunDelta}d` : `${overrunDelta}d`}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="prominent-metric-card">
+
+        <div className={`prominent-metric-card ${isReplanActive && ecloDelta !== 0 ? "replan-highlight" : ""}`}>
           <span>ECLO Nights</span>
-          <strong style={{ color: ecloNights > 0 ? "var(--orange)" : "var(--text-primary)" }}>
-            {ecloNights}n
-          </strong>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+            <strong style={{ color: displayEclo > 0 ? "var(--orange)" : "var(--text-primary)" }}>
+              {displayEclo}n
+            </strong>
+            {isReplanActive && ecloDelta !== 0 && (
+              <span
+                className={`replan-kpi-delta ${ecloDelta > 0 ? "rose" : "emerald"}`}
+                title={`Re-plan ECLO delta: ${ecloDelta > 0 ? `+${ecloDelta}` : ecloDelta} nights`}
+              >
+                {ecloDelta > 0 ? `+${ecloDelta}n` : `${ecloDelta}n`}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="prominent-metric-card">
+
+        <div className={`prominent-metric-card ${isReplanActive && excessDelta !== 0 ? "replan-highlight" : ""}`}>
           <span>Excess Access</span>
-          <strong style={{ color: excessNights > 0 ? "var(--amber)" : "var(--text-primary)" }}>
-            {excessNights}n
-          </strong>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+            <strong style={{ color: displayExcess > 0 ? "var(--amber)" : "var(--text-primary)" }}>
+              {displayExcess}n
+            </strong>
+            {isReplanActive && excessDelta !== 0 && (
+              <span
+                className={`replan-kpi-delta ${excessDelta > 0 ? "rose" : "emerald"}`}
+                title={`Re-plan excess access delta: ${excessDelta > 0 ? `+${excessDelta}` : excessDelta} nights`}
+              >
+                {excessDelta > 0 ? `+${excessDelta}n` : `${excessDelta}n`}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="prominent-metric-card">
+
+        <div className={`prominent-metric-card ${isReplanActive && accessesDelta !== 0 ? "replan-highlight" : ""}`}>
           <span>Possession Accesses</span>
-          <strong>{detail?.accesses.length ?? 0}</strong>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+            <strong>{displayAccesses}</strong>
+            {isReplanActive && accessesDelta !== 0 && (
+              <span
+                className={`replan-kpi-delta ${accessesDelta > 0 ? "amber" : "emerald"}`}
+                title={`Re-plan accesses delta: ${accessesDelta > 0 ? `+${accessesDelta}` : accessesDelta}`}
+              >
+                {accessesDelta > 0 ? `+${accessesDelta}` : `${accessesDelta}`}
+              </span>
+            )}
+          </div>
         </div>
+
         <div className="prominent-metric-card">
           <span>Search Runtime</span>
           <strong>{formatSeconds(run.diagnostics?.elapsed_seconds ?? run.solver_stats.elapsed_seconds)}</strong>
