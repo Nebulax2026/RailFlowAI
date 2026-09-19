@@ -132,6 +132,30 @@ def test_preview_only_returns_validated_draft(model, tiny):
     assert job.replans == {}
 
 
+def test_explicit_preview_request_cannot_be_replaced_by_model_prose(model, tiny):
+    location = next(key for key, row in tiny.supply.items() if row.supply_capacity > 0)
+    solution = solve_scenario(tiny, Scenario.A, 3)
+    job = SimpleNamespace(instance=tiny, replans={}, scenarios={Scenario.A: SimpleNamespace(solution=solution)})
+    result = chat(job, Scenario.A, solution,
+                  f"For Scenario A, reduce capacity at {location} to 0 in week 1.", [])
+    assert result["intent"] == "disruption_preview"
+    assert result["mode"] == "deterministic-safety"
+    assert result["data"]["location_id"] == location
+    assert result["data"]["capacity"] == 0
+    model.assert_not_called()
+
+
+def test_model_cannot_claim_an_uncreated_preview(model, tiny):
+    solution = solve_scenario(tiny, Scenario.A, 3)
+    job = SimpleNamespace(instance=tiny, replans={}, scenarios={Scenario.A: SimpleNamespace(solution=solution)})
+    model.return_value = response("I prepared the requested preview.")
+    result = chat(job, Scenario.A, solution,
+                  "Reduce capacity at the Alpha Line tunnel to 1 in week 1.", [])
+    assert result["intent"] == "conversation"
+    assert "No disruption preview has been created" in result["answer"]
+    assert "data" not in result
+
+
 def test_chat_approval_is_bound_to_displayed_preview_and_does_not_execute(model):
     pending = {"preview_id": "server-issued-preview", "disruption": {"capacity": 0}}
     model.side_effect = [tool("approve_pending_replan", {}), response("Approval confirmed.")]
@@ -139,6 +163,27 @@ def test_chat_approval_is_bound_to_displayed_preview_and_does_not_execute(model)
     result = chat(job, "A", None, "Approve", [], pending_preview=pending)
     assert result["approved_preview_id"] == pending["preview_id"]
     assert job.replans == {}
+
+
+def test_explicit_chat_approval_does_not_depend_on_model_tool_choice(model):
+    pending = {"preview_id": "server-issued-preview", "disruption": {"capacity": 0}}
+    result = chat(SimpleNamespace(), "A", None, "Yes, I approve the previous preview.", [], pending_preview=pending)
+    assert result["approved_preview_id"] == pending["preview_id"]
+    assert result["mode"] == "deterministic-safety"
+    model.assert_not_called()
+
+
+def test_unknown_counterfactual_is_always_described_as_inconclusive(model, tiny, monkeypatch):
+    baseline = solve_scenario(tiny, Scenario.A, 3)
+    aid = next(iter(tiny.activities))
+    job = SimpleNamespace(instance=tiny, replans={}, scenarios={Scenario.A: SimpleNamespace(solution=baseline)})
+    monkeypatch.setattr("app.ps1.counterfactual.evaluate_activity_boundary",
+                        lambda *args, **kwargs: {"status": "unknown", "reason": "time_limit"})
+    model.side_effect = [tool("test_activity_timing", {"activity_id": aid, "boundary": "start", "target_week": 1}),
+                         response("The unknown result confirms the current placement is required.")]
+    result = chat(job, Scenario.A, baseline, "Why this timing?", [])
+    assert "Counterfactual result: inconclusive" in result["answer"]
+    assert "unknown result confirms" not in result["answer"]
 
 
 def test_no_approval_tool_without_existing_preview(model):

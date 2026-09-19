@@ -867,9 +867,9 @@ export function AIAssistantPanel({
                     <AnswerBody text={entry.answer.answer} />
                     {entry.answer.evidence && entry.answer.evidence.length > 0 && (
                       <div className="bubble-evidence-wrap">
-                        {entry.answer.evidence.slice(0, 4).map((ev) => (
+                        {entry.answer.evidence.slice(0, 4).map((ev, index, shown) => (
                           <span key={ev} className="evidence-chip">
-                            {ev}
+                            {ev}{index < shown.length - 1 ? "," : ""}
                           </span>
                         ))}
                       </div>

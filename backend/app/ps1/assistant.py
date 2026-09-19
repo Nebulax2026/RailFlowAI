@@ -82,7 +82,7 @@ def _parse_deterministic(question):
     text = question.strip(); lower = text.lower()
     aids = re.findall(r"\bA\d+\b", text, re.I)
     contracts = re.findall(r"\bC\d+\b", text, re.I)
-    locations = re.findall(r"\b(?:SEC|PLAT):[A-Z0-9_:]+", text, re.I)
+    locations = re.findall(r"\b(?:SEC|PLAT|STN|BUF):[A-Z0-9_:]+", text, re.I)
     weeks = [int(value) for value in re.findall(r"\bweeks?\s+(\d+)\b", lower)]
     range_match = re.search(r"\bweeks?\s+(\d+)\s*(?:to|-|through)\s*(\d+)\b", lower)
     if range_match: weeks = [int(range_match.group(1)), int(range_match.group(2))]
@@ -104,6 +104,59 @@ def _parse_deterministic(question):
     capacity = re.search(r"\b(?:to\s+|capacity\s+(?:of|is)?\s*)(\d+)\b", lower)
     entities["capacity"] = int(capacity.group(1)) if capacity else None
     return {"intent": intent, "entities": entities}
+
+
+def _explicit_disruption_request(question: str, active_scenario: str) -> dict | None:
+    """Extract a complete, explicit preview request without trusting model prose."""
+    parsed = _parse_deterministic(question)
+    if parsed.get("intent") != "disruption_preview":
+        return None
+    entities = parsed.get("entities", {})
+    weeks = entities.get("weeks") or []
+    location_id = entities.get("location_id")
+    capacity = entities.get("capacity")
+    target_scenario = entities.get("scenario") or active_scenario
+    if target_scenario not in {"A", "B", "C"} or not location_id or capacity is None or not weeks:
+        return None
+    return {
+        "target_scenario": target_scenario,
+        "location_id": location_id,
+        "start_week": min(weeks),
+        "end_week": max(weeks),
+        "capacity": capacity,
+    }
+
+
+def _looks_like_disruption_request(question: str) -> bool:
+    lower = question.lower()
+    return "capacity" in lower and any(token in lower for token in ("reduce", "reduction", "disruption", "re-plan", "replan"))
+
+
+def _is_explicit_preview_approval(question: str) -> bool:
+    """Accept only a standalone, unambiguous approval of an existing preview."""
+    lower = " ".join(question.lower().strip().split())
+    if not lower or "?" in lower:
+        return False
+    if any(token in lower for token in ("don't", "do not", "not approve", "cancel", "change", "modify", "instead", "what if", "if i")):
+        return False
+    if re.search(r"\b(?:week|capacity|scenario|policy)\b|\b(?:sec|plat|stn|buf):", lower):
+        return False
+    return bool(re.search(r"\b(?:approve|approved|execute)\b", lower)
+                or re.fullmatch(r"(?:yes[,.! ]*)?run (?:it|the re-?plan)[.! ]*", lower))
+
+
+def _enforce_counterfactual_caution(answer: str, outcomes: list[dict]) -> str:
+    """Prevent an inconclusive solver result from being presented as proof."""
+    if not any(item.get("status") == "unknown" for item in outcomes):
+        return answer
+    sentences = re.split(r"(?<=[.!?])\s+", answer)
+    filtered = [sentence for sentence in sentences
+                if not ("unknown" in sentence.lower()
+                        and any(term in sentence.lower() for term in ("confirm", "prove", "demonstrat", "therefore", "must")))]
+    prefix = " ".join(filtered).strip()
+    caution = ("**Counterfactual result: inconclusive.** The timing check returned `unknown`; it does not confirm "
+               "that the current placement is required or that the alternative is impossible.")
+    return f"{prefix}\n\n{caution}" if prefix else caution
 
 
 def _parse_with_gemini(question):
@@ -304,6 +357,7 @@ def chat(job, scenario, solution, question, history, diff=None, pending_preview=
     draft = None
     approved_preview_id = None
     counterfactual_checks = 0
+    counterfactual_outcomes = []
 
     def validated(candidate):
         return candidate and candidate.validation.feasible and candidate.validation.detail.get("safety_status") == "verified"
@@ -489,6 +543,7 @@ def chat(job, scenario, solution, question, history, diff=None, pending_preview=
         counterfactual_checks += 1
         from app.ps1.counterfactual import evaluate_activity_boundary
         result = evaluate_activity_boundary(job.instance, scenario, solution, activity_id, boundary, target_week)
+        counterfactual_outcomes.append(result)
         evidence.update([f"scenario:{scenario}:revision:{solution.solution_revision}", activity_id,
                          f"counterfactual:{activity_id}:{boundary}:week:{target_week}"])
         return result
@@ -552,6 +607,26 @@ def chat(job, scenario, solution, question, history, diff=None, pending_preview=
         approved_preview_id = pending_preview["preview_id"]
         return {"status": "approval_recorded", "note": "The client will request execution. Not started or validated yet."}
 
+    # Preview creation and approval are state-changing gates. Handle complete,
+    # explicit requests deterministically so model prose can never impersonate
+    # a server-issued preview or approval.
+    if pending_preview and _is_explicit_preview_approval(question):
+        return {"answer": "Approval recorded for the displayed preview. The client will now request the validated re-plan.",
+                "intent": "conversation", "mode": "deterministic-safety",
+                "evidence": [f"preview:{pending_preview['preview_id']}"],
+                "approved_preview_id": pending_preview["preview_id"]}
+
+    explicit_disruption = _explicit_disruption_request(question, scen_key)
+    if explicit_disruption:
+        prepared = prepare_disruption(**explicit_disruption)
+        if "error" not in prepared:
+            return {"answer": (f"Prepared a validated disruption preview for **Scenario {prepared['scenario']}** at "
+                               f"`{prepared['location_id']}`: capacity **{prepared['capacity']}** in weeks "
+                               f"**{prepared['start_week']}–{prepared['end_week']}**. No schedule has changed; "
+                               "review the preview card before approving it."),
+                    "intent": "disruption_preview", "mode": "deterministic-safety",
+                    "evidence": sorted(evidence), "data": draft}
+
     allowed = {fn.__name__: fn for fn in (get_schedule_results, explain_schedule_design, select_schedule, list_replans,
                                            get_activity, get_locations, inspect_schedule, read_generated_csv,
                                            test_activity_timing, assess_disruption, prepare_disruption)}
@@ -575,6 +650,10 @@ def chat(job, scenario, solution, question, history, diff=None, pending_preview=
                     answer = (response.text or "").strip()
                     if not answer:
                         raise HTTPException(502, "Gemini returned no answer. Please retry.")
+                    if _looks_like_disruption_request(question) and not draft:
+                        answer = ("No disruption preview has been created. Include a target scenario, exact location ID, "
+                                  "week or week range, and reduced capacity so the server can validate a real preview.")
+                    answer = _enforce_counterfactual_caution(answer, counterfactual_outcomes)
                     result = {"answer": answer, "intent": "disruption_preview" if draft else "conversation", "mode": "gemini", "evidence": sorted(evidence)}
                     if draft: result["data"] = draft
                     elif approved_preview_id: result["approved_preview_id"] = approved_preview_id
